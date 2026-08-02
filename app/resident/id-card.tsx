@@ -1,0 +1,264 @@
+import { useState } from 'react';
+import { View, Text, FlatList, RefreshControl, ActivityIndicator, Modal, Pressable } from 'react-native';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../../lib/supabase';
+import { shareHouseholdCard } from '../../lib/share-id-card';
+import { useAuthStore } from '../../store/auth-store';
+import { useTheme } from '../../context/theme-context';
+import { IDCardView } from '../../components/ui/IDCardView';
+import { AddHouseholdMemberForm } from '../../components/resident/AddHouseholdMemberForm';
+import { Avatar } from '../../components/ui/Avatar';
+import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
+import { Notice } from '../../components/ui/Notice';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { StatusBadge } from '../../components/ui/StatusBadge';
+import { EmptyState } from '../../components/ui/EmptyState';
+import type { Estate, HouseholdMember } from '../../types/database';
+
+export default function IdCardScreen() {
+  const profile = useAuthStore((s) => s.profile);
+  const refreshProfile = useAuthStore((s) => s.refreshProfile);
+  const { colors, spacing, typography } = useTheme();
+  const queryClient = useQueryClient();
+
+  const [viewingMember, setViewingMember] = useState<HouseholdMember | null>(null);
+  const [pendingRevoke, setPendingRevoke] = useState<HouseholdMember | null>(null);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
+  const [confirmingRegenerate, setConfirmingRegenerate] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+  const [notice, setNotice] = useState<string>();
+  const [error, setError] = useState<string>();
+
+  const { data: estate } = useQuery({
+    queryKey: ['my_estate', profile?.estate_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('estates')
+        .select('*')
+        .eq('id', profile!.estate_id!)
+        .single();
+      if (error) throw error;
+      return data as Estate;
+    },
+    enabled: !!profile?.estate_id,
+  });
+
+  const {
+    data: household,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useQuery({
+    queryKey: ['household_members', profile?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('household_members')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as HouseholdMember[];
+    },
+    enabled: !!profile,
+  });
+
+  function invalidateHousehold() {
+    queryClient.invalidateQueries({ queryKey: ['household_members', profile?.id] });
+  }
+
+  async function regenerateCode() {
+    setRegenerating(true);
+    const { error } = await supabase.rpc('regenerate_resident_code');
+    setRegenerating(false);
+    setConfirmingRegenerate(false);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    await refreshProfile();
+    setNotice('New code generated — your old card no longer works.');
+  }
+
+  async function revokeMember() {
+    if (!pendingRevoke) return;
+    const id = pendingRevoke.id;
+    setRevokingId(id);
+    const { error } = await supabase.from('household_members').update({ status: 'revoked' }).eq('id', id);
+    setRevokingId(null);
+    setPendingRevoke(null);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    invalidateHousehold();
+  }
+
+  if (isLoading || !profile) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  return (
+    <>
+      <FlatList
+        style={{ backgroundColor: colors.background }}
+        contentContainerStyle={{ padding: spacing.xl }}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
+        data={household ?? []}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={
+          <View>
+            {error && <Notice message={error} />}
+            {notice && <Notice tone="success" message={notice} />}
+
+            <IDCardView
+              photoUrl={profile.avatar_url}
+              name={profile.full_name ?? 'You'}
+              subtitle={profile.unit_no ? `Unit ${profile.unit_no}` : undefined}
+              estateName={estate?.name}
+              code={profile.resident_code ?? '—'}
+            />
+
+            <Button
+              label="Regenerate my code"
+              variant="ghost"
+              onPress={() => setConfirmingRegenerate(true)}
+              style={{ marginTop: spacing.md, marginBottom: spacing['2xl'] }}
+            />
+
+            <Text style={[typography.subheading, { color: colors.text, marginBottom: spacing.xs }]}>
+              Household & frequent visitors
+            </Text>
+            <Text style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.md }]}>
+              Give family, house help, or a regular driver their own standing card — no need to
+              generate a new visitor pass every time they come.
+            </Text>
+
+            <AddHouseholdMemberForm
+              residentId={profile.id}
+              estateId={profile.estate_id!}
+              onCreated={invalidateHousehold}
+            />
+          </View>
+        }
+        ListEmptyComponent={
+          <EmptyState
+            title="No one added yet"
+            message="Add a household member or frequent visitor above to give them their own gate card."
+          />
+        }
+        renderItem={({ item }) => (
+          <Card>
+            <Pressable
+              onPress={() => setViewingMember(item)}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}
+            >
+              <Avatar uri={item.avatar_url} name={item.full_name} size={44} />
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
+                  {item.full_name}
+                </Text>
+                <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
+                  {item.relationship} · Code: {item.code}
+                </Text>
+              </View>
+              <StatusBadge
+                label={item.status === 'revoked' ? 'Revoked' : 'Active'}
+                tone={item.status === 'revoked' ? 'danger' : 'success'}
+              />
+            </Pressable>
+            {item.status === 'active' && (
+              <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
+                <Button
+                  label="View card"
+                  variant="secondary"
+                  onPress={() => setViewingMember(item)}
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  label="Revoke"
+                  variant="ghost"
+                  loading={revokingId === item.id}
+                  onPress={() => setPendingRevoke(item)}
+                />
+              </View>
+            )}
+          </Card>
+        )}
+      />
+
+      <Modal visible={!!viewingMember} transparent animationType="fade" onRequestClose={() => setViewingMember(null)}>
+        <Pressable
+          onPress={() => setViewingMember(null)}
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(15, 17, 22, 0.5)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: spacing.xl,
+          }}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 360 }}>
+            {viewingMember && (
+              <>
+                <IDCardView
+                  photoUrl={viewingMember.avatar_url}
+                  name={viewingMember.full_name}
+                  subtitle={viewingMember.relationship}
+                  estateName={estate?.name}
+                  code={viewingMember.code}
+                  revoked={viewingMember.status === 'revoked'}
+                />
+                <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg }}>
+                  {viewingMember.status === 'active' && (
+                    <Button
+                      label="Share"
+                      variant="secondary"
+                      onPress={async () => {
+                        const outcome = await shareHouseholdCard(viewingMember, estate?.name);
+                        if (outcome === 'copied') setNotice('Copied — paste it into WhatsApp.');
+                      }}
+                      style={{ flex: 1 }}
+                    />
+                  )}
+                  <Button label="Close" onPress={() => setViewingMember(null)} style={{ flex: 1 }} />
+                </View>
+              </>
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <ConfirmDialog
+        visible={!!pendingRevoke}
+        title="Revoke this card?"
+        message={
+          pendingRevoke
+            ? `${pendingRevoke.full_name}'s code (${pendingRevoke.code}) will stop working immediately.`
+            : undefined
+        }
+        confirmLabel="Revoke"
+        cancelLabel="Keep"
+        destructive
+        loading={!!revokingId}
+        onConfirm={revokeMember}
+        onCancel={() => setPendingRevoke(null)}
+      />
+
+      <ConfirmDialog
+        visible={confirmingRegenerate}
+        title="Regenerate your code?"
+        message="Your current ID card — printed or on-screen — will stop working immediately. Only do this if you think your code was seen by someone it shouldn't have been."
+        confirmLabel="Regenerate"
+        cancelLabel="Cancel"
+        destructive
+        loading={regenerating}
+        onConfirm={regenerateCode}
+        onCancel={() => setConfirmingRegenerate(false)}
+      />
+    </>
+  );
+}

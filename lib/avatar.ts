@@ -1,0 +1,87 @@
+import * as ImagePicker from 'expo-image-picker';
+import { supabase } from './supabase';
+
+interface PickAndUploadResult {
+  url?: string;
+  cancelled?: boolean;
+  error?: string;
+}
+
+async function pickImage() {
+  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permission.granted) {
+    return { error: 'Photo library access is needed to set a profile picture.' } as const;
+  }
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ['images'],
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.7,
+  });
+  if (result.canceled || !result.assets[0]) return { cancelled: true } as const;
+
+  return { asset: result.assets[0] } as const;
+}
+
+async function uploadToPath(uri: string, mimeType: string | null | undefined, path: string) {
+  const ext = (uri.split('.').pop() || 'jpg').toLowerCase().split('?')[0];
+  const contentType = mimeType ?? `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+  const blob = await fetch(uri).then((r) => r.blob());
+
+  const { error } = await supabase.storage.from('avatars').upload(path, blob, {
+    contentType,
+    upsert: true,
+  });
+  if (error) return { error: error.message } as const;
+
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+  // Cache-bust so a re-picked photo replaces the old one immediately in any
+  // <Image> that already cached the previous URL for this same path.
+  return { url: `${data.publicUrl}?t=${Date.now()}` } as const;
+}
+
+/**
+ * Opens the photo library, uploads the chosen image to the `avatars` bucket at
+ * `{userId}/avatar.<ext>`, and returns its public URL. Upserts, so re-picking a
+ * photo replaces the old one at the same path rather than accumulating files.
+ */
+export async function pickAndUploadAvatar(userId: string): Promise<PickAndUploadResult> {
+  const picked = await pickImage();
+  if ('error' in picked || 'cancelled' in picked) return picked;
+  return uploadToPath(picked.asset.uri, picked.asset.mimeType, `${userId}/avatar.${(picked.asset.uri.split('.').pop() || 'jpg').toLowerCase().split('?')[0]}`);
+}
+
+/**
+ * Same idea, for a staff invite still being accepted — there's no user id yet
+ * (no account exists until the confirmation-email step completes), so the
+ * upload path is keyed by the invite code instead: `pending/{code}/avatar.<ext>`.
+ * A narrow storage policy allows this specific path shape for `anon`, scoped to
+ * codes with a live pending invite (see migration 0007). The file stays under
+ * that path rather than being moved to the user's own folder once the account
+ * exists — the bucket is public either way, so the URL keeps working; it's a
+ * minor storage-hygiene tradeoff against not needing a "move file" step.
+ */
+export async function pickAndUploadPendingInviteAvatar(code: string): Promise<PickAndUploadResult> {
+  const picked = await pickImage();
+  if ('error' in picked || 'cancelled' in picked) return picked;
+  const ext = (picked.asset.uri.split('.').pop() || 'jpg').toLowerCase().split('?')[0];
+  return uploadToPath(picked.asset.uri, picked.asset.mimeType, `pending/${code}/avatar.${ext}`);
+}
+
+/**
+ * A household member has no auth.users row of their own, so there's no
+ * `{userId}/avatar.<ext>` to key off. Nesting under the resident's own folder
+ * (`{residentId}/household/{memberId}.<ext>`) keeps this within the existing
+ * `avatar_insert_own` storage policy — it only checks the top-level folder
+ * matches the caller's uid, so no new storage migration is needed.
+ */
+export async function pickAndUploadHouseholdAvatar(
+  residentId: string,
+  memberId: string
+): Promise<PickAndUploadResult> {
+  const picked = await pickImage();
+  if ('error' in picked || 'cancelled' in picked) return picked;
+  const ext = (picked.asset.uri.split('.').pop() || 'jpg').toLowerCase().split('?')[0];
+  return uploadToPath(picked.asset.uri, picked.asset.mimeType, `${residentId}/household/${memberId}.${ext}`);
+}
