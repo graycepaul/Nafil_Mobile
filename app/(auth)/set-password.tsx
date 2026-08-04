@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { useTheme } from '../../context/theme-context';
 import { AuthShell, AuthLink } from '../../components/auth/AuthShell';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -27,7 +26,6 @@ type LinkStatus = 'checking' | 'ready' | 'invalid';
  * had a chance to set a password.
  */
 export default function SetPasswordScreen() {
-  const { colors, spacing, typography } = useTheme();
   const router = useRouter();
 
   const [status, setStatus] = useState<LinkStatus>('checking');
@@ -95,7 +93,7 @@ export default function SetPasswordScreen() {
   if (status === 'checking') {
     return (
       <AuthShell title="Checking your link…">
-        <Text style={[typography.body, { color: colors.textMuted }]}>
+        <Text className="text-base text-paper-500 dark:text-ink-textMuted">
           One moment, confirming this link is still valid.
         </Text>
       </AuthShell>
@@ -164,8 +162,8 @@ export default function SetPasswordScreen() {
 
       <Button label="Set password" onPress={handleSubmit} loading={loading} />
 
-      <View style={{ marginTop: spacing.lg }}>
-        <Text style={[typography.caption, { color: colors.textMuted, lineHeight: 18 }]}>
+      <View className="mt-lg">
+        <Text className="text-[13px] leading-[18px] text-paper-500 dark:text-ink-textMuted">
           This link can only be used once.
         </Text>
       </View>

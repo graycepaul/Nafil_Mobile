@@ -19,7 +19,7 @@ type RequestWithEstate = EstateJoinRequest & { estate: Estate | null };
  * again without needing to sign out and back in.
  */
 export default function PendingApprovalScreen() {
-  const { colors, spacing, radius, typography } = useTheme();
+  const { colors } = useTheme();
   const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
   const refreshProfile = useAuthStore((s) => s.refreshProfile);
@@ -63,7 +63,7 @@ export default function PendingApprovalScreen() {
         }
         footer={<AuthLink label="Sign out" onPress={signOut} />}
       >
-        <Text style={[typography.body, { color: colors.textMuted, marginBottom: spacing.xl, lineHeight: 22 }]}>
+        <Text className="mb-xl text-base leading-[22px] text-paper-500 dark:text-ink-textMuted">
           Double-check the estate and unit number, then submit a new request. If you think this
           is a mistake, contact your estate admin directly.
         </Text>
@@ -86,45 +86,29 @@ export default function PendingApprovalScreen() {
       subtitle="An admin at your estate needs to confirm your details before you get access."
       footer={<AuthLink label="Sign out" onPress={signOut} />}
     >
-      <View
-        style={{
-          backgroundColor: colors.primaryMuted,
-          borderRadius: radius.lg,
-          padding: spacing.lg,
-          marginBottom: spacing.xl,
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-          <View
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: radius.full,
-              backgroundColor: colors.buttonFill,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+      <View className="mb-xl rounded-lg bg-brand-50 p-lg dark:bg-brand-900">
+        <View className="flex-row items-center gap-md">
+          <View className="h-11 w-11 items-center justify-center rounded-full bg-brand-800 dark:bg-brand-500">
             <ShieldIcon color={colors.onButtonFill} size={20} />
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.bodyStrong, { color: colors.text }]}>
+          <View className="flex-1">
+            <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
               {request?.estate?.name ?? 'Your estate'}
             </Text>
-            <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
+            <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
               {request ? `Unit ${request.unit_no}` : ''}
             </Text>
           </View>
         </View>
 
         {submittedDate && (
-          <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.md }]}>
+          <Text className="mt-md text-[13px] text-paper-500 dark:text-ink-textMuted">
             Requested {submittedDate}
           </Text>
         )}
       </View>
 
-      <Text style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.xl, lineHeight: 19 }]}>
+      <Text className="mb-xl text-[13px] leading-[19px] text-paper-500 dark:text-ink-textMuted">
         Most requests are reviewed within a day or two. You don’t need to do anything else.
         We'll let you in as soon as it's confirmed. Check back here any time.
       </Text>

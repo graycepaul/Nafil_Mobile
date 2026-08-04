@@ -27,7 +27,7 @@ const STATUS_TONE: Record<VisitorPassStatus, BadgeTone> = {
 
 export default function VisitorPassScreen() {
   const profile = useAuthStore((s) => s.profile);
-  const { colors, spacing, typography } = useTheme();
+  const { colors } = useTheme();
   const queryClient = useQueryClient();
   const navigation = useNavigation();
   const { new: openOnLoad } = useLocalSearchParams<{ new?: string }>();
@@ -55,7 +55,7 @@ export default function VisitorPassScreen() {
           accessibilityRole="button"
           accessibilityLabel={formOpen ? 'Close form' : 'Generate pass'}
           hitSlop={8}
-          style={{ paddingHorizontal: spacing.lg }}
+          className="px-lg"
         >
           <View style={{ transform: [{ rotate: formOpen ? '45deg' : '0deg' }] }}>
             <PlusIcon color={colors.onHeaderBg} size={24} />
@@ -63,7 +63,7 @@ export default function VisitorPassScreen() {
         </Pressable>
       ),
     });
-  }, [navigation, formOpen, colors.onHeaderBg, spacing.lg]);
+  }, [navigation, formOpen, colors.onHeaderBg]);
 
   const { data: passes, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['visitor_passes', profile?.id],
@@ -118,7 +118,7 @@ export default function VisitorPassScreen() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
+      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -127,13 +127,13 @@ export default function VisitorPassScreen() {
   return (
     <>
       <FlatList
-        style={{ backgroundColor: colors.background }}
-        contentContainerStyle={{ padding: spacing.xl }}
+        className="bg-white dark:bg-ink-bg"
+        contentContainerClassName="p-xl"
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
         ListHeaderComponent={
           <View>
             {formOpen && (
-              <Card style={{ marginBottom: spacing.lg }}>
+              <Card className="mb-lg">
                 {formError && <Notice message={formError} />}
                 {formNotice && <Notice tone="success" message={formNotice} />}
                 <Input label="Visitor name" value={visitorName} onChangeText={setVisitorName} />
@@ -151,12 +151,7 @@ export default function VisitorPassScreen() {
                 />
               </Card>
             )}
-            <Text
-              style={[
-                typography.subheading,
-                { color: colors.text, marginBottom: spacing.sm },
-              ]}
-            >
+            <Text className="mb-sm text-lg font-semibold text-paper-900 dark:text-ink-text">
               Your passes
             </Text>
           </View>
@@ -181,24 +176,24 @@ export default function VisitorPassScreen() {
 
           return (
             <Card>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
-                <View style={{ backgroundColor: '#fff', padding: spacing.xs, borderRadius: 4 }}>
+              <View className="flex-row items-center gap-lg">
+                <View className="rounded-[4px] bg-white p-xs">
                   <QRCode value={item.code} size={72} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
                     {item.visitor_name}
                   </Text>
-                  <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
+                  <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
                     Code: {item.code}
                   </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs }}>
+                  <View className="mt-xs flex-row items-center gap-sm">
                     <StatusBadge
                       label={isLapsed ? 'expired' : item.status}
                       tone={isLapsed ? 'neutral' : STATUS_TONE[item.status]}
                     />
                     {item.status === 'pending' && (
-                      <Text style={[typography.caption, { color: colors.textMuted }]}>
+                      <Text className="text-[13px] text-paper-500 dark:text-ink-textMuted">
                         {expiryLabel(item.valid_until)}
                       </Text>
                     )}
@@ -206,7 +201,7 @@ export default function VisitorPassScreen() {
                 </View>
               </View>
               {isActionable && (
-                <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
+                <View className="mt-md flex-row gap-sm">
                   <Button
                     label="Share with visitor"
                     variant="secondary"
@@ -216,7 +211,7 @@ export default function VisitorPassScreen() {
                         setFormNotice('Copied. Paste it into WhatsApp.');
                       }
                     }}
-                    style={{ flex: 1 }}
+                    className="flex-1"
                   />
                   <Button
                     label="Cancel"

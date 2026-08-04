@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { View, Animated, Easing } from 'react-native';
-import { useTheme } from '../context/theme-context';
 import { BrandLockup } from '../components/ui/BrandMark';
 
 /**
@@ -10,7 +9,6 @@ import { BrandLockup } from '../components/ui/BrandMark';
  * stall, short enough that the entrance has to be quick.
  */
 export default function SplashScreen() {
-  const { colors } = useTheme();
   const fade = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.94)).current;
 
@@ -32,14 +30,7 @@ export default function SplashScreen() {
   }, [fade, scale]);
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: colors.brandField,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
+    <View className="flex-1 items-center justify-center bg-brand-800 dark:bg-brand-900">
       <Animated.View style={{ opacity: fade, transform: [{ scale }] }}>
         <BrandLockup size="lg" direction="column" inverted />
       </Animated.View>

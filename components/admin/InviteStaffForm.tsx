@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { View, Text } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { shareStaffInvite } from '../../lib/share-staff-invite';
-import { useTheme } from '../../context/theme-context';
 import { useAuthStore } from '../../store/auth-store';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -19,7 +18,6 @@ import type { StaffInvite } from '../../types/database';
  * provider, a backend endpoint) that isn't wired up yet. This works today.
  */
 export function InviteStaffForm({ estateName }: { estateName?: string }) {
-  const { colors, spacing, typography } = useTheme();
   const profile = useAuthStore((s) => s.profile);
 
   const [open, setOpen] = useState(false);
@@ -64,52 +62,33 @@ export function InviteStaffForm({ estateName }: { estateName?: string }) {
 
   if (!open) {
     return (
-      <Button
-        label="+ Invite staff"
-        variant="secondary"
-        onPress={() => setOpen(true)}
-        style={{ marginBottom: spacing.xl }}
-      />
+      <Button label="+ Invite staff" variant="secondary" onPress={() => setOpen(true)} className="mb-xl" />
     );
   }
 
   if (created) {
     return (
-      <Card style={{ marginBottom: spacing.xl }}>
-        <Text style={[typography.bodyStrong, { color: colors.text }]}>Invite created</Text>
-        <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs, marginBottom: spacing.md }]}>
+      <Card className="mb-xl">
+        <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">Invite created</Text>
+        <Text className="mb-md mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
           Share this code with {created.email}. It works once, for 7 days.
         </Text>
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 8,
-            padding: spacing.md,
-            alignItems: 'center',
-            marginBottom: spacing.md,
-          }}
-        >
-          <Text style={[typography.title, { color: colors.primary, letterSpacing: 2 }]}>
+        <View className="mb-md items-center rounded-[8px] bg-paper-50 p-md dark:bg-ink-surface">
+          <Text className="text-[28px] font-bold tracking-[2px] text-brand-800 dark:text-brand-300">
             {created.code}
           </Text>
         </View>
-        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-          <Button
-            label="Share invite"
-            onPress={() => shareStaffInvite(created, estateName)}
-            style={{ flex: 1 }}
-          />
-          <Button label="Done" variant="secondary" onPress={reset} style={{ flex: 1 }} />
+        <View className="flex-row gap-sm">
+          <Button label="Share invite" onPress={() => shareStaffInvite(created, estateName)} className="flex-1" />
+          <Button label="Done" variant="secondary" onPress={reset} className="flex-1" />
         </View>
       </Card>
     );
   }
 
   return (
-    <Card style={{ marginBottom: spacing.xl }}>
-      <Text style={[typography.bodyStrong, { color: colors.text, marginBottom: spacing.md }]}>
-        Invite staff
-      </Text>
+    <Card className="mb-xl">
+      <Text className="mb-md text-base font-semibold text-paper-900 dark:text-ink-text">Invite staff</Text>
       {formError && <Notice message={formError} />}
       <Input
         label="Email"
@@ -123,9 +102,9 @@ export function InviteStaffForm({ estateName }: { estateName?: string }) {
         }}
         error={error}
       />
-      <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-        <Button label="Send invite" onPress={handleCreate} loading={creating} style={{ flex: 1 }} />
-        <Button label="Cancel" variant="secondary" onPress={reset} style={{ flex: 1 }} />
+      <View className="flex-row gap-sm">
+        <Button label="Send invite" onPress={handleCreate} loading={creating} className="flex-1" />
+        <Button label="Cancel" variant="secondary" onPress={reset} className="flex-1" />
       </View>
     </Card>
   );

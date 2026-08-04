@@ -15,7 +15,7 @@ import type { Estate, JoinRequestWithApplicant, Profile } from '../../types/data
 
 export default function AdminResidentsScreen() {
   const profile = useAuthStore((s) => s.profile);
-  const { colors, spacing, typography } = useTheme();
+  const { colors } = useTheme();
   const queryClient = useQueryClient();
   const [formError, setFormError] = useState<string>();
 
@@ -82,8 +82,8 @@ export default function AdminResidentsScreen() {
 
   return (
     <FlatList
-      style={{ backgroundColor: colors.background }}
-      contentContainerStyle={{ padding: spacing.xl }}
+      className="bg-white dark:bg-ink-bg"
+      contentContainerClassName="p-xl"
       data={residents ?? []}
       keyExtractor={(item) => item.id}
       ListHeaderComponent={
@@ -94,47 +94,43 @@ export default function AdminResidentsScreen() {
             <InviteStaffForm estateName={estate?.name} />
           </View>
 
-          <Text
-            style={[typography.subheading, { color: colors.text, marginBottom: spacing.md }]}
-          >
+          <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">
             Pending requests {requests && requests.length > 0 ? `(${requests.length})` : ''}
           </Text>
 
           {(!requests || requests.length === 0) && (
-            <View style={{ marginBottom: spacing.lg }}>
+            <View className="mb-lg">
               <EmptyState title="All caught up" message="No join requests waiting on you." />
             </View>
           )}
 
           {requests?.map((req) => (
-            <Card key={req.id} style={{ marginBottom: spacing.md }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <Card key={req.id} className="mb-md">
+              <View className="flex-row items-center gap-md">
                 <Avatar uri={req.applicant?.avatar_url} name={req.applicant?.full_name} size={44} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[typography.bodyStrong, { color: colors.text }]}>
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
                     {req.applicant?.full_name ?? 'Unnamed'}
                   </Text>
-                  <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
+                  <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
                     Unit {req.unit_no}
                     {req.applicant?.phone ? ` · ${req.applicant.phone}` : ''}
                   </Text>
                 </View>
               </View>
-              <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
-                <Button label="Approve" onPress={() => approve(req.id)} style={{ flex: 1 }} />
+              <View className="mt-md flex-row gap-sm">
+                <Button label="Approve" onPress={() => approve(req.id)} className="flex-1" />
                 <Button
                   label="Reject"
                   variant="secondary"
                   onPress={() => reject(req.id)}
-                  style={{ flex: 1 }}
+                  className="flex-1"
                 />
               </View>
             </Card>
           ))}
 
-          <Text
-            style={[typography.subheading, { color: colors.text, marginTop: spacing.xl, marginBottom: spacing.md }]}
-          >
+          <Text className="mb-md mt-xl text-lg font-semibold text-paper-900 dark:text-ink-text">
             Residents
           </Text>
         </View>
@@ -147,13 +143,13 @@ export default function AdminResidentsScreen() {
         />
       }
       renderItem={({ item }) => (
-        <Card style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.sm }}>
+        <Card className="mb-sm flex-row items-center gap-md">
           <Avatar uri={item.avatar_url} name={item.full_name} size={36} />
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
+          <View className="flex-1">
+            <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
               {item.full_name ?? item.phone ?? 'Unnamed'}
             </Text>
-            <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
+            <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
               {item.role === 'resident' ? `Unit ${item.unit_no ?? 'N/A'}` : item.role.replace('_', ' ')}
             </Text>
           </View>

@@ -6,10 +6,10 @@ import { BellIcon, LifeBuoyIcon, GearIcon } from './icons';
 /** Home tab's header-right row: notifications, support, settings — the only tab that gets all three. */
 export function HomeHeaderActions() {
   const router = useRouter();
-  const { colors, spacing } = useTheme();
+  const { colors } = useTheme();
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingRight: spacing.lg }}>
+    <View className="flex-row items-center gap-md pr-lg">
       <Pressable
         onPress={() => router.push('/resident/announcements')}
         accessibilityRole="button"

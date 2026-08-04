@@ -5,6 +5,8 @@ import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { WrenchIcon } from '../../components/ui/icons';
 import type { Issue, IssueStatus } from '../../types/database';
 
 const NEXT_STATUS: Record<IssueStatus, IssueStatus | null> = {
@@ -15,7 +17,7 @@ const NEXT_STATUS: Record<IssueStatus, IssueStatus | null> = {
 
 export default function AdminIssuesScreen() {
   const profile = useAuthStore((s) => s.profile);
-  const { colors, spacing, typography } = useTheme();
+  const { colors } = useTheme();
   const queryClient = useQueryClient();
 
   const { data: issues } = useQuery({
@@ -46,37 +48,31 @@ export default function AdminIssuesScreen() {
 
   return (
     <FlatList
-      style={{ backgroundColor: colors.background }}
-      contentContainerStyle={{ padding: spacing.xl }}
+      className="bg-white dark:bg-ink-bg"
+      contentContainerClassName="p-xl"
       data={issues ?? []}
       keyExtractor={(item) => item.id}
       ListEmptyComponent={
-        <Text style={{ color: colors.textMuted, textAlign: 'center', marginTop: spacing['2xl'] }}>
-          No issues reported.
-        </Text>
+        <EmptyState
+          icon={<WrenchIcon color={colors.textMuted} size={26} />}
+          title="No issues reported"
+          message="Issues residents report will show up here."
+        />
       }
       renderItem={({ item }) => {
         const next = NEXT_STATUS[item.status];
         return (
           <Card>
-            <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
+            <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
               {item.category}
             </Text>
-            <Text
-              style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}
-            >
+            <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
               {item.description}
             </Text>
             <Text
-              style={[
-                typography.caption,
-                {
-                  color: colors.primary,
-                  marginTop: spacing.sm,
-                  marginBottom: next ? spacing.sm : 0,
-                  textTransform: 'capitalize',
-                },
-              ]}
+              className={`mt-sm capitalize text-[13px] text-brand-800 dark:text-brand-300 ${
+                next ? 'mb-sm' : ''
+              }`}
             >
               {item.status.replace('_', ' ')}
             </Text>

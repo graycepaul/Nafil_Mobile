@@ -19,7 +19,7 @@ import { Notice } from '../../components/ui/Notice';
  * avatar renders.
  */
 export default function ProfileSetupScreen() {
-  const { colors, spacing, typography } = useTheme();
+  const { colors } = useTheme();
   const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
   const refreshProfile = useAuthStore((s) => s.refreshProfile);
@@ -73,15 +73,15 @@ export default function ProfileSetupScreen() {
     >
       {formError && <Notice message={formError} />}
 
-      <View style={{ alignItems: 'center', marginBottom: spacing.xl }}>
+      <View className="mb-xl items-center">
         <Avatar uri={avatarUrl} name={profile?.full_name} size={96} />
         <Pressable
           onPress={handlePickPhoto}
           disabled={uploading}
           accessibilityRole="button"
-          style={({ pressed }) => ({ marginTop: spacing.md, opacity: pressed ? 0.6 : 1 })}
+          className="mt-md active:opacity-60"
         >
-          <Text style={[typography.label, { color: colors.primary, fontWeight: '600' }]}>
+          <Text className="text-sm font-semibold text-brand-800 dark:text-brand-300">
             {uploading ? 'Uploading…' : avatarUrl ? 'Change photo' : 'Add a photo'}
           </Text>
         </Pressable>

@@ -29,7 +29,7 @@ const STATUS_LABEL: Record<IssueStatus, string> = {
 
 export default function IssuesScreen() {
   const profile = useAuthStore((s) => s.profile);
-  const { colors, spacing, typography } = useTheme();
+  const { colors } = useTheme();
   const queryClient = useQueryClient();
   const navigation = useNavigation();
   const { new: openOnLoad } = useLocalSearchParams<{ new?: string }>();
@@ -51,7 +51,7 @@ export default function IssuesScreen() {
           accessibilityRole="button"
           accessibilityLabel={formOpen ? 'Close form' : 'Report issue'}
           hitSlop={8}
-          style={{ paddingHorizontal: spacing.lg }}
+          className="px-lg"
         >
           <View style={{ transform: [{ rotate: formOpen ? '45deg' : '0deg' }] }}>
             <PlusIcon color={colors.onHeaderBg} size={24} />
@@ -59,7 +59,7 @@ export default function IssuesScreen() {
         </Pressable>
       ),
     });
-  }, [navigation, formOpen, colors.onHeaderBg, spacing.lg]);
+  }, [navigation, formOpen, colors.onHeaderBg]);
 
   const { data: issues, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['issues', profile?.id],
@@ -98,7 +98,7 @@ export default function IssuesScreen() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
+      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -106,13 +106,13 @@ export default function IssuesScreen() {
 
   return (
     <FlatList
-      style={{ backgroundColor: colors.background }}
-      contentContainerStyle={{ padding: spacing.xl }}
+      className="bg-white dark:bg-ink-bg"
+      contentContainerClassName="p-xl"
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
       ListHeaderComponent={
         <View>
           {formOpen && (
-            <Card style={{ marginBottom: spacing.lg }}>
+            <Card className="mb-lg">
               {formError && <Notice message={formError} />}
               <Input
                 label="Category"
@@ -134,12 +134,7 @@ export default function IssuesScreen() {
               />
             </Card>
           )}
-          <Text
-            style={[
-              typography.subheading,
-              { color: colors.text, marginBottom: spacing.sm },
-            ]}
-          >
+          <Text className="mb-sm text-lg font-semibold text-paper-900 dark:text-ink-text">
             Your reports
           </Text>
         </View>
@@ -155,16 +150,16 @@ export default function IssuesScreen() {
       }
       renderItem={({ item }) => (
         <Card>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <Text style={[typography.body, { color: colors.text, fontWeight: '600', flex: 1 }]}>
+          <View className="flex-row items-start justify-between">
+            <Text className="flex-1 text-base font-semibold text-paper-900 dark:text-ink-text">
               {item.category}
             </Text>
             <StatusBadge label={STATUS_LABEL[item.status]} tone={STATUS_TONE[item.status]} />
           </View>
-          <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
+          <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
             {item.description}
           </Text>
-          <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.sm }]}>
+          <Text className="mt-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
             {relativeTime(item.created_at)}
             {item.resolved_at ? ` · resolved ${relativeTime(item.resolved_at)}` : ''}
           </Text>

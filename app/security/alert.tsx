@@ -2,14 +2,12 @@ import { useState } from 'react';
 import { View, Text } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
-import { useTheme } from '../../context/theme-context';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Notice } from '../../components/ui/Notice';
 
 export default function SecurityAlertScreen() {
   const profile = useAuthStore((s) => s.profile);
-  const { colors, spacing, typography } = useTheme();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
@@ -37,10 +35,8 @@ export default function SecurityAlertScreen() {
   }
 
   return (
-    <View style={{ flex: 1, padding: spacing.xl, backgroundColor: colors.background }}>
-      <Text
-        style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.lg }]}
-      >
+    <View className="flex-1 bg-white p-xl dark:bg-ink-bg">
+      <Text className="mb-lg text-[13px] text-paper-500 dark:text-ink-textMuted">
         This sends an emergency notification to every resident in your estate.
       </Text>
 
@@ -55,7 +51,7 @@ export default function SecurityAlertScreen() {
         onPress={sendAlert}
         loading={sending}
         disabled={!title.trim() || !body.trim()}
-        style={{ marginTop: spacing.sm }}
+        className="mt-sm"
       />
     </View>
   );

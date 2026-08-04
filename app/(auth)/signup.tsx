@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { useTheme } from '../../context/theme-context';
 import { AuthShell, AuthLink } from '../../components/auth/AuthShell';
 import { OrDivider, GoogleAuthButton } from '../../components/auth/SocialAuthRow';
 import { Button } from '../../components/ui/Button';
@@ -18,7 +17,6 @@ import {
 } from '../../lib/validation';
 
 export default function SignupScreen() {
-  const { colors, spacing, typography } = useTheme();
   const router = useRouter();
 
   const [fullName, setFullName] = useState('');
@@ -63,15 +61,8 @@ export default function SignupScreen() {
       subtitle="Signing up as a resident"
       onBack={() => router.back()}
       footer={
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: spacing.xs + 2,
-          }}
-        >
-          <Text style={[typography.caption, { color: colors.textMuted }]}>
+        <View className="flex-row items-center justify-center gap-[6px]">
+          <Text className="text-[13px] text-paper-500 dark:text-ink-textMuted">
             Already have an account?
           </Text>
           <AuthLink label="Sign in" onPress={() => router.replace('/login')} />
@@ -138,17 +129,7 @@ export default function SignupScreen() {
 
       <Button label="Sign up" onPress={handleSignup} loading={loading} />
 
-      <Text
-        style={[
-          typography.caption,
-          {
-            color: colors.textMuted,
-            textAlign: 'center',
-            marginTop: spacing.lg,
-            lineHeight: 18,
-          },
-        ]}
-      >
+      <Text className="mt-lg text-center text-[13px] leading-[18px] text-paper-500 dark:text-ink-textMuted">
         An estate admin approves new accounts against the unit register before access is
         granted.
       </Text>

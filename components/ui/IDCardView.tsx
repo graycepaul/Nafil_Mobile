@@ -1,6 +1,5 @@
 import { View, Text } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { useTheme } from '../../context/theme-context';
 import { Avatar } from './Avatar';
 import { StatusBadge } from './StatusBadge';
 
@@ -24,76 +23,42 @@ interface IDCardViewProps {
  * never itself the proof of anything.
  */
 export function IDCardView({ photoUrl, name, subtitle, estateName, code, revoked }: IDCardViewProps) {
-  const { colors, spacing, radius, typography, elevation } = useTheme();
-
   return (
-    <View
-      style={[
-        {
-          backgroundColor: colors.surfaceRaised,
-          borderRadius: radius.lg,
-          overflow: 'hidden',
-          borderWidth: 1,
-          borderColor: colors.border,
-        },
-        elevation.raised,
-      ]}
-    >
-      <View
-        style={{
-          backgroundColor: colors.brandField,
-          paddingVertical: spacing.sm,
-          paddingHorizontal: spacing.lg,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <Text style={[typography.micro, { color: colors.onHero }]}>NAFIL ESTATES</Text>
+    <View className="overflow-hidden rounded-lg border border-paper-200 bg-white shadow-lg dark:border-ink-border dark:bg-ink-raised">
+      <View className="flex-row items-center justify-between bg-brand-800 px-lg py-sm dark:bg-brand-900">
+        <Text className="text-[11px] font-semibold uppercase tracking-[0.6px] text-white">
+          NAFIL ESTATES
+        </Text>
         {estateName && (
-          <Text style={[typography.micro, { color: colors.onHeroMuted }]} numberOfLines={1}>
+          <Text
+            className="text-[11px] font-semibold uppercase tracking-[0.6px] text-brand-100 dark:text-brand-200"
+            numberOfLines={1}
+          >
             {estateName.toUpperCase()}
           </Text>
         )}
       </View>
 
-      <View style={{ padding: spacing.xl, alignItems: 'center' }}>
+      <View className="items-center p-xl">
         <Avatar uri={photoUrl} name={name} size={72} />
-        <Text style={[typography.subheading, { color: colors.text, marginTop: spacing.md }]}>
-          {name}
-        </Text>
+        <Text className="mt-md text-lg font-semibold text-paper-900 dark:text-ink-text">{name}</Text>
         {subtitle && (
-          <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
-            {subtitle}
-          </Text>
+          <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">{subtitle}</Text>
         )}
 
         {revoked && (
-          <View style={{ marginTop: spacing.sm }}>
+          <View className="mt-sm">
             <StatusBadge label="Revoked" tone="danger" />
           </View>
         )}
 
-        <View
-          style={{
-            marginTop: spacing.xl,
-            padding: spacing.md,
-            backgroundColor: '#fff',
-            borderRadius: radius.md,
-            opacity: revoked ? 0.35 : 1,
-          }}
-        >
+        <View className={`mt-xl rounded-md bg-white p-md ${revoked ? 'opacity-35' : ''}`}>
           <QRCode value={code} size={140} />
         </View>
-        <Text
-          style={[
-            typography.bodyStrong,
-            { color: colors.text, letterSpacing: 2, marginTop: spacing.md },
-          ]}
-        >
+        <Text className="mt-md text-base font-semibold tracking-[2px] text-paper-900 dark:text-ink-text">
           {code}
         </Text>
-        <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs, textAlign: 'center' }]}>
+        <Text className="mt-xs text-center text-[13px] text-paper-500 dark:text-ink-textMuted">
           {revoked ? 'This code no longer works.' : 'Show this to security at the gate.'}
         </Text>
       </View>

@@ -3,7 +3,6 @@ import { View, Text, Platform } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
-import { useTheme } from '../../context/theme-context';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Notice } from '../../components/ui/Notice';
@@ -13,7 +12,6 @@ type NoticeTone = 'error' | 'success' | 'info';
 
 export default function SecurityScanScreen() {
   const profile = useAuthStore((s) => s.profile);
-  const { colors, spacing, radius, typography } = useTheme();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(true);
   const [manualCode, setManualCode] = useState('');
@@ -143,12 +141,6 @@ export default function SecurityScanScreen() {
     setScanning(true);
   }
 
-  const container = {
-    flex: 1,
-    padding: spacing.lg,
-    backgroundColor: colors.background,
-  } as const;
-
   // QR scanning needs a real camera + the native barcode detector. On web we go
   // straight to manual entry rather than showing a viewfinder that can't scan.
   const canScan = Platform.OS !== 'web';
@@ -175,14 +167,9 @@ export default function SecurityScanScreen() {
 
   if (!canScan) {
     return (
-      <View style={container}>
+      <View className="flex-1 bg-white p-lg dark:bg-ink-bg">
         {header}
-        <Text
-          style={[
-            typography.caption,
-            { color: colors.textMuted, marginBottom: spacing.lg },
-          ]}
-        >
+        <Text className="mb-lg text-[13px] text-paper-500 dark:text-ink-textMuted">
           QR scanning needs the camera on a phone. On web, enter the visitor's code manually.
         </Text>
         {manualEntry}
@@ -190,17 +177,12 @@ export default function SecurityScanScreen() {
     );
   }
 
-  if (!permission) return <View style={container} />;
+  if (!permission) return <View className="flex-1 bg-white p-lg dark:bg-ink-bg" />;
 
   if (!permission.granted) {
     return (
-      <View style={[container, { justifyContent: 'center' }]}>
-        <Text
-          style={[
-            typography.body,
-            { color: colors.text, textAlign: 'center', marginBottom: spacing.lg },
-          ]}
-        >
+      <View className="flex-1 items-center justify-center bg-white p-lg dark:bg-ink-bg">
+        <Text className="mb-lg text-center text-base text-paper-900 dark:text-ink-text">
           Camera access is needed to scan visitor QR codes.
         </Text>
         <Button label="Grant permission" onPress={requestPermission} />
@@ -209,16 +191,9 @@ export default function SecurityScanScreen() {
   }
 
   return (
-    <View style={container}>
+    <View className="flex-1 bg-white p-lg dark:bg-ink-bg">
       {header}
-      <View
-        style={{
-          height: 320,
-          borderRadius: radius.lg,
-          overflow: 'hidden',
-          backgroundColor: '#000',
-        }}
-      >
+      <View className="h-[320px] overflow-hidden rounded-lg bg-black">
         <CameraView
           style={{ flex: 1 }}
           barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
@@ -233,12 +208,7 @@ export default function SecurityScanScreen() {
         />
       </View>
 
-      <Text
-        style={[
-          typography.caption,
-          { color: colors.textMuted, textAlign: 'center', marginVertical: spacing.lg },
-        ]}
-      >
+      <Text className="my-lg text-center text-[13px] text-paper-500 dark:text-ink-textMuted">
         or enter code manually
       </Text>
 

@@ -7,26 +7,18 @@ import { authErrorMessage } from '../../lib/auth-errors';
 import { GOOGLE_OAUTH_ENABLED } from '../../constants/auth-config';
 
 export function OrDivider({ label }: { label: string }) {
-  const { colors, spacing, typography } = useTheme();
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.md,
-        marginVertical: spacing.xl,
-      }}
-    >
-      <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-      <Text style={[typography.caption, { color: colors.textMuted }]}>{label}</Text>
-      <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+    <View className="my-xl flex-row items-center gap-md">
+      <View className="h-px flex-1 bg-paper-200 dark:bg-ink-border" />
+      <Text className="text-[13px] text-paper-500 dark:text-ink-textMuted">{label}</Text>
+      <View className="h-px flex-1 bg-paper-200 dark:bg-ink-border" />
     </View>
   );
 }
 
 /** Full-width "Continue with Google" button — the only OAuth provider this app offers. */
 export function GoogleAuthButton({ onError }: { onError: (message: string) => void }) {
-  const { colors, spacing, radius, typography, elevation } = useTheme();
+  const { colors } = useTheme();
   const [loading, setLoading] = useState(false);
 
   async function handlePress() {
@@ -51,28 +43,14 @@ export function GoogleAuthButton({ onError }: { onError: (message: string) => vo
       accessibilityRole="button"
       accessibilityLabel="Continue with Google"
       accessibilityState={{ disabled: loading, busy: loading }}
-      style={({ pressed }) => [
-        {
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: spacing.sm + 2,
-          height: 54,
-          backgroundColor: colors.inputBg,
-          borderWidth: 1,
-          borderColor: colors.border,
-          borderRadius: radius.md,
-          opacity: pressed ? 0.7 : 1,
-        },
-        elevation.input,
-      ]}
+      className="h-[54px] flex-row items-center justify-center gap-[10px] rounded-md border border-paper-200 bg-white shadow-sm active:opacity-70 dark:border-ink-border dark:bg-ink-surface"
     >
       {loading ? (
         <ActivityIndicator size="small" color={colors.primary} />
       ) : (
         <>
           <GoogleIcon />
-          <Text style={[typography.bodyStrong, { color: colors.text }]}>
+          <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
             Continue with Google
           </Text>
         </>

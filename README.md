@@ -452,15 +452,15 @@ time from the gear icon in the header (`/settings`).
 
 ## Styling
 
-The app is mid-migration from inline `style={{}}` (driven by `useTheme()`) to NativeWind
-(`className`, driven by `tailwind.config.js`). Both work today and can be mixed freely on
-the same element — NativeWind merges `style` and `className`, `style` wins on conflicts.
-
-**Migrated**: the reusable primitives in `components/ui/` — `Button`, `Card`, `Input`,
-`Notice`, `StatusBadge`, `EmptyState`, `Avatar`.
-**Not yet migrated**: screens (`app/**`) and the more layout-heavy components
-(`StatCard`, `GlassCard`, `ConfirmDialog`, `BrandMark`) — still on `useTheme()` +
-`style={{}}`. Safe to convert incrementally; nothing breaks by mixing.
+Fully migrated from inline `style={{}}` (driven by `useTheme()`) to NativeWind
+(`className`, driven by `tailwind.config.js`) — every screen (`app/**`) and every
+component. `style` and `className` still compose fine on the same element (NativeWind
+merges them, `style` wins on conflicts) — deliberately kept where `className` genuinely
+can't reach: `Animated.Value`-driven styles (`app/index.tsx`'s splash fade/scale),
+runtime-computed dimensions (`Avatar`'s `size` prop — `w-[${size}px]` can't be statically
+extracted, so width/height/radius stay `style`), and native-only component props that
+aren't styles at all (`ActivityIndicator`/icon `color`, `CameraView`/`LinearGradient`).
+Those are the only `style={{}}` left in the app; grep for `style={{` if that ever drifts.
 
 ```tsx
 const { colors, spacing } = useTheme();            {/* old pattern, still fine */}

@@ -19,7 +19,7 @@ import type { Estate, HouseholdMember } from '../../types/database';
 export default function ProfileScreen() {
   const profile = useAuthStore((s) => s.profile);
   const refreshProfile = useAuthStore((s) => s.refreshProfile);
-  const { colors, spacing, typography } = useTheme();
+  const { colors } = useTheme();
   const queryClient = useQueryClient();
 
   const [viewingMember, setViewingMember] = useState<HouseholdMember | null>(null);
@@ -95,7 +95,7 @@ export default function ProfileScreen() {
 
   if (isLoading || !profile) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
+      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -104,8 +104,8 @@ export default function ProfileScreen() {
   return (
     <>
       <FlatList
-        style={{ backgroundColor: colors.background }}
-        contentContainerStyle={{ padding: spacing.xl }}
+        className="bg-white dark:bg-ink-bg"
+        contentContainerClassName="p-xl"
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
         data={household ?? []}
         keyExtractor={(item) => item.id}
@@ -126,13 +126,13 @@ export default function ProfileScreen() {
               label="Regenerate my code"
               variant="ghost"
               onPress={() => setConfirmingRegenerate(true)}
-              style={{ marginTop: spacing.md, marginBottom: spacing['2xl'] }}
+              className="mb-2xl mt-md"
             />
 
-            <Text style={[typography.subheading, { color: colors.text, marginBottom: spacing.xs }]}>
+            <Text className="mb-xs text-lg font-semibold text-paper-900 dark:text-ink-text">
               Household & frequent visitors
             </Text>
-            <Text style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.md }]}>
+            <Text className="mb-md text-[13px] text-paper-500 dark:text-ink-textMuted">
               Give family, house help, or a regular driver their own standing card. No need to
               generate a new visitor pass every time they come.
             </Text>
@@ -154,14 +154,14 @@ export default function ProfileScreen() {
           <Card>
             <Pressable
               onPress={() => setViewingMember(item)}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}
+              className="flex-row items-center gap-md"
             >
               <Avatar uri={item.avatar_url} name={item.full_name} size={44} />
-              <View style={{ flex: 1 }}>
-                <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
+              <View className="flex-1">
+                <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
                   {item.full_name}
                 </Text>
-                <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
+                <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
                   {item.relationship} · Code: {item.code}
                 </Text>
               </View>
@@ -171,12 +171,12 @@ export default function ProfileScreen() {
               />
             </Pressable>
             {item.status === 'active' && (
-              <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
+              <View className="mt-md flex-row gap-sm">
                 <Button
                   label="View card"
                   variant="secondary"
                   onPress={() => setViewingMember(item)}
-                  style={{ flex: 1 }}
+                  className="flex-1"
                 />
                 <Button
                   label="Revoke"
@@ -193,15 +193,9 @@ export default function ProfileScreen() {
       <Modal visible={!!viewingMember} transparent animationType="fade" onRequestClose={() => setViewingMember(null)}>
         <Pressable
           onPress={() => setViewingMember(null)}
-          style={{
-            flex: 1,
-            backgroundColor: 'rgba(15, 17, 22, 0.5)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: spacing.xl,
-          }}
+          className="flex-1 items-center justify-center bg-black/50 p-xl"
         >
-          <Pressable onPress={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 360 }}>
+          <Pressable onPress={(e) => e.stopPropagation()} className="w-full max-w-[360px]">
             {viewingMember && (
               <>
                 <IDCardView
@@ -212,7 +206,7 @@ export default function ProfileScreen() {
                   code={viewingMember.code}
                   revoked={viewingMember.status === 'revoked'}
                 />
-                <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg }}>
+                <View className="mt-lg flex-row gap-sm">
                   {viewingMember.status === 'active' && (
                     <Button
                       label="Share"
@@ -221,10 +215,10 @@ export default function ProfileScreen() {
                         const outcome = await shareHouseholdCard(viewingMember, estate?.name);
                         if (outcome === 'copied') setNotice('Copied. Paste it into WhatsApp.');
                       }}
-                      style={{ flex: 1 }}
+                      className="flex-1"
                     />
                   )}
-                  <Button label="Close" onPress={() => setViewingMember(null)} style={{ flex: 1 }} />
+                  <Button label="Close" onPress={() => setViewingMember(null)} className="flex-1" />
                 </View>
               </>
             )}

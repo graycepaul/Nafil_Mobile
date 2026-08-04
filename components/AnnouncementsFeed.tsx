@@ -15,7 +15,7 @@ export function AnnouncementsFeed({
 }: {
   ListHeaderComponent?: React.ReactElement;
 }) {
-  const { colors, spacing, typography } = useTheme();
+  const { colors } = useTheme();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -39,7 +39,7 @@ export function AnnouncementsFeed({
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
+      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -47,8 +47,8 @@ export function AnnouncementsFeed({
 
   return (
     <FlatList
-      style={{ backgroundColor: colors.background }}
-      contentContainerStyle={{ padding: spacing.xl }}
+      className="bg-white dark:bg-ink-bg"
+      contentContainerClassName="p-xl"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       ListHeaderComponent={ListHeaderComponent}
       data={announcements ?? []}
@@ -65,17 +65,13 @@ export function AnnouncementsFeed({
         return (
           <Card accent={isEmergency ? 'danger' : 'default'}>
             {isEmergency && (
-              <View style={{ marginBottom: spacing.xs }}>
+              <View className="mb-xs">
                 <StatusBadge label="Emergency" tone="danger" />
               </View>
             )}
-            <Text style={[typography.body, { color: colors.text, fontWeight: '700' }]}>
-              {item.title}
-            </Text>
-            <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
-              {item.body}
-            </Text>
-            <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.sm }]}>
+            <Text className="text-base font-bold text-paper-900 dark:text-ink-text">{item.title}</Text>
+            <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">{item.body}</Text>
+            <Text className="mt-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
               {relativeTime(item.created_at)}
             </Text>
           </Card>

@@ -4,7 +4,9 @@ import { useTheme } from '../../context/theme-context';
 
 /**
  * Nafil Estates mark: a shield (security) enclosing a roofline (estate).
- * SVG so it stays crisp at any size and can be tinted per surface.
+ * SVG so it stays crisp at any size and can be tinted per surface. Fill
+ * colors are native SVG props, not styles — className can't reach them, so
+ * this still reads from useTheme() directly.
  */
 export function BrandMark({
   size = 56,
@@ -43,38 +45,33 @@ interface LockupProps {
   direction?: 'row' | 'column';
 }
 
-const SIZES = {
-  sm: { mark: 30, title: 20 },
-  md: { mark: 44, title: 26 },
-  lg: { mark: 64, title: 34 },
+const MARK_SIZES = { sm: 30, md: 44, lg: 64 } as const;
+const TITLE_CLASSES = {
+  sm: 'text-[20px]',
+  md: 'text-[26px]',
+  lg: 'text-[34px]',
 } as const;
 
 export function BrandLockup({ size = 'md', inverted = false, direction = 'row' }: LockupProps) {
-  const { colors, spacing } = useTheme();
-  const { mark, title } = SIZES[size];
+  const { colors } = useTheme();
   const isRow = direction === 'row';
 
   const markColor = inverted ? colors.onHero : colors.primary;
   const markAccent = inverted ? colors.primary : colors.onPrimary;
 
   return (
-    <View
-      style={{
-        flexDirection: isRow ? 'row' : 'column',
-        alignItems: 'center',
-        gap: isRow ? spacing.sm + 2 : spacing.md,
-      }}
-    >
-      <BrandMark size={mark} color={markColor} accent={markAccent} />
+    <View className={`items-center ${isRow ? 'flex-row gap-[10px]' : 'flex-col gap-md'}`}>
+      <BrandMark size={MARK_SIZES[size]} color={markColor} accent={markAccent} />
       <Text
-        style={{
-          fontSize: title,
-          fontWeight: '700',
-          letterSpacing: -0.6,
-          color: inverted ? colors.onHero : colors.text,
-        }}
+        className={`font-bold tracking-[-0.6px] ${TITLE_CLASSES[size]} ${
+          inverted ? 'text-white' : 'text-paper-900 dark:text-ink-text'
+        }`}
       >
-        Nafil<Text style={{ color: inverted ? colors.onHeroMuted : colors.primary }}> Estates</Text>
+        Nafil
+        <Text className={inverted ? 'text-brand-100 dark:text-brand-200' : 'text-brand-800 dark:text-brand-300'}>
+          {' '}
+          Estates
+        </Text>
       </Text>
     </View>
   );

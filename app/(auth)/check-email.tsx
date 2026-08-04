@@ -10,7 +10,7 @@ import { EnvelopeIcon } from '../../components/auth/RoleIcons';
 import { authErrorMessage } from '../../lib/auth-errors';
 
 export default function CheckEmailScreen() {
-  const { colors, spacing, typography, radius } = useTheme();
+  const { colors } = useTheme();
   const router = useRouter();
   const { email, mode } = useLocalSearchParams<{ email?: string; mode?: string }>();
 
@@ -43,38 +43,14 @@ export default function CheckEmailScreen() {
       }
       footer={<AuthLink label="Back to sign in" onPress={() => router.replace('/login')} />}
     >
-      <View
-        style={{
-          alignItems: 'center',
-          backgroundColor: colors.primaryMuted,
-          borderRadius: radius.lg,
-          paddingVertical: spacing.xl,
-          paddingHorizontal: spacing.lg,
-          marginBottom: spacing.xl,
-        }}
-      >
+      <View className="mb-xl items-center rounded-lg bg-brand-50 px-lg py-xl dark:bg-brand-900">
         <EnvelopeIcon color={colors.primary} />
         {email && (
-          <Text
-            style={[
-              typography.bodyStrong,
-              { color: colors.text, marginTop: spacing.md, textAlign: 'center' },
-            ]}
-          >
+          <Text className="mt-md text-center text-base font-semibold text-paper-900 dark:text-ink-text">
             {email}
           </Text>
         )}
-        <Text
-          style={[
-            typography.caption,
-            {
-              color: colors.textMuted,
-              marginTop: spacing.sm,
-              textAlign: 'center',
-              lineHeight: 19,
-            },
-          ]}
-        >
+        <Text className="mt-sm text-center text-[13px] leading-[19px] text-paper-500 dark:text-ink-textMuted">
           The link expires in 60 minutes. Check your spam folder if it hasn’t arrived
           within a few minutes.
         </Text>

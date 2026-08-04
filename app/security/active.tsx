@@ -11,7 +11,7 @@ import type { VisitorLog } from '../../types/database';
 
 export default function ActiveVisitorsScreen() {
   const profile = useAuthStore((s) => s.profile);
-  const { colors, spacing, typography } = useTheme();
+  const { colors } = useTheme();
   const queryClient = useQueryClient();
 
   const { data: logs } = useQuery({
@@ -38,8 +38,8 @@ export default function ActiveVisitorsScreen() {
 
   return (
     <FlatList
-      style={{ backgroundColor: colors.background }}
-      contentContainerStyle={{ padding: spacing.xl }}
+      className="bg-white dark:bg-ink-bg"
+      contentContainerClassName="p-xl"
       data={logs ?? []}
       keyExtractor={(item) => item.id}
       ListEmptyComponent={
@@ -50,12 +50,12 @@ export default function ActiveVisitorsScreen() {
         />
       }
       renderItem={({ item }) => (
-        <Card style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
+        <Card className="flex-row items-center">
+          <View className="flex-1">
+            <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
               {item.visitor_name}
             </Text>
-            <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
+            <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
               In: {new Date(item.checked_in_at).toLocaleTimeString()}
             </Text>
           </View>

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { useTheme } from '../../context/theme-context';
 import { AuthShell, AuthLink } from '../../components/auth/AuthShell';
 import { OrDivider, GoogleAuthButton } from '../../components/auth/SocialAuthRow';
 import { Button } from '../../components/ui/Button';
@@ -12,7 +11,6 @@ import { authErrorMessage } from '../../lib/auth-errors';
 import { validateEmail } from '../../lib/validation';
 
 export default function LoginScreen() {
-  const { colors, spacing, typography } = useTheme();
   const router = useRouter();
 
   const [email, setEmail] = useState('');
@@ -45,15 +43,8 @@ export default function LoginScreen() {
     <AuthShell
       title="Login to your Account"
       footer={
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: spacing.xs + 2,
-          }}
-        >
-          <Text style={[typography.caption, { color: colors.textMuted }]}>
+        <View className="flex-row items-center justify-center gap-[6px]">
+          <Text className="text-[13px] text-paper-500 dark:text-ink-textMuted">
             Don’t have an account?
           </Text>
           <AuthLink label="Sign up" onPress={() => router.push('/role-select')} />
@@ -96,7 +87,7 @@ export default function LoginScreen() {
 
       <Button label="Sign in" onPress={handleLogin} loading={loading} />
 
-      <View style={{ alignItems: 'center', marginTop: spacing.lg }}>
+      <View className="mt-lg items-center">
         <AuthLink label="Forgot password?" onPress={() => router.push('/forgot-password')} />
       </View>
 

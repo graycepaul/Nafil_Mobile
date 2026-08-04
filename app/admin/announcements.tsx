@@ -3,7 +3,6 @@ import { View, Text } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
-import { useTheme } from '../../context/theme-context';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Notice } from '../../components/ui/Notice';
@@ -11,7 +10,6 @@ import { AnnouncementsFeed } from '../../components/AnnouncementsFeed';
 
 export default function AdminAnnouncementsScreen() {
   const profile = useAuthStore((s) => s.profile);
-  const { colors, spacing, typography } = useTheme();
   const queryClient = useQueryClient();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -52,12 +50,7 @@ export default function AdminAnnouncementsScreen() {
             loading={posting}
             disabled={!title.trim() || !body.trim()}
           />
-          <Text
-            style={[
-              typography.subheading,
-              { color: colors.text, marginTop: spacing.xl, marginBottom: spacing.sm },
-            ]}
-          >
+          <Text className="mb-sm mt-xl text-lg font-semibold text-paper-900 dark:text-ink-text">
             All announcements
           </Text>
         </View>

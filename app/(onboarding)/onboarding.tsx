@@ -76,7 +76,7 @@ export default function OnboardingRouter() {
   }, [profile, router, refreshProfile]);
 
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
+    <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
       <ActivityIndicator size="large" color={colors.primary} />
     </View>
   );

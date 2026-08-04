@@ -18,7 +18,7 @@ interface EstatePickerProps {
  * this way the join request is always unambiguous.
  */
 export function EstatePicker({ value, onChange, error }: EstatePickerProps) {
-  const { colors, spacing, radius, typography, elevation } = useTheme();
+  const { colors } = useTheme();
   const [query, setQuery] = useState(value?.name ?? '');
   const [results, setResults] = useState<Estate[]>([]);
   const [loading, setLoading] = useState(false);
@@ -53,7 +53,7 @@ export function EstatePicker({ value, onChange, error }: EstatePickerProps) {
   }, [query]);
 
   return (
-    <View style={{ position: 'relative', zIndex: 10 }}>
+    <View className="relative z-10">
       <Input
         label="Estate"
         placeholder="Search for your estate"
@@ -67,34 +67,13 @@ export function EstatePicker({ value, onChange, error }: EstatePickerProps) {
       />
 
       {open && query.trim().length > 0 && (
-        <View
-          style={[
-            {
-              position: 'absolute',
-              top: 72,
-              left: 0,
-              right: 0,
-              backgroundColor: colors.inputBg,
-              borderRadius: radius.md,
-              borderWidth: 1,
-              borderColor: colors.border,
-              maxHeight: 220,
-              overflow: 'hidden',
-            },
-            elevation.card,
-          ]}
-        >
+        <View className="absolute inset-x-0 top-[72px] max-h-[220px] overflow-hidden rounded-md border border-paper-200 bg-white shadow-lg dark:border-ink-border dark:bg-ink-surface">
           {loading ? (
-            <View style={{ padding: spacing.lg, alignItems: 'center' }}>
+            <View className="items-center p-lg">
               <ActivityIndicator size="small" color={colors.primary} />
             </View>
           ) : results.length === 0 ? (
-            <Text
-              style={[
-                typography.caption,
-                { color: colors.textMuted, padding: spacing.lg, textAlign: 'center' },
-              ]}
-            >
+            <Text className="p-lg text-center text-[13px] text-paper-500 dark:text-ink-textMuted">
               No estate found matching “{query.trim()}”.
             </Text>
           ) : (
@@ -106,16 +85,13 @@ export function EstatePicker({ value, onChange, error }: EstatePickerProps) {
                   setQuery(estate.name);
                   setOpen(false);
                 }}
-                style={({ pressed }) => ({
-                  padding: spacing.md,
-                  backgroundColor: pressed ? colors.surface : 'transparent',
-                  borderBottomWidth: 1,
-                  borderBottomColor: colors.border,
-                })}
+                className="border-b border-paper-200 p-md active:bg-paper-50 dark:border-ink-border dark:active:bg-ink-raised"
               >
-                <Text style={[typography.bodyStrong, { color: colors.text }]}>{estate.name}</Text>
+                <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
+                  {estate.name}
+                </Text>
                 {estate.address && (
-                  <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
+                  <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
                     {estate.address}
                   </Text>
                 )}

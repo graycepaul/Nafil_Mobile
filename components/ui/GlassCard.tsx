@@ -6,6 +6,7 @@ import { Card } from './Card';
 interface GlassCardProps {
   children: React.ReactNode;
   style?: ViewStyle;
+  className?: string;
   accent?: 'default' | 'danger';
 }
 
@@ -16,12 +17,12 @@ interface GlassCardProps {
  * would just look like a grey box, so there's nothing to gain from forcing
  * it there.
  */
-export function GlassCard({ children, style, accent = 'default' }: GlassCardProps) {
-  const { isDark, colors, spacing, radius, elevation } = useTheme();
+export function GlassCard({ children, style, className, accent = 'default' }: GlassCardProps) {
+  const { isDark } = useTheme();
 
   if (isDark) {
     return (
-      <Card accent={accent} style={style}>
+      <Card accent={accent} style={style} className={className}>
         {children}
       </Card>
     );
@@ -29,29 +30,13 @@ export function GlassCard({ children, style, accent = 'default' }: GlassCardProp
 
   return (
     <View
-      style={[
-        {
-          borderRadius: radius.md,
-          overflow: 'hidden',
-          borderWidth: 1,
-          borderColor: accent === 'danger' ? colors.danger : colors.glassBorder,
-          marginBottom: spacing.md,
-        },
-        elevation.card,
-        style,
-      ]}
+      style={style}
+      className={`mb-md overflow-hidden rounded-md border shadow-sm ${
+        accent === 'danger' ? 'border-danger' : 'border-white/65'
+      } ${className ?? ''}`}
     >
-      <BlurView intensity={40} tint="light" style={{ padding: spacing.md }}>
-        <View
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: accent === 'danger' ? colors.dangerMuted : colors.glassFill,
-          }}
-        />
+      <BlurView intensity={40} tint="light" className="p-md">
+        <View className={`absolute inset-0 ${accent === 'danger' ? 'bg-danger-muted' : 'bg-white/55'}`} />
         {children}
       </BlurView>
     </View>

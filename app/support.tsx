@@ -14,24 +14,13 @@ import { ArrowLeftIcon } from '../components/ui/icons';
 export default function SupportScreen() {
   const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
-  const { colors, spacing, typography, radius } = useTheme();
+  const { colors } = useTheme();
 
   const email = 'support@nafilestates.com';
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingHorizontal: spacing.lg,
-          paddingTop: spacing['2xl'],
-          paddingBottom: spacing.lg,
-          gap: spacing.md,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
-        }}
-      >
+    <View className="flex-1 bg-white dark:bg-ink-bg">
+      <View className="flex-row items-center gap-md border-b border-paper-200 px-lg pb-lg pt-2xl dark:border-ink-border">
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"
@@ -40,51 +29,42 @@ export default function SupportScreen() {
         >
           <ArrowLeftIcon color={colors.text} size={22} />
         </Pressable>
-        <Text style={[typography.heading, { color: colors.text }]}>Support</Text>
+        <Text className="text-[22px] font-bold text-paper-900 dark:text-ink-text">Support</Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.xl }}>
+      <ScrollView contentContainerClassName="p-xl">
         {profile?.role === 'resident' && (
-          <Card style={{ marginBottom: spacing.lg }}>
-            <Text style={[typography.bodyStrong, { color: colors.text, marginBottom: spacing.xs }]}>
+          <Card className="mb-lg">
+            <Text className="mb-xs text-base font-semibold text-paper-900 dark:text-ink-text">
               Something broken at home?
             </Text>
-            <Text style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.md }]}>
+            <Text className="mb-md text-[13px] text-paper-500 dark:text-ink-textMuted">
               Maintenance and estate issues go through Issues, not here — your admin sees those
               directly.
             </Text>
             <Pressable
               onPress={() => router.push('/resident/issues')}
-              style={{
-                borderRadius: radius.md,
-                borderWidth: 1,
-                borderColor: colors.border,
-                paddingVertical: spacing.sm,
-                alignItems: 'center',
-              }}
+              className="items-center rounded-md border border-paper-200 py-sm dark:border-ink-border"
             >
-              <Text style={[typography.bodyStrong, { color: colors.primary }]}>Go to Issues</Text>
+              <Text className="text-base font-semibold text-brand-800 dark:text-brand-300">
+                Go to Issues
+              </Text>
             </Pressable>
           </Card>
         )}
 
         <Card>
-          <Text style={[typography.bodyStrong, { color: colors.text, marginBottom: spacing.xs }]}>
+          <Text className="mb-xs text-base font-semibold text-paper-900 dark:text-ink-text">
             Contact Nafil Estates
           </Text>
-          <Text style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.md }]}>
+          <Text className="mb-md text-[13px] text-paper-500 dark:text-ink-textMuted">
             App problems, account access, or anything else — reach us directly.
           </Text>
           <Pressable
             onPress={() => Linking.openURL(`mailto:${email}`)}
-            style={{
-              borderRadius: radius.md,
-              backgroundColor: colors.buttonFill,
-              paddingVertical: spacing.sm,
-              alignItems: 'center',
-            }}
+            className="items-center rounded-md bg-brand-800 py-sm dark:bg-brand-500"
           >
-            <Text style={[typography.bodyStrong, { color: colors.onButtonFill }]}>{email}</Text>
+            <Text className="text-base font-semibold text-white">{email}</Text>
           </Pressable>
         </Card>
       </ScrollView>

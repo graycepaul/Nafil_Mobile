@@ -9,7 +9,6 @@ import {
   type ValidatedInvite,
 } from '../../lib/staff-invite';
 import { pickAndUploadPendingInviteAvatar } from '../../lib/avatar';
-import { useTheme } from '../../context/theme-context';
 import { AuthShell } from '../../components/auth/AuthShell';
 import { Avatar } from '../../components/ui/Avatar';
 import { Button } from '../../components/ui/Button';
@@ -37,7 +36,6 @@ type Step = 'code' | 'profile' | 'password' | 'sent';
  * mid-flow on — nothing to exempt, because nothing here is a route change.
  */
 export default function StaffInviteScreen() {
-  const { colors, spacing, typography } = useTheme();
   const router = useRouter();
 
   const [step, setStep] = useState<Step>('code');
@@ -154,7 +152,7 @@ export default function StaffInviteScreen() {
         title="Check your email"
         subtitle={`We've sent a confirmation link to ${invite?.email}. Click it to finish setting up your account. You'll land straight in your dashboard.`}
       >
-        <Text style={[typography.caption, { color: colors.textMuted, lineHeight: 19 }]}>
+        <Text className="text-[13px] leading-[19px] text-paper-500 dark:text-ink-textMuted">
           Your name, phone, and photo are already saved. There's nothing left to fill in once
           you confirm.
         </Text>
@@ -215,14 +213,11 @@ export default function StaffInviteScreen() {
       >
         {formError && <Notice message={formError} />}
 
-        <View style={{ alignItems: 'center', marginBottom: spacing.xl }}>
+        <View className="mb-xl items-center">
           <Avatar uri={avatarUrl} name={`${firstName} ${lastName}`} size={96} />
           <Text
             onPress={uploading ? undefined : handlePickPhoto}
-            style={[
-              typography.label,
-              { color: colors.primary, fontWeight: '600', marginTop: spacing.md },
-            ]}
+            className="mt-md text-sm font-semibold text-brand-800 dark:text-brand-300"
           >
             {uploading ? 'Uploading…' : avatarUrl ? 'Change photo' : 'Add a photo'}
           </Text>

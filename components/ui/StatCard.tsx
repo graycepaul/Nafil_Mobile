@@ -20,25 +20,17 @@ export function StatCard({
   label: string;
   onPress?: () => void;
 }) {
-  const { isDark, colors, spacing, radius, typography, elevation } = useTheme();
+  const { isDark } = useTheme();
 
   const inner = (
     <>
-      <View
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: radius.md,
-          backgroundColor: colors.primaryMuted,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: spacing.sm,
-        }}
-      >
+      <View className="mb-sm h-8 w-8 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
         {icon}
       </View>
-      <Text style={[typography.title, { color: colors.text }]}>{value}</Text>
-      <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>{label}</Text>
+      <Text className="text-[28px] font-bold leading-none text-paper-900 dark:text-ink-text">
+        {value}
+      </Text>
+      <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">{label}</Text>
     </>
   );
 
@@ -48,16 +40,7 @@ export function StatCard({
         onPress={onPress}
         disabled={!onPress}
         accessibilityRole={onPress ? 'button' : undefined}
-        style={({ pressed }) => [
-          {
-            flex: 1,
-            backgroundColor: colors.surface,
-            borderRadius: radius.lg,
-            padding: spacing.md,
-            opacity: pressed ? 0.85 : 1,
-          },
-          elevation.input,
-        ]}
+        className="flex-1 rounded-lg bg-ink-surface p-md shadow-sm active:opacity-85"
       >
         {inner}
       </Pressable>
@@ -69,29 +52,10 @@ export function StatCard({
       onPress={onPress}
       disabled={!onPress}
       accessibilityRole={onPress ? 'button' : undefined}
-      style={({ pressed }) => [
-        {
-          flex: 1,
-          borderRadius: radius.lg,
-          overflow: 'hidden',
-          borderWidth: 1,
-          borderColor: colors.glassBorder,
-          opacity: pressed ? 0.85 : 1,
-        },
-        elevation.input,
-      ]}
+      className="flex-1 overflow-hidden rounded-lg border border-white/65 shadow-sm active:opacity-85"
     >
-      <BlurView intensity={40} tint="light" style={{ padding: spacing.md }}>
-        <View
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: colors.glassFill,
-          }}
-        />
+      <BlurView intensity={40} tint="light" className="p-md">
+        <View className="absolute inset-0 bg-white/55" />
         {inner}
       </BlurView>
     </Pressable>

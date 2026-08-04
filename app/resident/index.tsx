@@ -28,7 +28,7 @@ import type { Announcement, Estate } from "../../types/database";
 
 export default function ResidentHome() {
   const profile = useAuthStore((s) => s.profile);
-  const { isDark, colors, spacing, radius, typography } = useTheme();
+  const { isDark, colors } = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
@@ -109,8 +109,8 @@ export default function ResidentHome() {
   // that backdrop; dark mode skips it since glass isn't used there.
   const scroll = (
     <ScrollView
-      style={{ backgroundColor: "transparent" }}
-      contentContainerStyle={{ padding: spacing.xl }}
+      className="bg-transparent"
+      contentContainerClassName="p-xl"
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -120,19 +120,14 @@ export default function ResidentHome() {
       }
     >
       {/* ── Welcome card ─────────────────────────────────────────── */}
-      <GlassCard style={{ marginBottom: spacing.xl }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
+      <GlassCard className="mb-xl">
+        <View className="flex-row items-center gap-md">
           <Avatar uri={profile?.avatar_url} name={profile?.full_name} size={56} />
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.heading, { color: colors.text }]}>
+          <View className="flex-1">
+            <Text className="text-[22px] font-bold tracking-[-0.2px] text-paper-900 dark:text-ink-text">
               {profile?.full_name ?? "Welcome Again"}
             </Text>
-            <Text
-              style={[
-                typography.caption,
-                { color: colors.textMuted, marginTop: 2 },
-              ]}
-            >
+            <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
               {estate?.name ?? "...fetching estate"}
               {profile?.unit_no ? ` · Unit ${profile.unit_no}` : ""}
             </Text>
@@ -141,13 +136,7 @@ export default function ResidentHome() {
       </GlassCard>
 
       {/* ── Quick stats ──────────────────────────────────────────── */}
-      <View
-        style={{
-          flexDirection: "row",
-          gap: spacing.md,
-          marginBottom: spacing.xl,
-        }}
-      >
+      <View className="mb-xl flex-row gap-md">
         <StatCard
           icon={<TicketIcon color={colors.primary} size={18} />}
           value={activePassCount ?? 0}
@@ -163,54 +152,25 @@ export default function ResidentHome() {
       </View>
 
       {/* ── Quick actions ────────────────────────────────────────── */}
-      <View
-        style={{
-          flexDirection: "row",
-          gap: spacing.md,
-          marginBottom: spacing.xl,
-        }}
-      >
+      <View className="mb-xl flex-row gap-md">
         <Pressable
           onPress={() => router.push("/resident/visitor-pass?new=1")}
-          style={({ pressed }) => ({
-            flex: 1,
-            backgroundColor: colors.buttonFill,
-            borderRadius: radius.md,
-            paddingVertical: spacing.md,
-            alignItems: "center",
-            opacity: pressed ? 0.9 : 1,
-          })}
+          className="flex-1 items-center rounded-md bg-brand-800 py-md active:opacity-90 dark:bg-brand-500"
         >
-          <Text style={[typography.bodyStrong, { color: colors.onButtonFill }]}>
-            + Visitor pass
-          </Text>
+          <Text className="text-base font-semibold text-white">+ Visitor pass</Text>
         </Pressable>
         <Pressable
           onPress={() => router.push("/resident/issues?new=1")}
-          style={({ pressed }) => ({
-            flex: 1,
-            backgroundColor: colors.surface,
-            borderRadius: radius.md,
-            paddingVertical: spacing.md,
-            alignItems: "center",
-            borderWidth: 1,
-            borderColor: colors.border,
-            opacity: pressed ? 0.8 : 1,
-          })}
+          className="flex-1 items-center rounded-md border border-paper-200 bg-paper-50 py-md active:opacity-80 dark:border-ink-border dark:bg-ink-surface"
         >
-          <Text style={[typography.bodyStrong, { color: colors.text }]}>
+          <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
             Report issue
           </Text>
         </Pressable>
       </View>
 
       {/* ── Latest announcement ──────────────────────────────────── */}
-      <Text
-        style={[
-          typography.subheading,
-          { color: colors.text, marginBottom: spacing.md },
-        ]}
-      >
+      <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">
         Latest announcement
       </Text>
       {latestAnnouncement ? (
@@ -220,52 +180,29 @@ export default function ResidentHome() {
               latestAnnouncement.severity === "emergency" ? "danger" : "default"
             }
           >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "flex-start",
-                gap: spacing.sm,
-              }}
-            >
-              <View
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: radius.md,
-                  backgroundColor: colors.primaryMuted,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+            <View className="flex-row items-start gap-sm">
+              <View className="h-8 w-8 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
                 <MegaphoneIcon color={colors.primary} size={16} />
               </View>
-              <View style={{ flex: 1 }}>
+              <View className="flex-1">
                 {latestAnnouncement.severity === "emergency" && (
-                  <View style={{ marginBottom: spacing.xs }}>
+                  <View className="mb-xs">
                     <StatusBadge label="Emergency" tone="danger" />
                   </View>
                 )}
                 <Text
-                  style={[typography.bodyStrong, { color: colors.text }]}
+                  className="text-base font-semibold text-paper-900 dark:text-ink-text"
                   numberOfLines={1}
                 >
                   {latestAnnouncement.title}
                 </Text>
                 <Text
-                  style={[
-                    typography.caption,
-                    { color: colors.textMuted, marginTop: 2 },
-                  ]}
+                  className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted"
                   numberOfLines={2}
                 >
                   {latestAnnouncement.body}
                 </Text>
-                <Text
-                  style={[
-                    typography.caption,
-                    { color: colors.textMuted, marginTop: spacing.xs },
-                  ]}
-                >
+                <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
                   {relativeTime(latestAnnouncement.created_at)}
                 </Text>
               </View>
@@ -286,11 +223,7 @@ export default function ResidentHome() {
   );
 
   if (isDark) {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
-        {scroll}
-      </View>
-    );
+    return <View className="flex-1 bg-ink-bg">{scroll}</View>;
   }
 
   return (

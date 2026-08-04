@@ -53,86 +53,53 @@ export function AuthShell({
   footer,
   onBack,
 }: AuthShellProps) {
-  const { colors, spacing, typography, layout } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View className="flex-1 bg-white dark:bg-ink-bg">
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
           keyboardShouldPersistTaps="handled"
+          contentContainerClassName="flex-grow justify-center px-xl"
           contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: "center",
-            paddingTop: insets.top + spacing.xl,
-            paddingBottom: insets.bottom + spacing.xl,
-            paddingHorizontal: spacing.xl,
+            paddingTop: insets.top + 24,
+            paddingBottom: insets.bottom + 24,
           }}
         >
-          <View
-            style={{
-              width: "100%",
-              maxWidth: layout.authMaxWidth,
-              alignSelf: "center",
-            }}
-          >
+          <View className="w-full max-w-[420px] self-center">
             {onBack && (
               <Pressable
                 onPress={onBack}
                 accessibilityRole="button"
                 accessibilityLabel="Go back"
                 hitSlop={12}
-                style={({ pressed }) => ({
-                  opacity: pressed ? 0.5 : 1,
-                  alignSelf: "flex-start",
-                  marginBottom: spacing.lg,
-                })}
+                className="mb-lg self-start active:opacity-50"
               >
                 <BackArrow color={colors.primary} />
               </Pressable>
             )}
 
-            <View style={{ alignItems: "center" }}>
+            <View className="items-center">
               <BrandLockup size="sm" />
             </View>
 
-            <Text
-              style={[
-                typography.subheading,
-                {
-                  color: colors.text,
-                  marginTop: spacing["2xl"],
-                  marginBottom: spacing.xl,
-                },
-              ]}
-            >
+            <Text className="mb-xl mt-2xl text-lg font-semibold text-paper-900 dark:text-ink-text">
               {title}
             </Text>
 
             {subtitle && (
-              <Text
-                style={[
-                  typography.caption,
-                  {
-                    color: colors.textMuted,
-                    marginTop: -spacing.md,
-                    marginBottom: spacing.xl,
-                    lineHeight: 19,
-                  },
-                ]}
-              >
+              <Text className="-mt-md mb-xl text-[13px] leading-[19px] text-paper-500 dark:text-ink-textMuted">
                 {subtitle}
               </Text>
             )}
 
             {children}
 
-            {footer && (
-              <View style={{ marginTop: spacing["2xl"] }}>{footer}</View>
-            )}
+            {footer && <View className="mt-2xl">{footer}</View>}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -148,19 +115,9 @@ export function AuthLink({
   label: string;
   onPress: () => void;
 }) {
-  const { colors, typography } = useTheme();
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="link"
-      hitSlop={8}
-      style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-    >
-      <Text
-        style={[typography.label, { color: colors.primary, fontWeight: "600" }]}
-      >
-        {label}
-      </Text>
+    <Pressable onPress={onPress} accessibilityRole="link" hitSlop={8} className="active:opacity-60">
+      <Text className="text-sm font-semibold text-brand-800 dark:text-brand-300">{label}</Text>
     </Pressable>
   );
 }

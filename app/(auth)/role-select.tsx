@@ -21,7 +21,7 @@ type SignupRole = 'resident' | 'staff';
  * an existing admin — there's no path to "admin" from this screen, deliberately.
  */
 export default function RoleSelectScreen() {
-  const { colors, spacing } = useTheme();
+  const { colors } = useTheme();
   const router = useRouter();
   const [role, setRole] = useState<SignupRole | null>(null);
 
@@ -36,7 +36,7 @@ export default function RoleSelectScreen() {
       subtitle="This determines what your account can see and do."
       onBack={() => router.back()}
     >
-      <View style={{ gap: spacing.md }} accessibilityRole="radiogroup">
+      <View className="gap-md" accessibilityRole="radiogroup">
         <RoleCard
           icon={<HomeIcon color={role === 'resident' ? colors.onButtonFill : colors.textMuted} />}
           title="Resident"
@@ -53,12 +53,7 @@ export default function RoleSelectScreen() {
         />
       </View>
 
-      <Button
-        label="Continue"
-        onPress={handleContinue}
-        disabled={!role}
-        style={{ marginTop: spacing.xl }}
-      />
+      <Button label="Continue" onPress={handleContinue} disabled={!role} className="mt-xl" />
     </AuthShell>
   );
 }

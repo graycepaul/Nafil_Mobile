@@ -1,5 +1,4 @@
 import { Modal, View, Text, Pressable } from 'react-native';
-import { useTheme } from '../../context/theme-context';
 import { Button } from './Button';
 
 interface ConfirmDialogProps {
@@ -32,50 +31,31 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  const { colors, spacing, radius, typography, elevation } = useTheme();
-
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <Pressable
         onPress={onCancel}
-        style={{
-          flex: 1,
-          backgroundColor: 'rgba(15, 17, 22, 0.5)',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: spacing.xl,
-        }}
+        className="flex-1 items-center justify-center bg-black/50 p-xl"
       >
         <Pressable
           onPress={(e) => e.stopPropagation()}
-          style={[
-            {
-              width: '100%',
-              maxWidth: 360,
-              backgroundColor: colors.background,
-              borderRadius: radius.lg,
-              padding: spacing.xl,
-            },
-            elevation.raised,
-          ]}
+          className="w-full max-w-[360px] rounded-lg bg-white p-xl shadow-lg dark:bg-ink-bg"
         >
-          <Text style={[typography.subheading, { color: colors.text }]}>{title}</Text>
+          <Text className="text-lg font-semibold text-paper-900 dark:text-ink-text">{title}</Text>
           {message && (
-            <Text
-              style={[typography.caption, { color: colors.textMuted, marginTop: spacing.sm, lineHeight: 19 }]}
-            >
+            <Text className="mt-sm text-[13px] leading-[19px] text-paper-500 dark:text-ink-textMuted">
               {message}
             </Text>
           )}
 
-          <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xl }}>
-            <Button label={cancelLabel} variant="secondary" onPress={onCancel} style={{ flex: 1 }} />
+          <View className="mt-xl flex-row gap-sm">
+            <Button label={cancelLabel} variant="secondary" onPress={onCancel} className="flex-1" />
             <Button
               label={confirmLabel}
               variant={destructive ? 'danger' : 'primary'}
               onPress={onConfirm}
               loading={loading}
-              style={{ flex: 1 }}
+              className="flex-1"
             />
           </View>
         </Pressable>

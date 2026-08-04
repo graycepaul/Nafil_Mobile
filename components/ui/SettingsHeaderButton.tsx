@@ -6,7 +6,7 @@ import { GearIcon } from './icons';
 /** Header-right gear icon, used across every role's tab bar to reach Settings. */
 export function SettingsHeaderButton() {
   const router = useRouter();
-  const { colors, spacing } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <Pressable
@@ -14,7 +14,7 @@ export function SettingsHeaderButton() {
       accessibilityRole="button"
       accessibilityLabel="Settings"
       hitSlop={8}
-      style={{ paddingHorizontal: spacing.lg }}
+      className="px-lg"
     >
       <GearIcon color={colors.onHeaderBg} size={22} />
     </Pressable>

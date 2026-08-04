@@ -20,21 +20,11 @@ const THEME_OPTIONS: { mode: ThemeMode; label: string }[] = [
  */
 export default function SettingsScreen() {
   const router = useRouter();
-  const { colors, spacing, radius, typography, elevation, mode, setMode } = useTheme();
+  const { colors, mode, setMode } = useTheme();
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          backgroundColor: colors.headerBg,
-          paddingHorizontal: spacing.lg,
-          paddingTop: spacing['2xl'],
-          paddingBottom: spacing.lg,
-          gap: spacing.md,
-        }}
-      >
+    <View className="flex-1 bg-white dark:bg-ink-bg">
+      <View className="flex-row items-center gap-md bg-white px-lg pb-lg pt-2xl dark:bg-ink-bg">
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"
@@ -43,14 +33,14 @@ export default function SettingsScreen() {
         >
           <ArrowLeftIcon color={colors.onHeaderBg} size={22} />
         </Pressable>
-        <Text style={[typography.heading, { color: colors.onHeaderBg }]}>Settings</Text>
+        <Text className="text-[22px] font-bold text-paper-900 dark:text-ink-text">Settings</Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.xl }}>
-        <Text style={[typography.label, { color: colors.textMuted, marginBottom: spacing.sm }]}>
+      <ScrollView contentContainerClassName="p-xl">
+        <Text className="mb-sm text-sm font-medium text-paper-500 dark:text-ink-textMuted">
           APPEARANCE
         </Text>
-        <Card style={{ padding: spacing.xs }}>
+        <Card className="p-xs">
           {THEME_OPTIONS.map((option, index) => {
             const active = mode === option.mode;
             return (
@@ -59,51 +49,30 @@ export default function SettingsScreen() {
                 onPress={() => setMode(option.mode)}
                 accessibilityRole="button"
                 accessibilityState={{ selected: active }}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  paddingVertical: spacing.md,
-                  paddingHorizontal: spacing.md,
-                  borderTopWidth: index === 0 ? 0 : 1,
-                  borderTopColor: colors.border,
-                }}
+                className={`flex-row items-center justify-between px-md py-md ${
+                  index === 0 ? '' : 'border-t border-paper-200 dark:border-ink-border'
+                }`}
               >
-                <Text style={[typography.body, { color: colors.text }]}>{option.label}</Text>
+                <Text className="text-base text-paper-900 dark:text-ink-text">{option.label}</Text>
                 <View
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: radius.full,
-                    borderWidth: 1.5,
-                    borderColor: active ? colors.primary : colors.border,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
+                  className={`h-5 w-5 items-center justify-center rounded-full border-[1.5px] ${
+                    active ? 'border-brand-800 dark:border-brand-300' : 'border-paper-200 dark:border-ink-border'
+                  }`}
                 >
-                  {active && (
-                    <View
-                      style={{
-                        width: 11,
-                        height: 11,
-                        borderRadius: radius.full,
-                        backgroundColor: colors.primary,
-                      }}
-                    />
-                  )}
+                  {active && <View className="h-[11px] w-[11px] rounded-full bg-brand-800 dark:bg-brand-300" />}
                 </View>
               </Pressable>
             );
           })}
         </Card>
-        <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.sm, marginBottom: spacing.xl }]}>
+        <Text className="mb-xl mt-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
           System follows your device's light/dark setting automatically.
         </Text>
 
-        <Text style={[typography.label, { color: colors.textMuted, marginBottom: spacing.sm }]}>
+        <Text className="mb-sm text-sm font-medium text-paper-500 dark:text-ink-textMuted">
           ACCOUNT
         </Text>
-        <Card style={{ alignItems: 'flex-start', ...elevation.card }}>
+        <Card className="items-start shadow-sm">
           <SignOutButton />
         </Card>
       </ScrollView>
