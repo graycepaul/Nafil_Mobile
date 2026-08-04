@@ -5,8 +5,14 @@ import type { ThemeColors } from '../../constants/colors';
  * No blanket headerRight here — the settings gear only belongs on each
  * role's primary/home tab (and resident's Profile), so it's set per-screen
  * in each role's _layout.tsx instead of globally.
+ *
+ * `bottomInset` is the device's safe-area bottom inset (0 on devices without
+ * a home indicator) — passed in explicitly since this isn't a component and
+ * can't call useSafeAreaInsets itself. Height/padding are set explicitly
+ * rather than left to the navigator default so there's always some breathing
+ * room below the icons, not just whatever the safe area happens to be.
  */
-export function themedTabOptions(colors: ThemeColors) {
+export function themedTabOptions(colors: ThemeColors, bottomInset: number = 0) {
   return {
     headerShown: true,
     headerStyle: {
@@ -22,6 +28,9 @@ export function themedTabOptions(colors: ThemeColors) {
     tabBarStyle: {
       backgroundColor: colors.background,
       borderTopColor: colors.border,
+      height: 58 + bottomInset,
+      paddingTop: 8,
+      paddingBottom: Math.max(bottomInset, 16),
     },
   };
 }

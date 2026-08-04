@@ -6,29 +6,23 @@ import {
   RefreshControl,
   Pressable,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/auth-store";
 import { useTheme } from "../../context/theme-context";
 import { relativeTime } from "../../lib/format";
 import { Avatar } from "../../components/ui/Avatar";
-import { GlassCard } from "../../components/ui/GlassCard";
+import { Card } from "../../components/ui/Card";
 import { StatCard } from "../../components/ui/StatCard";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { EmptyState } from "../../components/ui/EmptyState";
-import {
-  TicketIcon,
-  WrenchIcon,
-  MegaphoneIcon,
-  ChevronRightIcon,
-} from "../../components/ui/icons";
 import type { Announcement, Estate } from "../../types/database";
 
 export default function ResidentHome() {
   const profile = useAuthStore((s) => s.profile);
-  const { isDark, colors } = useTheme();
+  const { colors } = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
@@ -103,14 +97,10 @@ export default function ResidentHome() {
     setRefreshing(false);
   }
 
-  // The frosted-glass cards below (StatCard, the announcement GlassCard) need
-  // some tonal variation behind them to actually look like glass — a flat
-  // background makes a blur invisible. This soft top-to-bottom gradient is
-  // that backdrop; dark mode skips it since glass isn't used there.
-  const scroll = (
+  return (
     <ScrollView
-      className="bg-transparent"
-      contentContainerClassName="p-xl"
+      className="flex-1 bg-paper-50 dark:bg-ink-bg"
+      contentContainerClassName="p-lg"
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -120,9 +110,13 @@ export default function ResidentHome() {
       }
     >
       {/* ── Welcome card ─────────────────────────────────────────── */}
-      <GlassCard className="mb-xl">
+      <Card className="mb-lg">
         <View className="flex-row items-center gap-md">
-          <Avatar uri={profile?.avatar_url} name={profile?.full_name} size={56} />
+          <Avatar
+            uri={profile?.avatar_url}
+            name={profile?.full_name}
+            size={56}
+          />
           <View className="flex-1">
             <Text className="text-[22px] font-bold tracking-[-0.2px] text-paper-900 dark:text-ink-text">
               {profile?.full_name ?? "Welcome Again"}
@@ -133,18 +127,36 @@ export default function ResidentHome() {
             </Text>
           </View>
         </View>
-      </GlassCard>
+        <View className="flex-row gap-md mt-lg">
+          <Pressable
+            onPress={() => router.push("/resident/visitor-pass?new=1")}
+            className="flex-1 items-center rounded-md bg-brand-800 py-md active:opacity-90 dark:bg-brand-500"
+          >
+            <Text className="text-base font-semibold text-white">
+              + Visitor pass
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push("/resident/issues?new=1")}
+            className="flex-1 items-center rounded-md border border-paper-200 bg-paper-50 py-md active:opacity-80 dark:border-ink-border dark:bg-ink-surface"
+          >
+            <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
+              Report issue
+            </Text>
+          </Pressable>
+        </View>
+      </Card>
 
       {/* ── Quick stats ──────────────────────────────────────────── */}
-      <View className="mb-xl flex-row gap-md">
+      <View className="mb-lg flex-row gap-md">
         <StatCard
-          icon={<TicketIcon color={colors.primary} size={18} />}
+          icon={<Ionicons name="ticket-outline" color={colors.primary} size={18} />}
           value={activePassCount ?? 0}
           label="Active passes"
           onPress={() => router.push("/resident/visitor-pass")}
         />
         <StatCard
-          icon={<WrenchIcon color={colors.primary} size={18} />}
+          icon={<Ionicons name="build-outline" color={colors.primary} size={18} />}
           value={openIssueCount ?? 0}
           label="Open issues"
           onPress={() => router.push("/resident/issues")}
@@ -152,22 +164,6 @@ export default function ResidentHome() {
       </View>
 
       {/* ── Quick actions ────────────────────────────────────────── */}
-      <View className="mb-xl flex-row gap-md">
-        <Pressable
-          onPress={() => router.push("/resident/visitor-pass?new=1")}
-          className="flex-1 items-center rounded-md bg-brand-800 py-md active:opacity-90 dark:bg-brand-500"
-        >
-          <Text className="text-base font-semibold text-white">+ Visitor pass</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => router.push("/resident/issues?new=1")}
-          className="flex-1 items-center rounded-md border border-paper-200 bg-paper-50 py-md active:opacity-80 dark:border-ink-border dark:bg-ink-surface"
-        >
-          <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
-            Report issue
-          </Text>
-        </Pressable>
-      </View>
 
       {/* ── Latest announcement ──────────────────────────────────── */}
       <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">
@@ -175,14 +171,14 @@ export default function ResidentHome() {
       </Text>
       {latestAnnouncement ? (
         <Pressable onPress={() => router.push("/resident/announcements")}>
-          <GlassCard
+          <Card
             accent={
               latestAnnouncement.severity === "emergency" ? "danger" : "default"
             }
           >
             <View className="flex-row items-start gap-sm">
               <View className="h-8 w-8 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
-                <MegaphoneIcon color={colors.primary} size={16} />
+                <Ionicons name="megaphone-outline" color={colors.primary} size={16} />
               </View>
               <View className="flex-1">
                 {latestAnnouncement.severity === "emergency" && (
@@ -206,32 +202,19 @@ export default function ResidentHome() {
                   {relativeTime(latestAnnouncement.created_at)}
                 </Text>
               </View>
-              <ChevronRightIcon color={colors.textMuted} size={18} />
+              <Ionicons name="chevron-forward" color={colors.textMuted} size={18} />
             </View>
-          </GlassCard>
+          </Card>
         </Pressable>
       ) : (
-        <GlassCard>
+        <Card>
           <EmptyState
-            icon={<MegaphoneIcon color={colors.textMuted} size={26} />}
+            icon={<Ionicons name="megaphone-outline" color={colors.textMuted} size={26} />}
             title="No announcements yet"
             message="Estate-wide updates will show up here."
           />
-        </GlassCard>
+        </Card>
       )}
     </ScrollView>
-  );
-
-  if (isDark) {
-    return <View className="flex-1 bg-ink-bg">{scroll}</View>;
-  }
-
-  return (
-    <LinearGradient
-      colors={[colors.primaryMuted, colors.background]}
-      style={{ flex: 1 }}
-    >
-      {scroll}
-    </LinearGradient>
   );
 }
