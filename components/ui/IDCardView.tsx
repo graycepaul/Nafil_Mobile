@@ -11,6 +11,15 @@ interface IDCardViewProps {
   estateName?: string | null;
   code: string;
   revoked?: boolean;
+  /**
+   * Drops the outer drop shadow. Used for the instance captured by
+   * `react-native-view-shot` for sharing — on web, its `html2canvas` backend
+   * renders CSS `box-shadow` as a blocky, unblurred halo rather than a soft
+   * shadow, so the exported PNG picked up a tacky white/grey border around
+   * the card. A border-only card avoids the shadow entirely and looks clean
+   * both on screen and in the exported image.
+   */
+  elevated?: boolean;
 }
 
 /**
@@ -22,17 +31,36 @@ interface IDCardViewProps {
  * made-up or already-revoked code fails that lookup — the printed card is
  * never itself the proof of anything.
  */
-export function IDCardView({ photoUrl, name, subtitle, estateName, code, revoked }: IDCardViewProps) {
+export function IDCardView({
+  photoUrl,
+  name,
+  subtitle,
+  estateName,
+  code,
+  revoked,
+  elevated = true,
+}: IDCardViewProps) {
   return (
-    <View className="overflow-hidden rounded-lg border border-paper-200 bg-white shadow-lg dark:border-ink-border dark:bg-ink-raised">
-      <View className="flex-row items-center justify-between bg-brand-800 px-lg py-sm dark:bg-brand-900">
-        <Text className="text-[11px] font-semibold uppercase tracking-[0.6px] text-white">
+    <View
+      className={`overflow-hidden rounded-lg border border-paper-200 bg-white dark:border-ink-border dark:bg-ink-raised ${elevated ? 'shadow-lg' : ''}`}
+    >
+      <View className="flex-row items-center justify-between bg-brand-800 px-lg py-md dark:bg-brand-900">
+        <Text
+          style={{ lineHeight: 16 }}
+          className="text-[11px] font-semibold uppercase tracking-[0.6px] text-white"
+        >
           NAFIL ESTATES
         </Text>
         {estateName && (
+          // No numberOfLines: RN Web compiles that to a `-webkit-line-clamp`
+          // box, which `html2canvas` (react-native-view-shot's web capture
+          // backend) mis-measures and clips the top of the text off. Estate
+          // names are short branded labels, so an occasional wrap on an
+          // unusually long one is a fine trade for the capture rendering
+          // correctly.
           <Text
+            style={{ lineHeight: 16, maxWidth: 140 }}
             className="text-[11px] font-semibold uppercase tracking-[0.6px] text-brand-100 dark:text-brand-200"
-            numberOfLines={1}
           >
             {estateName.toUpperCase()}
           </Text>

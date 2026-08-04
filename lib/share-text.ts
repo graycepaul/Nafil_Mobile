@@ -1,7 +1,7 @@
 import { Platform, Share } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 
-export type ShareOutcome = 'shared' | 'copied' | 'dismissed';
+export type ShareOutcome = 'shared' | 'copied' | 'downloaded' | 'dismissed';
 
 /**
  * Native: the OS share sheet (WhatsApp, SMS, email — anything installed).

@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ActivityIndicator, Modal, Pressable } from 'react-native';
+import { useRef, useState } from 'react';
+import { View, Text, FlatList, RefreshControl, ActivityIndicator, Pressable } from 'react-native';
+import ViewShot, { type ViewShotRef } from 'react-native-view-shot';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { shareHouseholdCard } from '../../lib/share-id-card';
+import { shareHouseholdCardImage } from '../../lib/share-id-card';
+import { pickAndUploadHouseholdAvatar } from '../../lib/avatar';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { IDCardView } from '../../components/ui/IDCardView';
@@ -10,8 +12,9 @@ import { AddHouseholdMemberForm } from '../../components/resident/AddHouseholdMe
 import { Avatar } from '../../components/ui/Avatar';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
-import { Notice } from '../../components/ui/Notice';
+import { Toast } from '../../components/ui/Toast';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { Overlay } from '../../components/ui/Overlay';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import type { Estate, HouseholdMember } from '../../types/database';
@@ -27,8 +30,11 @@ export default function ProfileScreen() {
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [confirmingRegenerate, setConfirmingRegenerate] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [addingPhotoId, setAddingPhotoId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string>();
   const [error, setError] = useState<string>();
+  const cardShotRef = useRef<ViewShotRef>(null);
 
   const { data: estate } = useQuery({
     queryKey: ['my_estate', profile?.estate_id],
@@ -79,6 +85,42 @@ export default function ProfileScreen() {
     setNotice('New code generated. Your old card no longer works.');
   }
 
+  async function addPhotoToMember(member: HouseholdMember) {
+    setAddingPhotoId(member.id);
+    const result = await pickAndUploadHouseholdAvatar(profile!.id, member.id);
+    setAddingPhotoId(null);
+    if ('error' in result && result.error) {
+      setError(result.error);
+      return;
+    }
+    if ('cancelled' in result) return;
+    const { error: updateError } = await supabase
+      .from('household_members')
+      .update({ avatar_url: result.url })
+      .eq('id', member.id);
+    if (updateError) {
+      setError(updateError.message);
+      return;
+    }
+    invalidateHousehold();
+    setViewingMember((current) => (current?.id === member.id ? { ...current, avatar_url: result.url! } : current));
+  }
+
+  async function shareCard() {
+    if (!viewingMember) return;
+    setSharing(true);
+    try {
+      const uri = await cardShotRef.current?.capture?.();
+      const outcome = uri
+        ? await shareHouseholdCardImage(uri, viewingMember, estate?.name)
+        : 'dismissed';
+      if (outcome === 'downloaded') setNotice('Saved. Attach the image in WhatsApp.');
+      if (outcome === 'copied') setNotice('Copied. Paste it into WhatsApp.');
+    } finally {
+      setSharing(false);
+    }
+  }
+
   async function revokeMember() {
     if (!pendingRevoke) return;
     const id = pendingRevoke.id;
@@ -111,9 +153,6 @@ export default function ProfileScreen() {
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
           <View>
-            {error && <Notice message={error} />}
-            {notice && <Notice tone="success" message={notice} />}
-
             <IDCardView
               photoUrl={profile.avatar_url}
               name={profile.full_name ?? 'You'}
@@ -170,14 +209,29 @@ export default function ProfileScreen() {
                 tone={item.status === 'revoked' ? 'danger' : 'success'}
               />
             </Pressable>
+            {item.status === 'active' && !item.avatar_url && (
+              <Text className="mt-sm text-[13px] text-danger">
+                No photo yet — add one so security can check it against their face at the gate.
+              </Text>
+            )}
             {item.status === 'active' && (
               <View className="mt-md flex-row gap-sm">
-                <Button
-                  label="View card"
-                  variant="secondary"
-                  onPress={() => setViewingMember(item)}
-                  className="flex-1"
-                />
+                {item.avatar_url ? (
+                  <Button
+                    label="View card"
+                    variant="secondary"
+                    onPress={() => setViewingMember(item)}
+                    className="flex-1"
+                  />
+                ) : (
+                  <Button
+                    label="Add photo"
+                    variant="secondary"
+                    loading={addingPhotoId === item.id}
+                    onPress={() => addPhotoToMember(item)}
+                    className="flex-1"
+                  />
+                )}
                 <Button
                   label="Revoke"
                   variant="ghost"
@@ -190,41 +244,80 @@ export default function ProfileScreen() {
         )}
       />
 
-      <Modal visible={!!viewingMember} transparent animationType="fade" onRequestClose={() => setViewingMember(null)}>
-        <Pressable
-          onPress={() => setViewingMember(null)}
-          className="flex-1 items-center justify-center bg-black/50 p-xl"
-        >
-          <Pressable onPress={(e) => e.stopPropagation()} className="w-full max-w-[360px]">
-            {viewingMember && (
-              <>
-                <IDCardView
-                  photoUrl={viewingMember.avatar_url}
-                  name={viewingMember.full_name}
-                  subtitle={viewingMember.relationship}
-                  estateName={estate?.name}
-                  code={viewingMember.code}
-                  revoked={viewingMember.status === 'revoked'}
-                />
-                <View className="mt-lg flex-row gap-sm">
-                  {viewingMember.status === 'active' && (
-                    <Button
-                      label="Share"
-                      variant="secondary"
-                      onPress={async () => {
-                        const outcome = await shareHouseholdCard(viewingMember, estate?.name);
-                        if (outcome === 'copied') setNotice('Copied. Paste it into WhatsApp.');
-                      }}
-                      className="flex-1"
-                    />
-                  )}
-                  <Button label="Close" onPress={() => setViewingMember(null)} className="flex-1" />
+      <Toast
+        message={error ?? notice}
+        tone={error ? 'error' : 'success'}
+        onDismiss={() => {
+          setError(undefined);
+          setNotice(undefined);
+        }}
+      />
+
+      <Overlay visible={!!viewingMember} onDismiss={() => setViewingMember(null)}>
+        {viewingMember && (
+          <>
+            {/* What the resident actually sees — plain card, no mat. */}
+            <IDCardView
+              photoUrl={viewingMember.avatar_url}
+              name={viewingMember.full_name}
+              subtitle={viewingMember.relationship}
+              estateName={estate?.name}
+              code={viewingMember.code}
+              revoked={viewingMember.status === 'revoked'}
+            />
+
+            {/* Off-screen twin, captured for sharing instead of the card
+                above. It's matted on a solid frame rather than captured
+                tight to its own edge — html2canvas (react-native-view-shot's
+                web capture backend) doesn't anti-alias a border-radius
+                cleanly against nothing, leaving a stray light sliver right
+                at the corners. A solid backdrop behind it hides that seam
+                instead of fighting it, and reads as an intentional
+                card-on-a-mat look rather than a bug. Kept out of the visible
+                layout (absolute + far off-screen, not display:none — a
+                non-rendered node has no bitmap for html2canvas to grab). */}
+            <View
+              style={{ position: 'absolute', left: -9999, top: 0 }}
+              pointerEvents="none"
+            >
+              <ViewShot ref={cardShotRef} options={{ format: 'png', quality: 1 }}>
+                <View className="items-center rounded-xl bg-paper-100 p-xl">
+                  <IDCardView
+                    photoUrl={viewingMember.avatar_url}
+                    name={viewingMember.full_name}
+                    subtitle={viewingMember.relationship}
+                    estateName={estate?.name}
+                    code={viewingMember.code}
+                    revoked={viewingMember.status === 'revoked'}
+                    elevated={false}
+                  />
                 </View>
-              </>
-            )}
-          </Pressable>
-        </Pressable>
-      </Modal>
+              </ViewShot>
+            </View>
+            <View className="mt-lg flex-row gap-sm">
+              {viewingMember.status === 'active' &&
+                (viewingMember.avatar_url ? (
+                  <Button
+                    label="Share"
+                    variant="secondary"
+                    loading={sharing}
+                    onPress={shareCard}
+                    className="flex-1"
+                  />
+                ) : (
+                  <Button
+                    label="Add photo to share"
+                    variant="secondary"
+                    loading={addingPhotoId === viewingMember.id}
+                    onPress={() => addPhotoToMember(viewingMember)}
+                    className="flex-1"
+                  />
+                ))}
+              <Button label="Close" onPress={() => setViewingMember(null)} className="flex-1" />
+            </View>
+          </>
+        )}
+      </Overlay>
 
       <ConfirmDialog
         visible={!!pendingRevoke}

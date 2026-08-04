@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import { View, Text } from 'react-native';
-import { supabase } from '../../lib/supabase';
-import { pickAndUploadHouseholdAvatar } from '../../lib/avatar';
-import { Button } from '../ui/Button';
-import { Input } from '../ui/Input';
-import { Notice } from '../ui/Notice';
-import { Card } from '../ui/Card';
-import { Avatar } from '../ui/Avatar';
-import type { HouseholdMember } from '../../types/database';
+import { useState } from "react";
+import { View, Text } from "react-native";
+import { supabase } from "../../lib/supabase";
+import { pickAndUploadHouseholdAvatar } from "../../lib/avatar";
+import { Button } from "../ui/Button";
+import { Input } from "../ui/Input";
+import { Notice } from "../ui/Notice";
+import { Card } from "../ui/Card";
+import { Avatar } from "../ui/Avatar";
+import type { HouseholdMember } from "../../types/database";
 
 /**
  * Adds a standing allow-list entry — a family member, a nanny, a regular
@@ -27,9 +27,9 @@ export function AddHouseholdMemberForm({
   onCreated: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [fullName, setFullName] = useState('');
-  const [relationship, setRelationship] = useState('');
-  const [phone, setPhone] = useState('');
+  const [fullName, setFullName] = useState("");
+  const [relationship, setRelationship] = useState("");
+  const [phone, setPhone] = useState("");
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string>();
   const [created, setCreated] = useState<HouseholdMember | null>(null);
@@ -37,9 +37,9 @@ export function AddHouseholdMemberForm({
 
   function reset() {
     setOpen(false);
-    setFullName('');
-    setRelationship('');
-    setPhone('');
+    setFullName("");
+    setRelationship("");
+    setPhone("");
     setFormError(undefined);
     setCreated(null);
   }
@@ -54,7 +54,7 @@ export function AddHouseholdMemberForm({
     setFormError(undefined);
     setCreating(true);
     const { data, error } = await supabase
-      .from('household_members')
+      .from("household_members")
       .insert({
         estate_id: estateId,
         resident_id: residentId,
@@ -78,12 +78,15 @@ export function AddHouseholdMemberForm({
     setUploadingPhoto(true);
     const result = await pickAndUploadHouseholdAvatar(residentId, created.id);
     setUploadingPhoto(false);
-    if ('error' in result && result.error) {
+    if ("error" in result && result.error) {
       setFormError(result.error);
       return;
     }
-    if ('cancelled' in result) return;
-    await supabase.from('household_members').update({ avatar_url: result.url }).eq('id', created.id);
+    if ("cancelled" in result) return;
+    await supabase
+      .from("household_members")
+      .update({ avatar_url: result.url })
+      .eq("id", created.id);
     setCreated({ ...created, avatar_url: result.url! });
   }
 
@@ -105,20 +108,27 @@ export function AddHouseholdMemberForm({
           {created.full_name} added
         </Text>
         <Text className="mb-md mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
-          Their card is ready. Code: {created.code}. A photo is optional but helps security recognise them.
+          {created.avatar_url
+            ? `Code: ${created.code}. Their card is ready.`
+            : `Code: ${created.code}. A photo is required for proper identification a the gate.`}
         </Text>
         <View className="mb-md items-center">
           <Avatar uri={created.avatar_url} name={created.full_name} size={64} />
         </View>
         <View className="flex-row gap-sm">
           <Button
-            label={created.avatar_url ? 'Change photo' : 'Add photo'}
+            label={created.avatar_url ? "Change photo" : "Add photo"}
             variant="secondary"
             onPress={addPhoto}
             loading={uploadingPhoto}
             className="flex-1"
           />
-          <Button label="Done" onPress={finish} className="flex-1" />
+          <Button
+            label="Done"
+            onPress={finish}
+            disabled={!created.avatar_url}
+            className="flex-1"
+          />
         </View>
       </Card>
     );
@@ -130,7 +140,12 @@ export function AddHouseholdMemberForm({
         Add to your household
       </Text>
       {formError && <Notice message={formError} />}
-      <Input label="Full name" placeholder="Full name" value={fullName} onChangeText={setFullName} />
+      <Input
+        label="Full name"
+        placeholder="Full name"
+        value={fullName}
+        onChangeText={setFullName}
+      />
       <Input
         label="Relationship"
         placeholder="Relationship (e.g. Spouse, Nanny, Driver)"
@@ -152,7 +167,12 @@ export function AddHouseholdMemberForm({
           disabled={!fullName.trim() || !relationship.trim()}
           className="flex-1"
         />
-        <Button label="Cancel" variant="secondary" onPress={reset} className="flex-1" />
+        <Button
+          label="Cancel"
+          variant="secondary"
+          onPress={reset}
+          className="flex-1"
+        />
       </View>
     </Card>
   );
