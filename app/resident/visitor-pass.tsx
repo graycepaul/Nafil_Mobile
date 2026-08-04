@@ -15,7 +15,7 @@ import { Notice } from '../../components/ui/Notice';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { TicketIcon, PlusIcon } from '../../components/ui/icons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { VisitorPass, VisitorPassStatus } from '../../types/database';
 
 const STATUS_TONE: Record<VisitorPassStatus, BadgeTone> = {
@@ -58,7 +58,7 @@ export default function VisitorPassScreen() {
           className="px-lg"
         >
           <View style={{ transform: [{ rotate: formOpen ? '45deg' : '0deg' }] }}>
-            <PlusIcon color={colors.onHeaderBg} size={24} />
+            <Ionicons name="add" color={colors.onHeaderBg} size={24} />
           </View>
         </Pressable>
       ),
@@ -160,7 +160,7 @@ export default function VisitorPassScreen() {
         keyExtractor={(item) => item.id}
         ListEmptyComponent={
           <EmptyState
-            icon={<TicketIcon color={colors.textMuted} size={26} />}
+            icon={<Ionicons name="ticket-outline" color={colors.textMuted} size={26} />}
             title="No passes yet"
             message="Tap + up top to generate one and share the code with your visitor."
           />

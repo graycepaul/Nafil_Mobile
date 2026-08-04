@@ -1,38 +1,44 @@
 import { Tabs } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme } from '../../context/theme-context';
 import { themedTabOptions } from '../../components/ui/tab-options';
-import { BrandLockup } from '../../components/ui/BrandMark';
-import { HomeHeaderActions } from '../../components/ui/HomeHeaderActions';
+import { HomeHeader } from '../../components/ui/HomeHeader';
 import { SettingsHeaderButton } from '../../components/ui/SettingsHeaderButton';
-import { HomeIcon, TicketIcon, WrenchIcon, MegaphoneIcon, UserIcon } from '../../components/ui/icons';
 
 export default function ResidentLayout() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
-    <Tabs screenOptions={themedTabOptions(colors)}>
+    <Tabs screenOptions={themedTabOptions(colors, insets.bottom)}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          headerTitle: () => <BrandLockup size="sm" />,
-          headerRight: () => <HomeHeaderActions />,
-          tabBarIcon: ({ color }) => <HomeIcon color={color as string} size={22} />,
+          header: () => <HomeHeader />,
+          tabBarIcon: ({ color }) => <Ionicons name="home-outline" color={color as string} size={22} />,
         }}
       />
       <Tabs.Screen
         name="visitor-pass"
-        options={{ title: 'Visitors', tabBarIcon: ({ color }) => <TicketIcon color={color as string} size={22} /> }}
+        options={{
+          title: 'Visitors',
+          tabBarIcon: ({ color }) => <Ionicons name="ticket-outline" color={color as string} size={22} />,
+        }}
       />
       <Tabs.Screen
         name="issues"
-        options={{ title: 'Issues', tabBarIcon: ({ color }) => <WrenchIcon color={color as string} size={22} /> }}
+        options={{
+          title: 'Issues',
+          tabBarIcon: ({ color }) => <Ionicons name="build-outline" color={color as string} size={22} />,
+        }}
       />
       <Tabs.Screen
         name="announcements"
         options={{
           title: 'Announcements',
-          tabBarIcon: ({ color }) => <MegaphoneIcon color={color as string} size={22} />,
+          tabBarIcon: ({ color }) => <Ionicons name="megaphone-outline" color={color as string} size={22} />,
         }}
       />
       <Tabs.Screen
@@ -40,7 +46,7 @@ export default function ResidentLayout() {
         options={{
           title: 'Profile',
           headerRight: () => <SettingsHeaderButton />,
-          tabBarIcon: ({ color }) => <UserIcon color={color as string} size={22} />,
+          tabBarIcon: ({ color }) => <Ionicons name="person-outline" color={color as string} size={22} />,
         }}
       />
     </Tabs>

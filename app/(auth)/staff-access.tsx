@@ -2,7 +2,7 @@ import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../context/theme-context';
 import { AuthShell } from '../../components/auth/AuthShell';
-import { ShieldIcon } from '../../components/auth/RoleIcons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Button } from '../../components/ui/Button';
 
 /**
@@ -22,7 +22,7 @@ export default function StaffAccessScreen() {
     <AuthShell title="Security & Staff" onBack={() => router.back()}>
       <View className="mb-xl items-center rounded-lg bg-brand-50 px-lg py-xl dark:bg-brand-900">
         <View className="h-14 w-14 items-center justify-center rounded-full bg-brand-800 dark:bg-brand-500">
-          <ShieldIcon color={colors.onButtonFill} size={26} />
+          <Ionicons name="shield-checkmark-outline" color={colors.onButtonFill} size={26} />
         </View>
 
         <Text className="mt-md text-center text-base font-semibold text-paper-900 dark:text-ink-text">

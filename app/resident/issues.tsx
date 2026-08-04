@@ -12,7 +12,7 @@ import { Card } from '../../components/ui/Card';
 import { Notice } from '../../components/ui/Notice';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { WrenchIcon, PlusIcon } from '../../components/ui/icons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { Issue, IssueStatus } from '../../types/database';
 
 const STATUS_TONE: Record<IssueStatus, BadgeTone> = {
@@ -54,7 +54,7 @@ export default function IssuesScreen() {
           className="px-lg"
         >
           <View style={{ transform: [{ rotate: formOpen ? '45deg' : '0deg' }] }}>
-            <PlusIcon color={colors.onHeaderBg} size={24} />
+            <Ionicons name="add" color={colors.onHeaderBg} size={24} />
           </View>
         </Pressable>
       ),
@@ -143,7 +143,7 @@ export default function IssuesScreen() {
       keyExtractor={(item) => item.id}
       ListEmptyComponent={
         <EmptyState
-          icon={<WrenchIcon color={colors.textMuted} size={26} />}
+          icon={<Ionicons name="build-outline" color={colors.textMuted} size={26} />}
           title="No issues reported"
           message="Anything broken or worth flagging? Tap + up top to report it."
         />

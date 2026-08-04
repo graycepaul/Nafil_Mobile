@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { useTheme } from '../../context/theme-context';
 import { useAuthStore } from '../../store/auth-store';
 import { AuthShell, AuthLink } from '../../components/auth/AuthShell';
-import { ShieldIcon } from '../../components/auth/RoleIcons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Button } from '../../components/ui/Button';
 import type { Estate, EstateJoinRequest } from '../../types/database';
 
@@ -89,7 +89,7 @@ export default function PendingApprovalScreen() {
       <View className="mb-xl rounded-lg bg-brand-50 p-lg dark:bg-brand-900">
         <View className="flex-row items-center gap-md">
           <View className="h-11 w-11 items-center justify-center rounded-full bg-brand-800 dark:bg-brand-500">
-            <ShieldIcon color={colors.onButtonFill} size={20} />
+            <Ionicons name="shield-checkmark-outline" color={colors.onButtonFill} size={20} />
           </View>
           <View className="flex-1">
             <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">

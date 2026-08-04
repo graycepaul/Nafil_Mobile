@@ -1,7 +1,7 @@
 import { Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../context/theme-context';
-import { GearIcon } from './icons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 
 /** Header-right gear icon, used across every role's tab bar to reach Settings. */
 export function SettingsHeaderButton() {
@@ -16,7 +16,7 @@ export function SettingsHeaderButton() {
       hitSlop={8}
       className="px-lg"
     >
-      <GearIcon color={colors.onHeaderBg} size={22} />
+      <Ionicons name="settings-outline" color={colors.onHeaderBg} size={22} />
     </Pressable>
   );
 }

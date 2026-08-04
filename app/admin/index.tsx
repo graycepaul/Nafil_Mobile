@@ -9,7 +9,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Notice } from '../../components/ui/Notice';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { UserIcon } from '../../components/ui/icons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { InviteStaffForm } from '../../components/admin/InviteStaffForm';
 import type { Estate, JoinRequestWithApplicant, Profile } from '../../types/database';
 
@@ -137,7 +137,7 @@ export default function AdminResidentsScreen() {
       }
       ListEmptyComponent={
         <EmptyState
-          icon={<UserIcon color={colors.textMuted} size={26} />}
+          icon={<Ionicons name="person-outline" color={colors.textMuted} size={26} />}
           title="No approved residents yet"
           message="Approved residents in your estate will show up here."
         />

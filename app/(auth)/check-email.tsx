@@ -6,7 +6,7 @@ import { useTheme } from '../../context/theme-context';
 import { AuthShell, AuthLink } from '../../components/auth/AuthShell';
 import { Button } from '../../components/ui/Button';
 import { Notice } from '../../components/ui/Notice';
-import { EnvelopeIcon } from '../../components/auth/RoleIcons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { authErrorMessage } from '../../lib/auth-errors';
 
 export default function CheckEmailScreen() {
@@ -44,7 +44,7 @@ export default function CheckEmailScreen() {
       footer={<AuthLink label="Back to sign in" onPress={() => router.replace('/login')} />}
     >
       <View className="mb-xl items-center rounded-lg bg-brand-50 px-lg py-xl dark:bg-brand-900">
-        <EnvelopeIcon color={colors.primary} />
+        <Ionicons name="mail-outline" color={colors.primary} size={40} />
         {email && (
           <Text className="mt-md text-center text-base font-semibold text-paper-900 dark:text-ink-text">
             {email}

@@ -4,7 +4,7 @@ import { useTheme } from '../context/theme-context';
 import type { ThemeMode } from '../store/theme-store';
 import { Card } from '../components/ui/Card';
 import { SignOutButton } from '../components/SignOutButton';
-import { ArrowLeftIcon } from '../components/ui/icons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 
 const THEME_OPTIONS: { mode: ThemeMode; label: string }[] = [
   { mode: 'system', label: 'System' },
@@ -31,7 +31,7 @@ export default function SettingsScreen() {
           accessibilityLabel="Back"
           hitSlop={8}
         >
-          <ArrowLeftIcon color={colors.onHeaderBg} size={22} />
+          <Ionicons name="arrow-back" color={colors.onHeaderBg} size={22} />
         </Pressable>
         <Text className="text-[22px] font-bold text-paper-900 dark:text-ink-text">Settings</Text>
       </View>

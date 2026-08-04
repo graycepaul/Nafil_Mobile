@@ -6,7 +6,7 @@ import { useTheme } from '../../context/theme-context';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { WrenchIcon } from '../../components/ui/icons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { Issue, IssueStatus } from '../../types/database';
 
 const NEXT_STATUS: Record<IssueStatus, IssueStatus | null> = {
@@ -54,7 +54,7 @@ export default function AdminIssuesScreen() {
       keyExtractor={(item) => item.id}
       ListEmptyComponent={
         <EmptyState
-          icon={<WrenchIcon color={colors.textMuted} size={26} />}
+          icon={<Ionicons name="build-outline" color={colors.textMuted} size={26} />}
           title="No issues reported"
           message="Issues residents report will show up here."
         />

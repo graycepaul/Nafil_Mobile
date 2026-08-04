@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../../context/theme-context';
 import { AuthShell } from '../../components/auth/AuthShell';
 import { RoleCard } from '../../components/auth/RoleCard';
-import { HomeIcon, ShieldIcon } from '../../components/auth/RoleIcons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Button } from '../../components/ui/Button';
 
 type SignupRole = 'resident' | 'staff';
@@ -38,14 +38,14 @@ export default function RoleSelectScreen() {
     >
       <View className="gap-md" accessibilityRole="radiogroup">
         <RoleCard
-          icon={<HomeIcon color={role === 'resident' ? colors.onButtonFill : colors.textMuted} />}
+          icon={<Ionicons name="home-outline" size={22} color={role === 'resident' ? colors.onButtonFill : colors.textMuted} />}
           title="Resident"
           description="Manage visitors, pay dues, and report issues in your home."
           selected={role === 'resident'}
           onPress={() => setRole('resident')}
         />
         <RoleCard
-          icon={<ShieldIcon color={role === 'staff' ? colors.onButtonFill : colors.textMuted} />}
+          icon={<Ionicons name="shield-checkmark-outline" size={22} color={role === 'staff' ? colors.onButtonFill : colors.textMuted} />}
           title="Security & Staff"
           description="Verify visitors and manage gate access for your estate."
           selected={role === 'staff'}

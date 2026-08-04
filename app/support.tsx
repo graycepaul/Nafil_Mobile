@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../context/theme-context';
 import { useAuthStore } from '../store/auth-store';
 import { Card } from '../components/ui/Card';
-import { ArrowLeftIcon } from '../components/ui/icons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 
 /**
  * Shared across every role, same reasoning as /settings — nothing here is
@@ -27,7 +27,7 @@ export default function SupportScreen() {
           accessibilityLabel="Back"
           hitSlop={8}
         >
-          <ArrowLeftIcon color={colors.text} size={22} />
+          <Ionicons name="arrow-back" color={colors.text} size={22} />
         </Pressable>
         <Text className="text-[22px] font-bold text-paper-900 dark:text-ink-text">Support</Text>
       </View>

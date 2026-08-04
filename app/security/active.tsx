@@ -6,7 +6,7 @@ import { useTheme } from '../../context/theme-context';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { ClockIcon } from '../../components/ui/icons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { VisitorLog } from '../../types/database';
 
 export default function ActiveVisitorsScreen() {
@@ -44,7 +44,7 @@ export default function ActiveVisitorsScreen() {
       keyExtractor={(item) => item.id}
       ListEmptyComponent={
         <EmptyState
-          icon={<ClockIcon color={colors.textMuted} size={26} />}
+          icon={<Ionicons name="time-outline" color={colors.textMuted} size={26} />}
           title="No one on-site"
           message="Checked-in visitors will show up here until they check out."
         />

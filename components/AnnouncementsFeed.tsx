@@ -7,7 +7,7 @@ import { relativeTime } from '../lib/format';
 import { Card } from './ui/Card';
 import { StatusBadge } from './ui/StatusBadge';
 import { EmptyState } from './ui/EmptyState';
-import { MegaphoneIcon } from './ui/icons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { Announcement } from '../types/database';
 
 export function AnnouncementsFeed({
@@ -55,7 +55,7 @@ export function AnnouncementsFeed({
       keyExtractor={(item) => item.id}
       ListEmptyComponent={
         <EmptyState
-          icon={<MegaphoneIcon color={colors.textMuted} size={26} />}
+          icon={<Ionicons name="megaphone-outline" color={colors.textMuted} size={26} />}
           title="No announcements yet"
           message="Estate-wide updates will show up here."
         />

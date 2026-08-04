@@ -7,24 +7,10 @@ import {
   Platform,
   Pressable,
 } from "react-native";
-import Svg, { Path } from "react-native-svg";
+import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/theme-context";
 import { BrandLockup } from "../ui/BrandMark";
-
-function BackArrow({ color, size = 24 }: { color: string; size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M19 12H5m0 0 6-6m-6 6 6 6"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
-  );
-}
 
 interface AuthShellProps {
   title: string;
@@ -79,7 +65,7 @@ export function AuthShell({
                 hitSlop={12}
                 className="mb-lg self-start active:opacity-50"
               >
-                <BackArrow color={colors.primary} />
+                <Ionicons name="arrow-back" color={colors.primary} size={24} />
               </Pressable>
             )}
 

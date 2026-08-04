@@ -1,6 +1,6 @@
 import { View, Text, Image } from 'react-native';
 import { useTheme } from '../../context/theme-context';
-import { UserIcon } from './icons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 
 function initials(name?: string | null) {
   if (!name) return null;
@@ -54,7 +54,7 @@ export function Avatar({
           {label}
         </Text>
       ) : (
-        <UserIcon color={colors.primary} size={size * 0.5} />
+        <Ionicons name="person-outline" color={colors.primary} size={size * 0.5} />
       )}
     </View>
   );
