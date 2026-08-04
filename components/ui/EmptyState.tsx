@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { View, Text } from 'react-native';
-import { useTheme } from '../../context/theme-context';
 
 /** Consistent "nothing here yet" treatment — an icon, a line, an optional nudge. */
 export function EmptyState({
@@ -12,35 +11,18 @@ export function EmptyState({
   title: string;
   message?: string;
 }) {
-  const { colors, spacing, radius, typography } = useTheme();
-
   return (
-    <View style={{ alignItems: 'center', paddingVertical: spacing['2xl'], paddingHorizontal: spacing.xl }}>
+    <View className="items-center px-xl py-2xl">
       {icon && (
-        <View
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: radius.full,
-            backgroundColor: colors.surface,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: spacing.md,
-          }}
-        >
+        <View className="mb-md h-14 w-14 items-center justify-center rounded-full bg-paper-50 dark:bg-ink-surface">
           {icon}
         </View>
       )}
-      <Text style={[typography.bodyStrong, { color: colors.text, textAlign: 'center' }]}>
+      <Text className="text-center text-base font-semibold text-paper-900 dark:text-ink-text">
         {title}
       </Text>
       {message && (
-        <Text
-          style={[
-            typography.caption,
-            { color: colors.textMuted, textAlign: 'center', marginTop: spacing.xs, lineHeight: 19 },
-          ]}
-        >
+        <Text className="mt-xs text-center text-[13px] leading-[19px] text-paper-500 dark:text-ink-textMuted">
           {message}
         </Text>
       )}

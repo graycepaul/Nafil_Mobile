@@ -1,5 +1,6 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
+import { colorScheme as nativewindColorScheme } from 'nativewind';
 import { darkColors, lightColors, type ThemeColors } from '../constants/colors';
 import { useThemeStore, type ThemeMode } from '../store/theme-store';
 import { elevation, layout, radius, spacing, typography } from '../constants/theme';
@@ -24,6 +25,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const setMode = useThemeStore((s) => s.setMode);
 
   const isDark = mode === 'system' ? systemScheme === 'dark' : mode === 'dark';
+
+  // NativeWind resolves `dark:` classes off its own colorScheme, which by
+  // default just mirrors the OS. This app has its own resolved value (mode
+  // can be 'system' | 'light' | 'dark', persisted) — push that in directly
+  // rather than let NativeWind re-derive it, so `dark:` classes and the
+  // theme-context colors never disagree.
+  useEffect(() => {
+    nativewindColorScheme.set(isDark ? 'dark' : 'light');
+  }, [isDark]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({

@@ -12,6 +12,7 @@ Supabase schema/migrations and [`../Nafil Docs`](../Nafil%20Docs) for planning d
 - Expo (SDK 57) + Expo Router (file-based navigation, role-based route groups)
 - Supabase (Postgres + Auth + Row Level Security) as the backend
 - TanStack Query for server state, Zustand for client state
+- NativeWind (Tailwind for React Native) for styling — see "Styling" below
 - `expo-camera` for QR scanning, `react-native-qrcode-svg` for QR generation
 
 > `.npmrc` sets `legacy-peer-deps=true`. expo-router 57 pulls radix/react-dom peers that
@@ -442,18 +443,52 @@ Schema + RLS policies live in `../Nafil Backend/supabase/migrations/`.
 
 ## Theme
 
-Primary is `#084DA5`. Components read tokens via `useTheme()` rather than hardcoding hex, so
-dark mode and any rebrand are a single-file change in `constants/colors.ts`.
+Primary is `#084DA5`. Colors live in `constants/colors.ts`, spacing/radius/typography in
+`constants/theme.ts` — one file each for dark mode or a rebrand to touch.
+
+Theme mode (`light` / `dark` / `system`) persists via `useThemeStore`, **defaults to
+`system`** (a fresh install should match the device's own setting), and is reachable any
+time from the gear icon in the header (`/settings`).
+
+## Styling
+
+The app is mid-migration from inline `style={{}}` (driven by `useTheme()`) to NativeWind
+(`className`, driven by `tailwind.config.js`). Both work today and can be mixed freely on
+the same element — NativeWind merges `style` and `className`, `style` wins on conflicts.
+
+**Migrated**: the reusable primitives in `components/ui/` — `Button`, `Card`, `Input`,
+`Notice`, `StatusBadge`, `EmptyState`, `Avatar`.
+**Not yet migrated**: screens (`app/**`) and the more layout-heavy components
+(`StatCard`, `GlassCard`, `ConfirmDialog`, `BrandMark`) — still on `useTheme()` +
+`style={{}}`. Safe to convert incrementally; nothing breaks by mixing.
 
 ```tsx
-const { colors, spacing, typography } = useTheme();
+const { colors, spacing } = useTheme();            {/* old pattern, still fine */}
 <View style={{ backgroundColor: colors.background, padding: spacing.xl }} />
+
+<View className="bg-white dark:bg-ink-bg p-xl" />  {/* new pattern */}
 ```
 
-Theme mode (`light` / `dark` / `system`) persists via `useThemeStore` — **defaults to
-`light`**, not `system`. The brand is designed light-first; following the OS would mean
-the client's first launch looks different depending on their phone's setting. `setMode`
-still switches to `dark`/`system` on request.
+`tailwind.config.js` mirrors the existing tokens rather than introducing a second design
+system:
+
+- `spacing`/`borderRadius` extend Tailwind's defaults with the app's own scale
+  (`xs`/`sm`/`md`/`lg`/`xl`/`2xl`/`3xl`/`4xl`, `sm`/`md`/`lg`/`xl`) — `p-md`, `rounded-lg`
+  match `spacing.md`, `radius.lg` exactly.
+- Colors are **not** one semantic token that resolves differently per theme (that's not
+  how Tailwind's dark mode works) — they're two named scales you pair with `dark:`:
+  `brand` (the blue scale, `primary` = `brand-800`), `paper` (light neutral scale, was
+  `neutral` in `colors.ts`), `ink` (dark neutral scale — `ink.bg`/`surface`/`raised`/
+  `border`/`text`/`textMuted`). So `colors.surface` becomes
+  `bg-paper-50 dark:bg-ink-surface`, not a single class.
+- `success`/`warning`/`danger`/`info` are flat (same hex in both themes already), each
+  with a `-muted`/`-mutedDark` pair for tinted backgrounds
+  (`bg-danger-muted dark:bg-danger-mutedDark`).
+
+Dark mode uses `darkMode: 'class'` — NativeWind's `colorScheme.set()` is called from
+`ThemeProvider` (`context/theme-context.tsx`) whenever the app's own resolved `isDark`
+changes, so `dark:` classes always agree with `useTheme().colors` rather than following
+the OS independently.
 
 ## State management
 
@@ -524,11 +559,12 @@ security and admin, render through `Notice` rather than `Alert.alert` (a no-op o
 ## Settings, theme, and sign-out
 
 One shared screen, [`app/settings.tsx`](app/settings.tsx), holds the two things that aren't
-role-specific: theme (System/Light/Dark, via `useThemeStore`) and sign-out. It's reached from
-a gear icon in the header of every tab, every role — wired once in
-[`themedTabOptions`](components/ui/tab-options.ts) rather than duplicated per layout. Theme
-defaults to `system` (`store/theme-store.ts`) so a fresh install matches the device's own
-light/dark setting instead of forcing light.
+role-specific: theme (System/Light/Dark, via `useThemeStore`) and sign-out. Reached from a
+[`SettingsHeaderButton`](components/ui/SettingsHeaderButton.tsx) gear icon — deliberately
+**not** on every tab, just each role's primary/home tab (and resident's Profile), set per
+`Tabs.Screen` in each role's `_layout.tsx`. Theme defaults to `system`
+(`store/theme-store.ts`) so a fresh install matches the device's own light/dark setting
+instead of forcing light.
 
 This replaced sign-out buttons that used to sit inline on each role's primary tab (resident
 Home, admin Residents, security Scan/Alert) — a leftover from before Settings existed, and an

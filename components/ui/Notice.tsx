@@ -1,7 +1,21 @@
 import { View, Text } from 'react-native';
-import { useTheme } from '../../context/theme-context';
 
 type Tone = 'error' | 'success' | 'info';
+
+const TONE_CLASSES: Record<Tone, { box: string; text: string }> = {
+  error: {
+    box: 'bg-danger-muted dark:bg-danger-mutedDark border-danger',
+    text: 'text-danger',
+  },
+  success: {
+    box: 'bg-success-muted dark:bg-success-mutedDark border-success',
+    text: 'text-success',
+  },
+  info: {
+    box: 'bg-brand-50 dark:bg-brand-900 border-brand-800 dark:border-brand-300',
+    text: 'text-brand-800 dark:text-brand-300',
+  },
+};
 
 /**
  * Inline form-level feedback. Replaces Alert.alert for auth, which matters
@@ -9,29 +23,15 @@ type Tone = 'error' | 'success' | 'info';
  * invisible in the browser.
  */
 export function Notice({ tone = 'error', message }: { tone?: Tone; message: string }) {
-  const { colors, spacing, radius, typography } = useTheme();
-
-  const { bg, fg, border } = {
-    error: { bg: colors.dangerMuted, fg: colors.danger, border: colors.danger },
-    success: { bg: colors.successMuted, fg: colors.success, border: colors.success },
-    info: { bg: colors.primaryMuted, fg: colors.primary, border: colors.primary },
-  }[tone];
+  const { box, text } = TONE_CLASSES[tone];
 
   return (
     <View
       accessibilityLiveRegion="polite"
       accessibilityRole="alert"
-      style={{
-        backgroundColor: bg,
-        borderLeftWidth: 3,
-        borderLeftColor: border,
-        borderRadius: radius.sm,
-        paddingVertical: spacing.md,
-        paddingHorizontal: spacing.md,
-        marginBottom: spacing.lg,
-      }}
+      className={`mb-lg rounded-sm border-l-[3px] px-md py-md ${box}`}
     >
-      <Text style={[typography.caption, { color: fg, lineHeight: 19 }]}>{message}</Text>
+      <Text className={`text-[13px] leading-[19px] ${text}`}>{message}</Text>
     </View>
   );
 }

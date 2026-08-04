@@ -1,27 +1,21 @@
 import { View, type ViewProps, type ViewStyle } from 'react-native';
-import { useTheme } from '../../context/theme-context';
 
 interface CardProps extends ViewProps {
   accent?: 'default' | 'danger';
   style?: ViewStyle;
+  className?: string;
 }
 
-export function Card({ accent = 'default', style, children, ...props }: CardProps) {
-  const { colors, radius, spacing } = useTheme();
+const ACCENT_CLASSES: Record<'default' | 'danger', string> = {
+  default: 'border-paper-200 dark:border-ink-border bg-paper-50 dark:bg-ink-surface',
+  danger: 'border-danger bg-brand-50 dark:bg-brand-900',
+};
 
+export function Card({ accent = 'default', style, className, children, ...props }: CardProps) {
   return (
     <View
-      style={[
-        {
-          borderWidth: 1,
-          borderColor: accent === 'danger' ? colors.danger : colors.border,
-          backgroundColor: accent === 'danger' ? colors.primaryMuted : colors.surface,
-          borderRadius: radius.md,
-          padding: spacing.md,
-          marginBottom: spacing.md,
-        },
-        style,
-      ]}
+      style={style}
+      className={`mb-md rounded-md border p-md ${ACCENT_CLASSES[accent]} ${className ?? ''}`}
       {...props}
     >
       {children}

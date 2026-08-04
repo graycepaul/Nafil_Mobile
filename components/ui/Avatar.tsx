@@ -12,6 +12,11 @@ function initials(name?: string | null) {
  * Circular avatar — the photo if set, initials if a name is known, otherwise
  * a generic person glyph. A bare "?" read as an error state rather than "no
  * name yet", which is misleading while a profile is still loading.
+ *
+ * `size` is a runtime number (callers pass 36/44/56/88…), so width/height/
+ * radius stay as `style` — Tailwind's className extraction is static and
+ * can't resolve a template-interpolated arbitrary value like `w-[${size}px]`.
+ * Everything that IS static (colors, layout) is className.
  */
 export function Avatar({
   uri,
@@ -28,7 +33,8 @@ export function Avatar({
     return (
       <Image
         source={{ uri }}
-        style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: colors.surface }}
+        style={{ width: size, height: size, borderRadius: size / 2 }}
+        className="bg-paper-50 dark:bg-ink-surface"
       />
     );
   }
@@ -37,17 +43,14 @@ export function Avatar({
 
   return (
     <View
-      style={{
-        width: size,
-        height: size,
-        borderRadius: size / 2,
-        backgroundColor: colors.primaryMuted,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
+      style={{ width: size, height: size, borderRadius: size / 2 }}
+      className="items-center justify-center bg-brand-50 dark:bg-brand-900"
     >
       {label ? (
-        <Text style={{ fontSize: size * 0.36, fontWeight: '700', color: colors.primary }}>
+        <Text
+          style={{ fontSize: size * 0.36 }}
+          className="font-bold text-brand-800 dark:text-brand-300"
+        >
           {label}
         </Text>
       ) : (

@@ -1,13 +1,5 @@
 import { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  Platform,
-  StyleSheet,
-  type TextInputProps,
-} from 'react-native';
+import { View, Text, TextInput, Pressable, Platform, type TextInputProps } from 'react-native';
 import { useTheme } from '../../context/theme-context';
 
 /**
@@ -45,62 +37,35 @@ export function Input({
   style,
   ...props
 }: InputProps) {
-  const { colors, radius, spacing, typography, elevation } = useTheme();
-  const [focused, setFocused] = useState(false);
+  const { colors } = useTheme();
   const [revealed, setRevealed] = useState(false);
 
-  const borderColor = error
-    ? colors.danger
-    : focused
-      ? colors.primary
-      : colors.border;
-
   return (
-    <View style={{ marginBottom: spacing.lg }}>
+    <View className="mb-lg">
       {showLabel && label && (
-        <Text style={[typography.label, { color: colors.text, marginBottom: spacing.sm }]}>
-          {label}
-        </Text>
+        <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">{label}</Text>
       )}
 
       <View
-        style={[
-          {
-            position: 'relative',
-            justifyContent: 'center',
-            backgroundColor: colors.inputBg,
-            borderRadius: radius.md,
-            borderWidth: 1,
-            borderColor,
-          },
-          !error && elevation.input,
-        ]}
+        className={`relative justify-center rounded-md border bg-white dark:bg-ink-surface ${
+          error
+            ? 'border-danger'
+            : 'border-paper-200 dark:border-ink-border focus-within:border-brand-800 dark:focus-within:border-brand-300 shadow-sm'
+        }`}
       >
         <TextInput
           placeholderTextColor={colors.textMuted}
           secureTextEntry={passwordToggle ? !revealed : props.secureTextEntry}
-          onFocus={(e) => {
-            setFocused(true);
-            props.onFocus?.(e);
-          }}
-          onBlur={(e) => {
-            setFocused(false);
-            props.onBlur?.(e);
-          }}
           accessibilityLabel={label}
+          className={`bg-transparent text-[15px] text-paper-900 dark:text-ink-text py-[16px] pl-lg ${
+            passwordToggle ? 'pr-[60px]' : 'pr-lg'
+          }`}
           style={[
-            styles.input,
             suppressBrowserOutline,
-            {
-              color: colors.text,
-              paddingVertical: spacing.md + 4,
-              paddingLeft: spacing.lg,
-              paddingRight: passwordToggle ? spacing['3xl'] + spacing.md : spacing.lg,
-            },
             props.multiline && {
               minHeight: multilineHeight ?? 96,
               textAlignVertical: 'top',
-              paddingTop: spacing.md,
+              paddingTop: 12,
             },
             style,
           ]}
@@ -113,13 +78,9 @@ export function Input({
             accessibilityRole="button"
             accessibilityLabel={revealed ? 'Hide password' : 'Show password'}
             hitSlop={8}
-            style={({ pressed }) => ({
-              position: 'absolute',
-              right: spacing.lg,
-              opacity: pressed ? 0.6 : 1,
-            })}
+            className="absolute right-lg active:opacity-60"
           >
-            <Text style={[typography.caption, { color: colors.primary, fontWeight: '600' }]}>
+            <Text className="text-[13px] font-semibold text-brand-800 dark:text-brand-300">
               {revealed ? 'Hide' : 'Show'}
             </Text>
           </Pressable>
@@ -127,21 +88,12 @@ export function Input({
       </View>
 
       {error ? (
-        <Text
-          style={[typography.caption, { color: colors.danger, marginTop: spacing.xs }]}
-          accessibilityLiveRegion="polite"
-        >
+        <Text className="mt-xs text-[13px] text-danger" accessibilityLiveRegion="polite">
           {error}
         </Text>
       ) : hint ? (
-        <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
-          {hint}
-        </Text>
+        <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">{hint}</Text>
       ) : null}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  input: { fontSize: 15, backgroundColor: 'transparent' },
-});

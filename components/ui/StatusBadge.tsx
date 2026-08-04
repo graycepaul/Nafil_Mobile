@@ -1,31 +1,22 @@
 import { View, Text } from 'react-native';
-import { useTheme } from '../../context/theme-context';
 
 export type BadgeTone = 'neutral' | 'success' | 'warning' | 'danger' | 'info';
 
+const TONE_CLASSES: Record<BadgeTone, { box: string; text: string }> = {
+  neutral: { box: 'bg-paper-50 dark:bg-ink-surface', text: 'text-paper-500 dark:text-ink-textMuted' },
+  success: { box: 'bg-success-muted dark:bg-success-mutedDark', text: 'text-success' },
+  warning: { box: 'bg-warning-muted dark:bg-warning-mutedDark', text: 'text-warning' },
+  danger: { box: 'bg-danger-muted dark:bg-danger-mutedDark', text: 'text-danger' },
+  info: { box: 'bg-brand-50 dark:bg-brand-900', text: 'text-brand-800 dark:text-brand-300' },
+};
+
 /** Small colored pill for status words (pending, resolved, expired, emergency…). */
 export function StatusBadge({ label, tone = 'neutral' }: { label: string; tone?: BadgeTone }) {
-  const { colors, spacing, radius, typography } = useTheme();
-
-  const { bg, fg } = {
-    neutral: { bg: colors.surface, fg: colors.textMuted },
-    success: { bg: colors.successMuted, fg: colors.success },
-    warning: { bg: colors.warningMuted, fg: colors.warning },
-    danger: { bg: colors.dangerMuted, fg: colors.danger },
-    info: { bg: colors.primaryMuted, fg: colors.primary },
-  }[tone];
+  const { box, text } = TONE_CLASSES[tone];
 
   return (
-    <View
-      style={{
-        alignSelf: 'flex-start',
-        backgroundColor: bg,
-        borderRadius: radius.full,
-        paddingVertical: 3,
-        paddingHorizontal: spacing.sm + 2,
-      }}
-    >
-      <Text style={[typography.micro, { color: fg, textTransform: 'uppercase' }]}>{label}</Text>
+    <View className={`self-start rounded-full px-[10px] py-[3px] ${box}`}>
+      <Text className={`text-[11px] font-semibold uppercase tracking-[0.6px] ${text}`}>{label}</Text>
     </View>
   );
 }
