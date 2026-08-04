@@ -1,29 +1,29 @@
 // Primary brand color: #084DA5
 const airForceBlue = {
-  50: '#EAF1FB',
-  100: '#C9DCF4',
-  200: '#A0C2EA',
-  300: '#74A6DF',
-  400: '#4989D3',
-  500: '#2A70C7',
-  600: '#155CB9',
-  700: '#0C51AC',
-  800: '#084DA5', // primary
-  900: '#06316B',
+  50: "#EAF1FB",
+  100: "#C9DCF4",
+  200: "#A0C2EA",
+  300: "#74A6DF",
+  400: "#4989D3",
+  500: "#2A70C7",
+  600: "#155CB9",
+  700: "#0C51AC",
+  800: "#084DA5", // primary
+  900: "#06316B",
 };
 
 const neutral = {
-  0: '#FFFFFF',
-  50: '#F7F8FA',
-  100: '#EEF0F3',
-  200: '#DEE1E6',
-  300: '#C3C8D0',
-  400: '#9AA1AC',
-  500: '#6B7280',
-  600: '#4B5160',
-  700: '#333846',
-  800: '#1E212B',
-  900: '#0F1116',
+  0: "#FFFFFF",
+  50: "#F7F8FA",
+  100: "#EEF0F3",
+  200: "#DEE1E6",
+  300: "#C3C8D0",
+  400: "#9AA1AC",
+  500: "#6B7280",
+  600: "#4B5160",
+  700: "#333846",
+  800: "#1E212B",
+  900: "#0F1116",
 };
 
 /**
@@ -34,19 +34,19 @@ const neutral = {
  * blue reads as a deliberate accent against it instead of competing with it.
  */
 const darkNeutral = {
-  bg: '#1C1C1E',
-  surface: '#242426',
-  surfaceRaised: '#2C2C2E',
-  border: '#3A3A3C',
-  borderStrong: '#48484A',
-  text: '#F2F2F7',
-  textMuted: '#98989D',
+  bg: "#1C1C1E",
+  surface: "#242426",
+  surfaceRaised: "#2C2C2E",
+  border: "#3A3A3C",
+  borderStrong: "#48484A",
+  text: "#EDEEF0",
+  textMuted: "#98989D",
 };
 
 const semantic = {
-  success: '#1C7C54',
-  warning: '#C98A1B',
-  danger: '#C0392B',
+  success: "#1C7C54",
+  warning: "#C98A1B",
+  danger: "#C0392B",
   info: airForceBlue[500],
 };
 
@@ -83,15 +83,15 @@ export const lightColors = {
   text: neutral[900],
   textMuted: neutral[500],
   focusRing: airForceBlue[400],
-  dangerMuted: '#FDECEA',
-  successMuted: '#E6F4EE',
-  warningMuted: '#FBF0DD',
+  dangerMuted: "#FDECEA",
+  successMuted: "#E6F4EE",
+  warningMuted: "#FBF0DD",
   /** Text/mark colour on `brandField` — the splash screen's solid navy. */
   onHero: neutral[0],
   onHeroMuted: airForceBlue[100],
   /** Frosted-glass surface (light mode only) — a translucent fill over a BlurView. */
-  glassFill: 'rgba(255, 255, 255, 0.55)',
-  glassBorder: 'rgba(255, 255, 255, 0.65)',
+  glassFill: "rgba(255, 255, 255, 0.55)",
+  glassBorder: "rgba(255, 255, 255, 0.65)",
   ...semantic,
 };
 
@@ -119,14 +119,14 @@ export const darkColors = {
   text: darkNeutral.text,
   textMuted: darkNeutral.textMuted,
   focusRing: airForceBlue[300],
-  dangerMuted: '#2A1512',
-  successMuted: '#0F2119',
-  warningMuted: '#2B2210',
+  dangerMuted: "#2A1512",
+  successMuted: "#0F2119",
+  warningMuted: "#2B2210",
   onHero: neutral[0],
   onHeroMuted: airForceBlue[200],
   /** Not used for an actual blur in dark mode (glass is a light-mode look), kept so the two palettes share a shape. */
-  glassFill: 'rgba(36, 36, 38, 0.6)',
-  glassBorder: 'rgba(255, 255, 255, 0.08)',
+  glassFill: "rgba(36, 36, 38, 0.6)",
+  glassBorder: "rgba(255, 255, 255, 0.08)",
   ...semantic,
 };
 
