@@ -40,7 +40,8 @@
         {
           "photosPermission": "Allow Nafil Estates to access your photos so you can set a profile picture."
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "scheme": "nafil-estates"
   }
