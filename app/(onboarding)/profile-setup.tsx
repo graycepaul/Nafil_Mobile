@@ -45,7 +45,7 @@ export default function ProfileSetupScreen() {
     if (!profile) return;
     const trimmed = phone.trim();
     if (!trimmed) {
-      setPhoneError('Enter a phone number — it’s how the gate or your admin reaches you.');
+      setPhoneError('Enter a phone number: it’s how the gate or your admin reaches you.');
       return;
     }
     setPhoneError(undefined);

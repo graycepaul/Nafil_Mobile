@@ -1,13 +1,18 @@
 import { View, Text, Image } from 'react-native';
 import { useTheme } from '../../context/theme-context';
+import { UserIcon } from './icons';
 
 function initials(name?: string | null) {
-  if (!name) return '?';
+  if (!name) return null;
   const parts = name.trim().split(/\s+/);
-  return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || '?';
+  return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || null;
 }
 
-/** Circular avatar — the photo if set, otherwise initials on a tinted background. */
+/**
+ * Circular avatar — the photo if set, initials if a name is known, otherwise
+ * a generic person glyph. A bare "?" read as an error state rather than "no
+ * name yet", which is misleading while a profile is still loading.
+ */
 export function Avatar({
   uri,
   name,
@@ -28,6 +33,8 @@ export function Avatar({
     );
   }
 
+  const label = initials(name);
+
   return (
     <View
       style={{
@@ -39,9 +46,13 @@ export function Avatar({
         justifyContent: 'center',
       }}
     >
-      <Text style={{ fontSize: size * 0.36, fontWeight: '700', color: colors.primary }}>
-        {initials(name)}
-      </Text>
+      {label ? (
+        <Text style={{ fontSize: size * 0.36, fontWeight: '700', color: colors.primary }}>
+          {label}
+        </Text>
+      ) : (
+        <UserIcon color={colors.primary} size={size * 0.5} />
+      )}
     </View>
   );
 }

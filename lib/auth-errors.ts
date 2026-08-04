@@ -15,7 +15,7 @@ const MESSAGES: Array<{ match: RegExp; message: string }> = [
   },
   {
     match: /email not confirmed/i,
-    message: 'Confirm your email first — check your inbox for the link we sent.',
+    message: 'Confirm your email first. Check your inbox for the link we sent.',
   },
   {
     match: /user already registered|already been registered/i,

@@ -397,7 +397,8 @@ app/
     profile-setup.tsx
     join-estate.tsx
     pending-approval.tsx
-  resident/             # resident tab group (Home, ID Card, Visitors, Issues, Announcements)
+  resident/             # resident tab group (Home, Visitors, Issues, Announcements, Profile)
+  settings.tsx           # shared theme + sign-out screen, reached via the header gear icon
   security/             # security tab group
   admin/                # admin tab group (also used by super_admin for now)
 components/
@@ -410,6 +411,7 @@ components/
     AddHouseholdMemberForm.tsx  # create → optional photo, mirrors InviteStaffForm's shape
   ui/                   # themed primitives: Button, Input, Card, Avatar, Notice
     IDCardView.tsx       # shared e-ID card: photo, name, subtitle, estate, QR + code
+    SettingsHeaderButton.tsx  # header gear icon → /settings, wired via tab-options.ts
   AnnouncementsFeed.tsx
   SignOutButton.tsx
 context/
@@ -465,9 +467,9 @@ Don't put server data in Zustand — if it comes from Postgres, it belongs in Qu
 
 ## Resident e-ID cards & household allow list
 
-A fifth resident tab, ID Card ([`app/resident/id-card.tsx`](app/resident/id-card.tsx)), gives
-every resident a permanent, revocable credential instead of forcing everything through a
-single-use visitor pass — useful for the resident's own identity, and for people who come
+The last resident tab, Profile ([`app/resident/profile.tsx`](app/resident/profile.tsx)),
+gives every resident a permanent, revocable credential instead of forcing everything through
+a single-use visitor pass. Useful for the resident's own identity, and for people who come
 constantly (spouse, kids, a live-in nanny, a regular driver) who shouldn't need a fresh code
 generated for them every day.
 
@@ -515,13 +517,22 @@ Verified directly against Postgres (impersonating the security role in a rolled-
 transaction): the lookup succeeds, and an attempted `UPDATE` from that same role is silently
 blocked by RLS, exactly as intended.
 
-**Known limitation carried over from the existing gap:** `app/security/index.tsx` still uses
-`Alert.alert` for its result messages, which — as documented above — is a no-op on web. The
-resident-side UI (ID card, add/revoke, ConfirmDialog) uses `Notice`/`ConfirmDialog` and is
-fully verified visually in the browser; the security-side scan result for these two new
-credential types was verified by replicating security's exact query directly against
-Postgres rather than by screenshot, for the same reason the existing visitor-pass alerts on
-that screen aren't visually verifiable on web either.
+`app/security/index.tsx`'s scan results, and every other error/success message across
+security and admin, render through `Notice` rather than `Alert.alert` (a no-op on web) — see
+"Settings, theme, and sign-out" below for the rest of that cleanup.
+
+## Settings, theme, and sign-out
+
+One shared screen, [`app/settings.tsx`](app/settings.tsx), holds the two things that aren't
+role-specific: theme (System/Light/Dark, via `useThemeStore`) and sign-out. It's reached from
+a gear icon in the header of every tab, every role — wired once in
+[`themedTabOptions`](components/ui/tab-options.ts) rather than duplicated per layout. Theme
+defaults to `system` (`store/theme-store.ts`) so a fresh install matches the device's own
+light/dark setting instead of forcing light.
+
+This replaced sign-out buttons that used to sit inline on each role's primary tab (resident
+Home, admin Residents, security Scan/Alert) — a leftover from before Settings existed, and an
+odd place to bury a destructive-ish account action next to a stats dashboard.
 
 ## Resident dashboard
 

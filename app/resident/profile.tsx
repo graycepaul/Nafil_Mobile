@@ -16,7 +16,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import type { Estate, HouseholdMember } from '../../types/database';
 
-export default function IdCardScreen() {
+export default function ProfileScreen() {
   const profile = useAuthStore((s) => s.profile);
   const refreshProfile = useAuthStore((s) => s.refreshProfile);
   const { colors, spacing, typography } = useTheme();
@@ -76,7 +76,7 @@ export default function IdCardScreen() {
       return;
     }
     await refreshProfile();
-    setNotice('New code generated — your old card no longer works.');
+    setNotice('New code generated. Your old card no longer works.');
   }
 
   async function revokeMember() {
@@ -119,7 +119,7 @@ export default function IdCardScreen() {
               name={profile.full_name ?? 'You'}
               subtitle={profile.unit_no ? `Unit ${profile.unit_no}` : undefined}
               estateName={estate?.name}
-              code={profile.resident_code ?? '—'}
+              code={profile.resident_code ?? 'N/A'}
             />
 
             <Button
@@ -133,7 +133,7 @@ export default function IdCardScreen() {
               Household & frequent visitors
             </Text>
             <Text style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.md }]}>
-              Give family, house help, or a regular driver their own standing card — no need to
+              Give family, house help, or a regular driver their own standing card. No need to
               generate a new visitor pass every time they come.
             </Text>
 
@@ -219,7 +219,7 @@ export default function IdCardScreen() {
                       variant="secondary"
                       onPress={async () => {
                         const outcome = await shareHouseholdCard(viewingMember, estate?.name);
-                        if (outcome === 'copied') setNotice('Copied — paste it into WhatsApp.');
+                        if (outcome === 'copied') setNotice('Copied. Paste it into WhatsApp.');
                       }}
                       style={{ flex: 1 }}
                     />
@@ -251,7 +251,7 @@ export default function IdCardScreen() {
       <ConfirmDialog
         visible={confirmingRegenerate}
         title="Regenerate your code?"
-        message="Your current ID card — printed or on-screen — will stop working immediately. Only do this if you think your code was seen by someone it shouldn't have been."
+        message="Your current ID card (printed or on-screen) will stop working immediately. Only do this if you think your code was seen by someone it shouldn't have been."
         confirmLabel="Regenerate"
         cancelLabel="Cancel"
         destructive

@@ -7,8 +7,8 @@ export function buildHouseholdCardMessage(member: HouseholdMember, estateName?: 
     '',
     member.code,
     '',
-    `Standing access as ${member.relationship.toLowerCase()} — no expiry, until the resident revokes it.`,
-    'Show this code, or the QR on their ID card, at the gate.',
+    `Standing access as ${member.relationship.toLowerCase()}. No expiry, until the resident revokes it.`,
+    'Show this code, or the QR on their card, at the gate.',
   ].join('\n');
 }
 

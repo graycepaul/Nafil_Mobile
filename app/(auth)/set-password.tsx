@@ -96,7 +96,7 @@ export default function SetPasswordScreen() {
     return (
       <AuthShell title="Checking your link…">
         <Text style={[typography.body, { color: colors.textMuted }]}>
-          One moment — confirming this link is still valid.
+          One moment, confirming this link is still valid.
         </Text>
       </AuthShell>
     );
@@ -121,7 +121,7 @@ export default function SetPasswordScreen() {
     return (
       <AuthShell
         title="Password set"
-        subtitle="You're all set — continue into your account."
+        subtitle="You're all set. Continue into your account."
       >
         <Button label="Continue" onPress={() => router.replace('/')} />
       </AuthShell>

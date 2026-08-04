@@ -7,7 +7,6 @@ import { useTheme } from '../../context/theme-context';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Notice } from '../../components/ui/Notice';
-import { SignOutButton } from '../../components/SignOutButton';
 import type { VisitorPass, HouseholdMember, Profile } from '../../types/database';
 
 type NoticeTone = 'error' | 'success' | 'info';
@@ -44,7 +43,7 @@ export default function SecurityScanScreen() {
     if (residentMatch) {
       setNotice({
         tone: 'success',
-        message: `Resident verified — ${residentMatch.full_name ?? 'Resident'}, Unit ${residentMatch.unit_no ?? '—'}.`,
+        message: `Resident verified: ${residentMatch.full_name ?? 'Resident'}, Unit ${residentMatch.unit_no ?? 'N/A'}.`,
       });
       setManualCode('');
       setProcessing(false);
@@ -63,12 +62,12 @@ export default function SecurityScanScreen() {
       if (householdMatch.status === 'revoked') {
         setNotice({
           tone: 'error',
-          message: `Revoked — ${householdMatch.full_name}'s access was revoked by the resident.`,
+          message: `Revoked: ${householdMatch.full_name}'s access was revoked by the resident.`,
         });
       } else {
         setNotice({
           tone: 'success',
-          message: `Verified — ${householdMatch.full_name} (${householdMatch.relationship}).`,
+          message: `Verified: ${householdMatch.full_name} (${householdMatch.relationship}).`,
         });
       }
       setManualCode('');
@@ -87,7 +86,7 @@ export default function SecurityScanScreen() {
     if (fetchError || !pass) {
       setNotice({
         tone: 'error',
-        message: "Not found — this code doesn't match a resident ID, household card, or visitor pass for your estate.",
+        message: "Not found: this code doesn't match a resident ID, household card, or visitor pass for your estate.",
       });
       setProcessing(false);
       setScanning(true);
@@ -95,7 +94,7 @@ export default function SecurityScanScreen() {
     }
 
     if (pass.status !== 'pending') {
-      setNotice({ tone: 'error', message: `Invalid pass — this pass is already "${pass.status}".` });
+      setNotice({ tone: 'error', message: `Invalid pass: this pass is already "${pass.status}".` });
       setProcessing(false);
       setScanning(true);
       return;
@@ -108,13 +107,13 @@ export default function SecurityScanScreen() {
     // window lapsed hours ago still reads as valid at the gate.
     const now = Date.now();
     if (new Date(pass.valid_until).getTime() < now) {
-      setNotice({ tone: 'error', message: `Expired — ${pass.visitor_name}'s pass expired and can no longer be used.` });
+      setNotice({ tone: 'error', message: `Expired: ${pass.visitor_name}'s pass expired and can no longer be used.` });
       setProcessing(false);
       setScanning(true);
       return;
     }
     if (new Date(pass.valid_from).getTime() > now) {
-      setNotice({ tone: 'error', message: `Not yet valid — ${pass.visitor_name}'s pass isn't valid until later.` });
+      setNotice({ tone: 'error', message: `Not yet valid: ${pass.visitor_name}'s pass isn't valid until later.` });
       setProcessing(false);
       setScanning(true);
       return;
@@ -134,7 +133,7 @@ export default function SecurityScanScreen() {
         vehicle_plate: pass.vehicle_plate,
         method: 'qr',
       });
-      setNotice({ tone: 'success', message: `Checked in — ${pass.visitor_name} has been checked in.` });
+      setNotice({ tone: 'success', message: `Checked in: ${pass.visitor_name} has been checked in.` });
     } else {
       setNotice({ tone: 'error', message: updateError.message });
     }
@@ -154,14 +153,7 @@ export default function SecurityScanScreen() {
   // straight to manual entry rather than showing a viewfinder that can't scan.
   const canScan = Platform.OS !== 'web';
 
-  const header = (
-    <>
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: spacing.sm }}>
-        <SignOutButton />
-      </View>
-      {notice && <Notice tone={notice.tone} message={notice.message} />}
-    </>
-  );
+  const header = notice ? <Notice tone={notice.tone} message={notice.message} /> : null;
 
   const manualEntry = (
     <>
@@ -203,9 +195,6 @@ export default function SecurityScanScreen() {
   if (!permission.granted) {
     return (
       <View style={[container, { justifyContent: 'center' }]}>
-        <View style={{ position: 'absolute', top: spacing.lg, right: spacing.lg }}>
-          <SignOutButton />
-        </View>
         <Text
           style={[
             typography.body,

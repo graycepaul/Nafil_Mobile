@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
+import { useEffect, useLayoutEffect, useState } from 'react';
+import { View, Text, FlatList, RefreshControl, ActivityIndicator, Pressable } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { sharePass } from '../../lib/share-pass';
 import { useAuthStore } from '../../store/auth-store';
@@ -14,7 +15,7 @@ import { Notice } from '../../components/ui/Notice';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { TicketIcon } from '../../components/ui/icons';
+import { TicketIcon, PlusIcon } from '../../components/ui/icons';
 import type { VisitorPass, VisitorPassStatus } from '../../types/database';
 
 const STATUS_TONE: Record<VisitorPassStatus, BadgeTone> = {
@@ -28,6 +29,9 @@ export default function VisitorPassScreen() {
   const profile = useAuthStore((s) => s.profile);
   const { colors, spacing, typography } = useTheme();
   const queryClient = useQueryClient();
+  const navigation = useNavigation();
+  const { new: openOnLoad } = useLocalSearchParams<{ new?: string }>();
+  const [formOpen, setFormOpen] = useState(false);
   const [visitorName, setVisitorName] = useState('');
   const [visitorPhone, setVisitorPhone] = useState('');
   const [creating, setCreating] = useState(false);
@@ -35,6 +39,31 @@ export default function VisitorPassScreen() {
   const [pendingRevoke, setPendingRevoke] = useState<VisitorPass | null>(null);
   const [formError, setFormError] = useState<string>();
   const [formNotice, setFormNotice] = useState<string>();
+
+  // Deep-linked from Home's "+ Visitor pass" quick action (?new=1) — opens
+  // straight to the form instead of landing on a closed tab the user then
+  // has to tap again.
+  useEffect(() => {
+    if (openOnLoad) setFormOpen(true);
+  }, [openOnLoad]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable
+          onPress={() => setFormOpen((v) => !v)}
+          accessibilityRole="button"
+          accessibilityLabel={formOpen ? 'Close form' : 'Generate pass'}
+          hitSlop={8}
+          style={{ paddingHorizontal: spacing.lg }}
+        >
+          <View style={{ transform: [{ rotate: formOpen ? '45deg' : '0deg' }] }}>
+            <PlusIcon color={colors.onHeaderBg} size={24} />
+          </View>
+        </Pressable>
+      ),
+    });
+  }, [navigation, formOpen, colors.onHeaderBg, spacing.lg]);
 
   const { data: passes, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['visitor_passes', profile?.id],
@@ -67,6 +96,7 @@ export default function VisitorPassScreen() {
     }
     setVisitorName('');
     setVisitorPhone('');
+    setFormOpen(false);
     queryClient.invalidateQueries({ queryKey: ['visitor_passes', profile.id] });
     queryClient.invalidateQueries({ queryKey: ['dashboard_active_passes'] });
   }
@@ -102,25 +132,29 @@ export default function VisitorPassScreen() {
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
         ListHeaderComponent={
           <View>
-            {formError && <Notice message={formError} />}
-            {formNotice && <Notice tone="success" message={formNotice} />}
-            <Input label="Visitor name" value={visitorName} onChangeText={setVisitorName} />
-            <Input
-              label="Visitor phone (optional)"
-              value={visitorPhone}
-              onChangeText={setVisitorPhone}
-              keyboardType="phone-pad"
-            />
-            <Button
-              label="Generate pass"
-              onPress={createPass}
-              loading={creating}
-              disabled={!visitorName.trim()}
-            />
+            {formOpen && (
+              <Card style={{ marginBottom: spacing.lg }}>
+                {formError && <Notice message={formError} />}
+                {formNotice && <Notice tone="success" message={formNotice} />}
+                <Input label="Visitor name" value={visitorName} onChangeText={setVisitorName} />
+                <Input
+                  label="Visitor phone (optional)"
+                  value={visitorPhone}
+                  onChangeText={setVisitorPhone}
+                  keyboardType="phone-pad"
+                />
+                <Button
+                  label="Generate pass"
+                  onPress={createPass}
+                  loading={creating}
+                  disabled={!visitorName.trim()}
+                />
+              </Card>
+            )}
             <Text
               style={[
                 typography.subheading,
-                { color: colors.text, marginTop: spacing.xl, marginBottom: spacing.sm },
+                { color: colors.text, marginBottom: spacing.sm },
               ]}
             >
               Your passes
@@ -133,7 +167,7 @@ export default function VisitorPassScreen() {
           <EmptyState
             icon={<TicketIcon color={colors.textMuted} size={26} />}
             title="No passes yet"
-            message="Generate one above and share the code with your visitor."
+            message="Tap + up top to generate one and share the code with your visitor."
           />
         }
         renderItem={({ item }) => {
@@ -179,7 +213,7 @@ export default function VisitorPassScreen() {
                     onPress={async () => {
                       const outcome = await sharePass(item);
                       if (outcome === 'copied') {
-                        setFormNotice('Copied — paste it into WhatsApp.');
+                        setFormNotice('Copied. Paste it into WhatsApp.');
                       }
                     }}
                     style={{ flex: 1 }}

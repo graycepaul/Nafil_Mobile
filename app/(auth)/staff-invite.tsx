@@ -81,7 +81,7 @@ export default function StaffInviteScreen() {
     setCheckingCode(false);
 
     if (!result.valid) {
-      setCodeError('That code isn’t valid — check it and try again, or ask your admin for a new one.');
+      setCodeError('That code isn’t valid. Check it and try again, or ask your admin for a new one.');
       return;
     }
     setInvite(result);
@@ -152,10 +152,10 @@ export default function StaffInviteScreen() {
     return (
       <AuthShell
         title="Check your email"
-        subtitle={`We've sent a confirmation link to ${invite?.email}. Click it to finish setting up your account — you'll land straight in your dashboard.`}
+        subtitle={`We've sent a confirmation link to ${invite?.email}. Click it to finish setting up your account. You'll land straight in your dashboard.`}
       >
         <Text style={[typography.caption, { color: colors.textMuted, lineHeight: 19 }]}>
-          Your name, phone, and photo are already saved — there's nothing left to fill in once
+          Your name, phone, and photo are already saved. There's nothing left to fill in once
           you confirm.
         </Text>
       </AuthShell>

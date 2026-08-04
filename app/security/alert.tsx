@@ -6,7 +6,6 @@ import { useTheme } from '../../context/theme-context';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Notice } from '../../components/ui/Notice';
-import { SignOutButton } from '../../components/SignOutButton';
 
 export default function SecurityAlertScreen() {
   const profile = useAuthStore((s) => s.profile);
@@ -34,15 +33,11 @@ export default function SecurityAlertScreen() {
     }
     setTitle('');
     setBody('');
-    setNotice({ tone: 'success', message: 'Alert sent — all residents in this estate have been notified.' });
+    setNotice({ tone: 'success', message: 'Alert sent. All residents in this estate have been notified.' });
   }
 
   return (
     <View style={{ flex: 1, padding: spacing.xl, backgroundColor: colors.background }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: spacing.sm }}>
-        <SignOutButton />
-      </View>
-
       <Text
         style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.lg }]}
       >

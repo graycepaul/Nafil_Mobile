@@ -125,8 +125,8 @@ export default function PendingApprovalScreen() {
       </View>
 
       <Text style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.xl, lineHeight: 19 }]}>
-        Most requests are reviewed within a day or two. You don’t need to do anything else —
-        we'll let you in as soon as it's confirmed. Check back here any time.
+        Most requests are reviewed within a day or two. You don’t need to do anything else.
+        We'll let you in as soon as it's confirmed. Check back here any time.
       </Text>
 
       <Button label="Check status" variant="secondary" onPress={handleCheckStatus} loading={checking} />

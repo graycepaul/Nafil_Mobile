@@ -108,7 +108,7 @@ export function AddHouseholdMemberForm({
           {created.full_name} added
         </Text>
         <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs, marginBottom: spacing.md }]}>
-          Their card is ready — code {created.code}. A photo is optional but helps security recognise them.
+          Their card is ready. Code: {created.code}. A photo is optional but helps security recognise them.
         </Text>
         <View style={{ alignItems: 'center', marginBottom: spacing.md }}>
           <Avatar uri={created.avatar_url} name={created.full_name} size={64} />
@@ -136,7 +136,7 @@ export function AddHouseholdMemberForm({
       <Input label="Full name" placeholder="Full name" value={fullName} onChangeText={setFullName} />
       <Input
         label="Relationship"
-        placeholder="Relationship — e.g. Spouse, Nanny, Driver"
+        placeholder="Relationship (e.g. Spouse, Nanny, Driver)"
         value={relationship}
         onChangeText={setRelationship}
       />

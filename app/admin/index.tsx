@@ -8,7 +8,8 @@ import { Avatar } from '../../components/ui/Avatar';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Notice } from '../../components/ui/Notice';
-import { SignOutButton } from '../../components/SignOutButton';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { UserIcon } from '../../components/ui/icons';
 import { InviteStaffForm } from '../../components/admin/InviteStaffForm';
 import type { Estate, JoinRequestWithApplicant, Profile } from '../../types/database';
 
@@ -87,11 +88,9 @@ export default function AdminResidentsScreen() {
       keyExtractor={(item) => item.id}
       ListHeaderComponent={
         <View>
-          <SignOutButton />
-
           {formError && <Notice message={formError} />}
 
-          <View style={{ marginTop: spacing.xl }}>
+          <View>
             <InviteStaffForm estateName={estate?.name} />
           </View>
 
@@ -102,9 +101,9 @@ export default function AdminResidentsScreen() {
           </Text>
 
           {(!requests || requests.length === 0) && (
-            <Text style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.xl }]}>
-              No join requests waiting on you.
-            </Text>
+            <View style={{ marginBottom: spacing.lg }}>
+              <EmptyState title="All caught up" message="No join requests waiting on you." />
+            </View>
           )}
 
           {requests?.map((req) => (
@@ -141,9 +140,11 @@ export default function AdminResidentsScreen() {
         </View>
       }
       ListEmptyComponent={
-        <Text style={{ color: colors.textMuted, textAlign: 'center', marginTop: spacing.lg }}>
-          No approved residents yet.
-        </Text>
+        <EmptyState
+          icon={<UserIcon color={colors.textMuted} size={26} />}
+          title="No approved residents yet"
+          message="Approved residents in your estate will show up here."
+        />
       }
       renderItem={({ item }) => (
         <Card style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.sm }}>
@@ -153,7 +154,7 @@ export default function AdminResidentsScreen() {
               {item.full_name ?? item.phone ?? 'Unnamed'}
             </Text>
             <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
-              {item.role === 'resident' ? `Unit ${item.unit_no ?? '—'}` : item.role.replace('_', ' ')}
+              {item.role === 'resident' ? `Unit ${item.unit_no ?? 'N/A'}` : item.role.replace('_', ' ')}
             </Text>
           </View>
         </Card>

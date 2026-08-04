@@ -5,6 +5,8 @@ import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { ClockIcon } from '../../components/ui/icons';
 import type { VisitorLog } from '../../types/database';
 
 export default function ActiveVisitorsScreen() {
@@ -41,9 +43,11 @@ export default function ActiveVisitorsScreen() {
       data={logs ?? []}
       keyExtractor={(item) => item.id}
       ListEmptyComponent={
-        <Text style={{ color: colors.textMuted, textAlign: 'center', marginTop: spacing['2xl'] }}>
-          No visitors currently on-site.
-        </Text>
+        <EmptyState
+          icon={<ClockIcon color={colors.textMuted} size={26} />}
+          title="No one on-site"
+          message="Checked-in visitors will show up here until they check out."
+        />
       }
       renderItem={({ item }) => (
         <Card style={{ flexDirection: 'row', alignItems: 'center' }}>

@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
+import { useEffect, useLayoutEffect, useState } from 'react';
+import { View, Text, FlatList, RefreshControl, ActivityIndicator, Pressable } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
@@ -11,7 +12,7 @@ import { Card } from '../../components/ui/Card';
 import { Notice } from '../../components/ui/Notice';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { WrenchIcon } from '../../components/ui/icons';
+import { WrenchIcon, PlusIcon } from '../../components/ui/icons';
 import type { Issue, IssueStatus } from '../../types/database';
 
 const STATUS_TONE: Record<IssueStatus, BadgeTone> = {
@@ -30,10 +31,35 @@ export default function IssuesScreen() {
   const profile = useAuthStore((s) => s.profile);
   const { colors, spacing, typography } = useTheme();
   const queryClient = useQueryClient();
+  const navigation = useNavigation();
+  const { new: openOnLoad } = useLocalSearchParams<{ new?: string }>();
+  const [formOpen, setFormOpen] = useState(false);
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string>();
+
+  useEffect(() => {
+    if (openOnLoad) setFormOpen(true);
+  }, [openOnLoad]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable
+          onPress={() => setFormOpen((v) => !v)}
+          accessibilityRole="button"
+          accessibilityLabel={formOpen ? 'Close form' : 'Report issue'}
+          hitSlop={8}
+          style={{ paddingHorizontal: spacing.lg }}
+        >
+          <View style={{ transform: [{ rotate: formOpen ? '45deg' : '0deg' }] }}>
+            <PlusIcon color={colors.onHeaderBg} size={24} />
+          </View>
+        </Pressable>
+      ),
+    });
+  }, [navigation, formOpen, colors.onHeaderBg, spacing.lg]);
 
   const { data: issues, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['issues', profile?.id],
@@ -65,6 +91,7 @@ export default function IssuesScreen() {
     }
     setCategory('');
     setDescription('');
+    setFormOpen(false);
     queryClient.invalidateQueries({ queryKey: ['issues', profile.id] });
     queryClient.invalidateQueries({ queryKey: ['dashboard_open_issues'] });
   }
@@ -84,29 +111,33 @@ export default function IssuesScreen() {
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
       ListHeaderComponent={
         <View>
-          {formError && <Notice message={formError} />}
-          <Input
-            label="Category"
-            placeholder="e.g. Plumbing, Electrical, Security"
-            value={category}
-            onChangeText={setCategory}
-          />
-          <Input
-            label="Description"
-            value={description}
-            onChangeText={setDescription}
-            multiline
-          />
-          <Button
-            label="Report issue"
-            onPress={submitIssue}
-            loading={submitting}
-            disabled={!category.trim() || !description.trim()}
-          />
+          {formOpen && (
+            <Card style={{ marginBottom: spacing.lg }}>
+              {formError && <Notice message={formError} />}
+              <Input
+                label="Category"
+                placeholder="e.g. Plumbing, Electrical, Security"
+                value={category}
+                onChangeText={setCategory}
+              />
+              <Input
+                label="Description"
+                value={description}
+                onChangeText={setDescription}
+                multiline
+              />
+              <Button
+                label="Report issue"
+                onPress={submitIssue}
+                loading={submitting}
+                disabled={!category.trim() || !description.trim()}
+              />
+            </Card>
+          )}
           <Text
             style={[
               typography.subheading,
-              { color: colors.text, marginTop: spacing.xl, marginBottom: spacing.sm },
+              { color: colors.text, marginBottom: spacing.sm },
             ]}
           >
             Your reports
@@ -119,7 +150,7 @@ export default function IssuesScreen() {
         <EmptyState
           icon={<WrenchIcon color={colors.textMuted} size={26} />}
           title="No issues reported"
-          message="Anything broken or worth flagging? Report it above."
+          message="Anything broken or worth flagging? Tap + up top to report it."
         />
       }
       renderItem={({ item }) => (

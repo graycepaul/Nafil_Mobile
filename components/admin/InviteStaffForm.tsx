@@ -78,7 +78,7 @@ export function InviteStaffForm({ estateName }: { estateName?: string }) {
       <Card style={{ marginBottom: spacing.xl }}>
         <Text style={[typography.bodyStrong, { color: colors.text }]}>Invite created</Text>
         <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs, marginBottom: spacing.md }]}>
-          Share this code with {created.email} — it works once, for 7 days.
+          Share this code with {created.email}. It works once, for 7 days.
         </Text>
         <View
           style={{

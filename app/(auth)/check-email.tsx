@@ -82,7 +82,7 @@ export default function CheckEmailScreen() {
 
       {error && <Notice message={error} />}
       {resent && !error && (
-        <Notice tone="success" message="Sent again — check your inbox." />
+        <Notice tone="success" message="Sent again. Check your inbox." />
       )}
 
       <Button

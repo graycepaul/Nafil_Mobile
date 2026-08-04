@@ -12,10 +12,10 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
-      // Light by default rather than 'system' — the brand is designed light-first,
-      // and following the OS would mean the client's first launch looks different
-      // depending on their phone settings. Users can still opt into dark/system.
-      mode: 'light',
+      // System by default: a fresh install should match the device's own
+      // light/dark setting rather than forcing light on everyone. Reachable
+      // any time from the settings gear in the header.
+      mode: 'system',
       setMode: (mode) => set({ mode }),
     }),
     {

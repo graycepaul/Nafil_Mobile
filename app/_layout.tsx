@@ -24,6 +24,10 @@ const ROLE_HOME: Record<UserRole, string> = {
 
 const AUTH_GROUP = "(auth)";
 const ONBOARDING_GROUP = "(onboarding)";
+// Shared across every role (theme, sign-out) — not nested under any role's
+// section, so it needs its own exemption from the "must be on your own role's
+// home section" redirect below, the same way the auth-group exceptions work.
+const SHARED_ROUTES = new Set(["settings", "support"]);
 // Reachable even when a session already exists — a fresh password-reset/invite
 // link establishes a session, and the usual "session exists → go to role home"
 // redirect below would otherwise bounce the user away before they can set a
@@ -102,6 +106,8 @@ function RootNavigation() {
       if (section !== ONBOARDING_GROUP) router.replace("/onboarding");
       return;
     }
+
+    if (section !== undefined && SHARED_ROUTES.has(section)) return;
 
     const homePath = ROLE_HOME[profile.role];
     const isOnOwnSection = section === homePath.slice(1);

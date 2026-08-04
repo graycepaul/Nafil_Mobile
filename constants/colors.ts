@@ -26,6 +26,23 @@ const neutral = {
   900: '#0F1116',
 };
 
+/**
+ * A true, warm-neutral gray scale for dark mode — deliberately separate from
+ * `neutral`, whose 800/900 steps carry a faint blue cast that (combined with
+ * a solid blue header) read as harsh/cheap rather than premium. This scale
+ * is closer to iOS's system dark grays: no color cast, just tonal steps, so
+ * blue reads as a deliberate accent against it instead of competing with it.
+ */
+const darkNeutral = {
+  bg: '#1C1C1E',
+  surface: '#242426',
+  surfaceRaised: '#2C2C2E',
+  border: '#3A3A3C',
+  borderStrong: '#48484A',
+  text: '#F2F2F7',
+  textMuted: '#98989D',
+};
+
 const semantic = {
   success: '#1C7C54',
   warning: '#C98A1B',
@@ -54,6 +71,13 @@ export const lightColors = {
   inputBg: neutral[0],
   /** Full-bleed brand field: splash screen, and any inverted surface. */
   brandField: airForceBlue[800],
+  /**
+   * Tab/nav header — matches the page background rather than a solid brand
+   * fill. Most modern apps don't drop a colored bar across the top; blue
+   * stays reserved for buttons, links, and active states instead.
+   */
+  headerBg: neutral[0],
+  onHeaderBg: neutral[900],
   border: neutral[200],
   borderStrong: neutral[300],
   text: neutral[900],
@@ -65,6 +89,9 @@ export const lightColors = {
   /** Text/mark colour on `brandField` — the splash screen's solid navy. */
   onHero: neutral[0],
   onHeroMuted: airForceBlue[100],
+  /** Frosted-glass surface (light mode only) — a translucent fill over a BlurView. */
+  glassFill: 'rgba(255, 255, 255, 0.55)',
+  glassBorder: 'rgba(255, 255, 255, 0.65)',
   ...semantic,
 };
 
@@ -77,21 +104,29 @@ export const darkColors = {
   // with white text rather than the dark-on-pale-blue the link colour would give.
   buttonFill: airForceBlue[500],
   onButtonFill: neutral[0],
-  background: neutral[900],
-  surface: neutral[800],
-  surfaceRaised: neutral[800],
-  inputBg: neutral[800],
+  background: darkNeutral.bg,
+  surface: darkNeutral.surface,
+  surfaceRaised: darkNeutral.surfaceRaised,
+  inputBg: darkNeutral.surface,
   brandField: airForceBlue[900],
-  border: neutral[700],
-  borderStrong: neutral[600],
-  text: neutral[50],
-  textMuted: neutral[400],
+  // Blue stays an accent (buttons, active tab, links) rather than a big
+  // field — the header matches the page's own neutral tone instead of
+  // dropping a saturated blue bar onto a near-black background.
+  headerBg: darkNeutral.bg,
+  onHeaderBg: darkNeutral.text,
+  border: darkNeutral.border,
+  borderStrong: darkNeutral.borderStrong,
+  text: darkNeutral.text,
+  textMuted: darkNeutral.textMuted,
   focusRing: airForceBlue[300],
   dangerMuted: '#2A1512',
   successMuted: '#0F2119',
   warningMuted: '#2B2210',
   onHero: neutral[0],
   onHeroMuted: airForceBlue[200],
+  /** Not used for an actual blur in dark mode (glass is a light-mode look), kept so the two palettes share a shape. */
+  glassFill: 'rgba(36, 36, 38, 0.6)',
+  glassBorder: 'rgba(255, 255, 255, 0.08)',
   ...semantic,
 };
 

@@ -56,7 +56,7 @@ export default function JoinEstateScreen() {
     if (error) {
       setFormError(
         error.code === '23505'
-          ? 'You already have a request in review — no need to submit another.'
+          ? 'You already have a request in review. No need to submit another.'
           : error.message
       );
       return;
