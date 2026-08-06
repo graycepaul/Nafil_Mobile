@@ -18,6 +18,7 @@ import { Card } from "../../components/ui/Card";
 import { StatCard } from "../../components/ui/StatCard";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { emergencyLabel } from "../../components/AnnouncementsFeed";
 import type { Announcement, Estate } from "../../types/database";
 
 export default function ResidentHome() {
@@ -183,7 +184,7 @@ export default function ResidentHome() {
               <View className="flex-1">
                 {latestAnnouncement.severity === "emergency" && (
                   <View className="mb-xs">
-                    <StatusBadge label="Emergency" tone="danger" />
+                    <StatusBadge label={emergencyLabel(latestAnnouncement.category)} tone="danger" />
                   </View>
                 )}
                 <Text

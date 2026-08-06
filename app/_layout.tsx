@@ -12,6 +12,7 @@ import {
   establishSessionFromUrl,
   urlLooksLikeAuthLink,
 } from "../lib/auth-session";
+import { registerForPushNotifications } from "../lib/push-notifications";
 import type { UserRole } from "../types/database";
 
 const queryClient = new QueryClient();
@@ -72,6 +73,18 @@ function RootNavigation() {
 
   useEffect(() => init(), [init]);
   useNativeAuthLinks();
+
+  // Registering as early as sign-in (rather than waiting for a specific
+  // screen) means a resident's device is reachable for an emergency alert
+  // from the moment they're part of an estate, not just once they happen to
+  // visit some particular tab. estate_id gates it — a token registered
+  // before a resident has one would just be unfindable by /alerts/broadcast,
+  // which looks up recipients by estate.
+  useEffect(() => {
+    if (profile?.id && profile.estate_id) {
+      registerForPushNotifications(profile.id);
+    }
+  }, [profile?.id, profile?.estate_id]);
 
   useEffect(() => {
     if (loading) return;

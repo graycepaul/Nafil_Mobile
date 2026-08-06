@@ -113,6 +113,8 @@ export interface Issue {
   resolved_at: string | null;
 }
 
+export type AlertCategory = 'missing_child' | 'security_breach' | 'epidemic' | 'other';
+
 export interface Announcement {
   id: string;
   estate_id: string;
@@ -120,5 +122,14 @@ export interface Announcement {
   title: string;
   body: string;
   severity: AnnouncementSeverity;
+  category: AlertCategory | null;
+  created_at: string;
+}
+
+export interface PushToken {
+  id: string;
+  profile_id: string;
+  token: string;
+  platform: string | null;
   created_at: string;
 }
