@@ -41,7 +41,13 @@
           "photosPermission": "Allow Nafil Estates to access your photos so you can set a profile picture."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "color": "#084DA5"
+        }
+      ]
     ],
     "scheme": "nafil-estates"
   }
