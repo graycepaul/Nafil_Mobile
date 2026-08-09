@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "nafil-estates",
-    "slug": "nafil-estates",
+    "slug": "nafil-estate",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,7 +16,11 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -49,6 +53,13 @@
         }
       ]
     ],
-    "scheme": "nafil-estates"
+    "scheme": "nafil-estates",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "9628b28f-924b-49a3-b652-e0327360c7d9"
+      }
+    },
+    "owner": "graycepaul"
   }
 }
