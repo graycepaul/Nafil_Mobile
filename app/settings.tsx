@@ -1,10 +1,15 @@
+import { useState } from 'react';
 import { View, Text, Pressable, ScrollView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/theme-context';
+import { useAuthStore } from '../store/auth-store';
 import type { ThemeMode } from '../store/theme-store';
 import { Card } from '../components/ui/Card';
 import { SignOutButton } from '../components/SignOutButton';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { Notice } from '../components/ui/Notice';
 import { requestDndAccess } from '../lib/push-notifications';
+import { apiDelete, ApiError } from '../lib/api';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 
 const THEME_OPTIONS: { mode: ThemeMode; label: string }[] = [
@@ -22,6 +27,23 @@ const THEME_OPTIONS: { mode: ThemeMode; label: string }[] = [
 export default function SettingsScreen() {
   const router = useRouter();
   const { colors, mode, setMode } = useTheme();
+  const signOut = useAuthStore((s) => s.signOut);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string>();
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    setDeleteError(undefined);
+    try {
+      await apiDelete('/account');
+      await signOut();
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
+      setDeleting(false);
+      setConfirmingDelete(false);
+    }
+  }
 
   return (
     <View className="flex-1 bg-white dark:bg-ink-bg">
@@ -101,7 +123,32 @@ export default function SettingsScreen() {
         <Card className="items-start shadow-sm">
           <SignOutButton />
         </Card>
+
+        <Text className="mb-sm mt-xl text-sm font-medium text-paper-500 dark:text-ink-textMuted">
+          DANGER ZONE
+        </Text>
+        {deleteError && <Notice message={deleteError} />}
+        <Card className="items-start shadow-sm">
+          <Pressable onPress={() => setConfirmingDelete(true)} accessibilityRole="button" className="p-sm">
+            <Text className="font-semibold text-danger">Delete my account</Text>
+          </Pressable>
+          <Text className="px-sm pb-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
+            Permanently deletes your profile, visitor passes, issues, and all other data tied
+            to your account. This can&apos;t be undone.
+          </Text>
+        </Card>
       </ScrollView>
+
+      <ConfirmDialog
+        visible={confirmingDelete}
+        title="Delete your account?"
+        message="This permanently deletes your profile, visitor passes, issues, and all other data tied to your account. This can't be undone."
+        confirmLabel="Delete account"
+        destructive
+        loading={deleting}
+        onConfirm={handleDeleteAccount}
+        onCancel={() => setConfirmingDelete(false)}
+      />
     </View>
   );
 }
