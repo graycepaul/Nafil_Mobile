@@ -32,7 +32,7 @@ export async function registerForPushNotifications(profileId: string): Promise<s
     await Notifications.setNotificationChannelAsync('emergency', {
       name: 'Emergency alerts',
       importance: Notifications.AndroidImportance.MAX,
-      sound: 'emergency-alert.wav',
+      sound: 'emergency_alert.wav',
       vibrationPattern: [0, 250, 250, 250],
       // Lets a security/admin broadcast ring through even when the resident's
       // phone is in Do Not Disturb — Android still requires the resident to
