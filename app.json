@@ -56,7 +56,7 @@
         "expo-notifications",
         {
           "color": "#084DA5",
-          "sounds": ["./assets/sounds/emergency-alert.wav"]
+          "sounds": ["./assets/sounds/emergency_alert.wav"]
         }
       ]
     ],
