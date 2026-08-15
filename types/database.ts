@@ -133,3 +133,22 @@ export interface PushToken {
   platform: string | null;
   created_at: string;
 }
+
+export type NotificationType =
+  | 'announcement'
+  | 'emergency'
+  | 'issue_status'
+  | 'visitor_pass_used'
+  | 'join_request_approved'
+  | 'staff_invite_accepted';
+
+export interface Notification {
+  id: string;
+  profile_id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  data: Record<string, unknown>;
+  read_at: string | null;
+  created_at: string;
+}

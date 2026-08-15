@@ -49,6 +49,12 @@ export default function ResidentLayout() {
           tabBarIcon: ({ color }) => <Ionicons name="person-outline" color={color as string} size={22} />,
         }}
       />
+      <Tabs.Screen
+        name="notifications"
+        // Reached by tapping the Home header's bell, not a tab of its own —
+        // `href: null` registers the route without adding a tab bar button.
+        options={{ title: 'Notifications', href: null }}
+      />
     </Tabs>
   );
 }
