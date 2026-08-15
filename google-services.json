@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "847463436343",
+    "project_id": "nafil-estates",
+    "storage_bucket": "nafil-estates.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:847463436343:android:bcf1d1ab9f6138b42c2fb2",
+        "android_client_info": {
+          "package_name": "com.graycepaul.nafilestate"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBpEx0EA0KKVidhfWOQH5GQiddQ5edSuVE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -7,9 +7,15 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.graycepaul.nafilestate",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.graycepaul.nafilestate",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -49,7 +55,8 @@
       [
         "expo-notifications",
         {
-          "color": "#084DA5"
+          "color": "#084DA5",
+          "sounds": ["./assets/sounds/emergency-alert.wav"]
         }
       ]
     ],
