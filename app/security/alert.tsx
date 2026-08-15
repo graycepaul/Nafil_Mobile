@@ -50,7 +50,7 @@ export default function SecurityAlertScreen() {
       });
       setNotice({
         tone: 'success',
-        message: `Alert sent — ${result.recipients} device${result.recipients === 1 ? '' : 's'} notified, plus the in-app announcement.`,
+        message: `Alert sent: ${result.recipients} device${result.recipients === 1 ? '' : 's'} notified, plus the in-app announcement.`,
       });
     } catch (pushError) {
       setNotice({
@@ -67,7 +67,7 @@ export default function SecurityAlertScreen() {
   return (
     <View className="flex-1 bg-white p-xl dark:bg-ink-bg">
       <Text className="mb-lg text-[13px] text-paper-500 dark:text-ink-textMuted">
-        Sends an emergency push notification to every resident's phone in your estate, and
+        Sends an emergency push notification to every resident&apos;s phone in your estate, and
         posts it as an in-app announcement.
       </Text>
 

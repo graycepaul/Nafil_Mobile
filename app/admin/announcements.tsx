@@ -56,7 +56,7 @@ export default function AdminAnnouncementsScreen() {
         });
         setNotice({
           tone: 'success',
-          message: `Alert sent — ${result.recipients} device${result.recipients === 1 ? '' : 's'} notified, plus the in-app announcement.`,
+          message: `Alert sent: ${result.recipients} device${result.recipients === 1 ? '' : 's'} notified, plus the in-app announcement.`,
         });
       } catch (pushError) {
         setNotice({
@@ -91,7 +91,7 @@ export default function AdminAnnouncementsScreen() {
                 Emergency alert
               </Text>
               <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
-                Also pushes straight to every resident's phone, not just the in-app feed.
+                Also pushes straight to every resident&apos;s phone, not just the in-app feed.
               </Text>
             </View>
             <View

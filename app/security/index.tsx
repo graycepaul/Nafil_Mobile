@@ -170,7 +170,7 @@ export default function SecurityScanScreen() {
       <View className="flex-1 bg-white p-lg dark:bg-ink-bg">
         {header}
         <Text className="mb-lg text-[13px] text-paper-500 dark:text-ink-textMuted">
-          QR scanning needs the camera on a phone. On web, enter the visitor's code manually.
+          QR scanning needs the camera on a phone. On web, enter the visitor&apos;s code manually.
         </Text>
         {manualEntry}
       </View>

@@ -14,7 +14,7 @@ export class ApiError extends Error {}
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   if (!API_URL) {
     throw new ApiError(
-      'EXPO_PUBLIC_API_URL is not set — the backend service URL needs to be in .env.'
+      'EXPO_PUBLIC_API_URL is not set. The backend service URL needs to be in .env.'
     );
   }
 
