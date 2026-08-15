@@ -1,3 +1,11 @@
+/** "grace balogun" -> "Grace Balogun" — normalizes free-text name entry for display/storage. */
+export function titleCase(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/\b\p{L}/gu, (c) => c.toUpperCase());
+}
+
 /** "2h ago", "Just now", "3d ago" — falls back to a short date beyond a week. */
 export function relativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();

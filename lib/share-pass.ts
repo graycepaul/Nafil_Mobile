@@ -16,8 +16,9 @@ export function buildPassMessage(pass: VisitorPass, estateName?: string) {
     '',
     pass.code,
     '',
-    `Valid until ${expiry}.`,
-    'Show this code at the gate, or have security scan your QR.',
+    'This code is valid for a single use only and stops working once security scans it at the gate.',
+    `If unused, it expires ${expiry}.`,
+    'Show this code to security at the gate.',
   ].join('\n');
 }
 
