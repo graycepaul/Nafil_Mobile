@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { supabase } from './supabase';
@@ -32,8 +32,14 @@ export async function registerForPushNotifications(profileId: string): Promise<s
     await Notifications.setNotificationChannelAsync('emergency', {
       name: 'Emergency alerts',
       importance: Notifications.AndroidImportance.MAX,
-      sound: 'default',
+      sound: 'emergency-alert.wav',
       vibrationPattern: [0, 250, 250, 250],
+      // Lets a security/admin broadcast ring through even when the resident's
+      // phone is in Do Not Disturb — Android still requires the resident to
+      // grant this app "Do Not Disturb access" by hand in system settings
+      // (see requestDndAccess below); this flag just tells the OS to use that
+      // access once granted, rather than muting the channel regardless.
+      bypassDnd: true,
     });
   }
 
@@ -71,4 +77,19 @@ export async function registerForPushNotifications(profileId: string): Promise<s
   }
 
   return token;
+}
+
+/**
+ * Android only. "Do Not Disturb access" is a system-level permission Android
+ * won't let any app request via a prompt — the user has to flip it on
+ * themselves in Settings, per-app, because it's powerful (it also lets an app
+ * silence *other* apps' notifications). This just opens that settings screen
+ * directly instead of leaving the resident to hunt for it, so the emergency
+ * channel's `bypassDnd` flag (set above) actually has something to bypass
+ * with. No iOS equivalent exists; iOS's version of this is the Critical
+ * Alerts entitlement, which only Apple can grant, not the user.
+ */
+export function requestDndAccess() {
+  if (Platform.OS !== 'android') return;
+  Linking.sendIntent?.('android.settings.NOTIFICATION_POLICY_ACCESS_SETTINGS');
 }
