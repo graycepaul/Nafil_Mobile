@@ -25,11 +25,14 @@ export function themedTabOptions(colors: ThemeColors, bottomInset: number = 0) {
     headerTitleStyle: { fontWeight: '700' as const },
     tabBarActiveTintColor: colors.primary,
     tabBarInactiveTintColor: colors.textMuted,
+    tabBarShowLabel: true,
+    tabBarLabelStyle: { fontSize: 11, lineHeight: 13, fontWeight: '600' as const, marginTop: 4 },
+    tabBarItemStyle: { paddingTop: 2 },
     tabBarStyle: {
       backgroundColor: colors.background,
       borderTopColor: colors.border,
-      height: 58 + bottomInset,
-      paddingTop: 8,
+      height: 78 + bottomInset,
+      paddingTop: 6,
       paddingBottom: Math.max(bottomInset, 16),
     },
   };

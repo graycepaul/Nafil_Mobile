@@ -1,10 +1,12 @@
-import { Text, FlatList } from 'react-native';
+import { useState } from 'react';
+import { View, Text, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { Notice } from '../../components/ui/Notice';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { Issue, IssueStatus } from '../../types/database';
@@ -19,8 +21,10 @@ export default function AdminIssuesScreen() {
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
   const queryClient = useQueryClient();
+  const [advancingId, setAdvancingId] = useState<string | null>(null);
+  const [error, setError] = useState<string>();
 
-  const { data: issues } = useQuery({
+  const { data: issues, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['issues_admin', profile?.estate_id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -36,20 +40,37 @@ export default function AdminIssuesScreen() {
   async function advance(issue: Issue) {
     const next = NEXT_STATUS[issue.status];
     if (!next) return;
-    await supabase
+    setError(undefined);
+    setAdvancingId(issue.id);
+    const { error } = await supabase
       .from('issues')
       .update({
         status: next,
         resolved_at: next === 'resolved' ? new Date().toISOString() : null,
       })
       .eq('id', issue.id);
+    setAdvancingId(null);
+    if (error) {
+      setError(error.message);
+      return;
+    }
     queryClient.invalidateQueries({ queryKey: ['issues_admin', profile?.estate_id] });
+  }
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
   }
 
   return (
     <FlatList
       className="bg-white dark:bg-ink-bg"
       contentContainerClassName="p-xl"
+      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
+      ListHeaderComponent={error ? <Notice message={error} /> : null}
       data={issues ?? []}
       keyExtractor={(item) => item.id}
       ListEmptyComponent={
@@ -77,7 +98,12 @@ export default function AdminIssuesScreen() {
               {item.status.replace('_', ' ')}
             </Text>
             {next && (
-              <Button label={`Mark ${next.replace('_', ' ')}`} onPress={() => advance(item)} />
+              <Button
+                label={`Mark ${next.replace('_', ' ')}`}
+                onPress={() => advance(item)}
+                loading={advancingId === item.id}
+                disabled={advancingId !== null && advancingId !== item.id}
+              />
             )}
           </Card>
         );

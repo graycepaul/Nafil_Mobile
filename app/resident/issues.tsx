@@ -40,6 +40,7 @@ export default function IssuesScreen() {
   const [formError, setFormError] = useState<string>();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- re-opens on repeat deep link even after the resident closes it
     if (openOnLoad) setFormOpen(true);
   }, [openOnLoad]);
 

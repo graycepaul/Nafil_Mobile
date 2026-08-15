@@ -8,7 +8,13 @@ import { Card } from './ui/Card';
 import { StatusBadge } from './ui/StatusBadge';
 import { EmptyState } from './ui/EmptyState';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
+import { ALERT_CATEGORIES } from './AlertCategoryPicker';
 import type { Announcement } from '../types/database';
+
+export function emergencyLabel(category: Announcement['category']) {
+  if (!category || category === 'other') return 'Emergency';
+  return ALERT_CATEGORIES.find((c) => c.value === category)?.label ?? 'Emergency';
+}
 
 export function AnnouncementsFeed({
   ListHeaderComponent,
@@ -66,7 +72,7 @@ export function AnnouncementsFeed({
           <Card accent={isEmergency ? 'danger' : 'default'}>
             {isEmergency && (
               <View className="mb-xs">
-                <StatusBadge label="Emergency" tone="danger" />
+                <StatusBadge label={emergencyLabel(item.category)} tone="danger" />
               </View>
             )}
             <Text className="text-base font-bold text-paper-900 dark:text-ink-text">{item.title}</Text>

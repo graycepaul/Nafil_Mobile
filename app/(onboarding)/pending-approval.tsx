@@ -42,6 +42,7 @@ export default function PendingApprovalScreen() {
   }, [profile]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- standard fetch-on-mount
     loadRequest().finally(() => setLoading(false));
   }, [loadRequest]);
 
@@ -110,7 +111,7 @@ export default function PendingApprovalScreen() {
 
       <Text className="mb-xl text-[13px] leading-[19px] text-paper-500 dark:text-ink-textMuted">
         Most requests are reviewed within a day or two. You don’t need to do anything else.
-        We'll let you in as soon as it's confirmed. Check back here any time.
+        We&apos;ll let you in as soon as it&apos;s confirmed. Check back here any time.
       </Text>
 
       <Button label="Check status" variant="secondary" onPress={handleCheckStatus} loading={checking} />

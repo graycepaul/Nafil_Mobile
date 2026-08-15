@@ -39,7 +39,7 @@ export default function SupportScreen() {
               Something broken at home?
             </Text>
             <Text className="mb-md text-[13px] text-paper-500 dark:text-ink-textMuted">
-              Maintenance and estate issues go through Issues, not here — your admin sees those
+              Maintenance and estate issues go through Issues, not here. Your admin sees those
               directly.
             </Text>
             <Pressable
@@ -58,7 +58,7 @@ export default function SupportScreen() {
             Contact Nafil Estates
           </Text>
           <Text className="mb-md text-[13px] text-paper-500 dark:text-ink-textMuted">
-            App problems, account access, or anything else — reach us directly.
+            App problems, account access, or anything else, reach us directly.
           </Text>
           <Pressable
             onPress={() => Linking.openURL(`mailto:${email}`)}

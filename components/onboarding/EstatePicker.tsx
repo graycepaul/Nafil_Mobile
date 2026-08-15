@@ -27,6 +27,7 @@ export function EstatePicker({ value, onChange, error }: EstatePickerProps) {
   useEffect(() => {
     if (value && query === value.name) return; // just selected, don't re-search
     if (!query.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clearing derived results when the query empties out
       setResults([]);
       return;
     }
@@ -50,7 +51,7 @@ export function EstatePicker({ value, onChange, error }: EstatePickerProps) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [query]);
+  }, [query, value]);
 
   return (
     <View className="relative z-10">

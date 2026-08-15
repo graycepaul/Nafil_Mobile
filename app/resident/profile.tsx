@@ -211,7 +211,7 @@ export default function ProfileScreen() {
             </Pressable>
             {item.status === 'active' && !item.avatar_url && (
               <Text className="mt-sm text-[13px] text-danger">
-                No photo yet — add one so security can check it against their face at the gate.
+                No photo yet. Add one so security can check it against their face at the gate.
               </Text>
             )}
             {item.status === 'active' && (

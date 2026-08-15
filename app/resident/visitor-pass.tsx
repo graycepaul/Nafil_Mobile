@@ -7,7 +7,7 @@ import { supabase } from '../../lib/supabase';
 import { sharePass } from '../../lib/share-pass';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
-import { expiryLabel } from '../../lib/format';
+import { expiryLabel, titleCase } from '../../lib/format';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
@@ -31,7 +31,10 @@ export default function VisitorPassScreen() {
   const queryClient = useQueryClient();
   const navigation = useNavigation();
   const { new: openOnLoad } = useLocalSearchParams<{ new?: string }>();
-  const [formOpen, setFormOpen] = useState(false);
+  // Open by default — generating a pass is this screen's primary action, and
+  // starting on a closed form just makes the resident tap + before they can
+  // do anything. They can still collapse it via the header toggle.
+  const [formOpen, setFormOpen] = useState(true);
   const [visitorName, setVisitorName] = useState('');
   const [visitorPhone, setVisitorPhone] = useState('');
   const [creating, setCreating] = useState(false);
@@ -40,10 +43,27 @@ export default function VisitorPassScreen() {
   const [formError, setFormError] = useState<string>();
   const [formNotice, setFormNotice] = useState<string>();
 
+  const { data: estate } = useQuery({
+    queryKey: ['my_estate', profile?.estate_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('estates')
+        .select('name')
+        .eq('id', profile!.estate_id!)
+        .single();
+      if (error) throw error;
+      return data as { name: string };
+    },
+    enabled: !!profile?.estate_id,
+  });
+
   // Deep-linked from Home's "+ Visitor pass" quick action (?new=1) — opens
   // straight to the form instead of landing on a closed tab the user then
-  // has to tap again.
+  // has to tap again. Stays an effect (not derived at render) because it
+  // must re-open the form on a repeat deep link even after the resident has
+  // since closed it via the header toggle.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (openOnLoad) setFormOpen(true);
   }, [openOnLoad]);
 
@@ -86,7 +106,7 @@ export default function VisitorPassScreen() {
     const { error } = await supabase.from('visitor_passes').insert({
       estate_id: profile.estate_id,
       resident_id: profile.id,
-      visitor_name: visitorName.trim(),
+      visitor_name: titleCase(visitorName),
       visitor_phone: visitorPhone.trim() || null,
     });
     setCreating(false);
@@ -136,9 +156,17 @@ export default function VisitorPassScreen() {
               <Card className="mb-lg">
                 {formError && <Notice message={formError} />}
                 {formNotice && <Notice tone="success" message={formNotice} />}
-                <Input label="Visitor name" value={visitorName} onChangeText={setVisitorName} />
+                <Input
+                  label="Visitor name"
+                  showLabel
+                  placeholder="e.g. Ade Johnson"
+                  value={visitorName}
+                  onChangeText={setVisitorName}
+                />
                 <Input
                   label="Visitor phone (optional)"
+                  showLabel
+                  placeholder="e.g. 0803 123 4567"
                   value={visitorPhone}
                   onChangeText={setVisitorPhone}
                   keyboardType="phone-pad"
@@ -171,6 +199,7 @@ export default function VisitorPassScreen() {
           // here. Compute the effective state client-side rather than show a
           // "Pending" badge next to "Expired 2h ago", which reads as contradictory.
           // Security enforces the real window at check-in regardless of this.
+          // eslint-disable-next-line react-hooks/purity
           const isLapsed = item.status === 'pending' && new Date(item.valid_until).getTime() < Date.now();
           const isActionable = item.status === 'pending' && !isLapsed;
 
@@ -182,7 +211,7 @@ export default function VisitorPassScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
-                    {item.visitor_name}
+                    {titleCase(item.visitor_name)}
                   </Text>
                   <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
                     Code: {item.code}
@@ -206,7 +235,7 @@ export default function VisitorPassScreen() {
                     label="Share with visitor"
                     variant="secondary"
                     onPress={async () => {
-                      const outcome = await sharePass(item);
+                      const outcome = await sharePass(item, estate?.name);
                       if (outcome === 'copied') {
                         setFormNotice('Copied. Paste it into WhatsApp.');
                       }
@@ -231,7 +260,7 @@ export default function VisitorPassScreen() {
         title="Cancel this pass?"
         message={
           pendingRevoke
-            ? `${pendingRevoke.visitor_name}'s code (${pendingRevoke.code}) will stop working immediately.`
+            ? `${titleCase(pendingRevoke.visitor_name)}'s code (${pendingRevoke.code}) will stop working immediately.`
             : undefined
         }
         confirmLabel="Cancel pass"
