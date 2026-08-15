@@ -1,3 +1,6 @@
+/* eslint-disable react-hooks/refs -- Animated.Value refs are RN's documented
+   pattern: a stable mutable value the native driver reads/writes outside
+   React's render cycle, not application state read during render. */
 import { useEffect, useRef } from 'react';
 import { View, Animated, Easing } from 'react-native';
 import { BrandLockup } from '../components/ui/BrandMark';

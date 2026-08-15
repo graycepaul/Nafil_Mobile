@@ -3,7 +3,6 @@ import { View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { pickAndUploadAvatar } from '../../lib/avatar';
-import { useTheme } from '../../context/theme-context';
 import { useAuthStore } from '../../store/auth-store';
 import { AuthShell } from '../../components/auth/AuthShell';
 import { Avatar } from '../../components/ui/Avatar';
@@ -19,7 +18,6 @@ import { Notice } from '../../components/ui/Notice';
  * avatar renders.
  */
 export default function ProfileSetupScreen() {
-  const { colors } = useTheme();
   const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
   const refreshProfile = useAuthStore((s) => s.refreshProfile);

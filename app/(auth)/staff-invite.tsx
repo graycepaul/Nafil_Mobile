@@ -153,7 +153,7 @@ export default function StaffInviteScreen() {
         subtitle={`We've sent a confirmation link to ${invite?.email}. Click it to finish setting up your account. You'll land straight in your dashboard.`}
       >
         <Text className="text-[13px] leading-[19px] text-paper-500 dark:text-ink-textMuted">
-          Your name, phone, and photo are already saved. There's nothing left to fill in once
+          Your name, phone, and photo are already saved. There&apos;s nothing left to fill in once
           you confirm.
         </Text>
       </AuthShell>
