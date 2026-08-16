@@ -14,9 +14,23 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Residents',
+          title: 'Dashboard',
           headerRight: () => <SettingsHeaderButton />,
+          tabBarIcon: ({ color }) => <Ionicons name="grid-outline" color={color as string} size={22} />,
+        }}
+      />
+      <Tabs.Screen
+        name="residents"
+        options={{
+          title: 'Residents',
           tabBarIcon: ({ color }) => <Ionicons name="person-outline" color={color as string} size={22} />,
+        }}
+      />
+      <Tabs.Screen
+        name="staff"
+        options={{
+          title: 'Staff',
+          tabBarIcon: ({ color }) => <Ionicons name="shield-outline" color={color as string} size={22} />,
         }}
       />
       <Tabs.Screen

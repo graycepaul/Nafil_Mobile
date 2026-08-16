@@ -17,7 +17,13 @@ import type { StaffInvite } from '../../types/database';
  * automatically; that would need server-side infrastructure (an email
  * provider, a backend endpoint) that isn't wired up yet. This works today.
  */
-export function InviteStaffForm({ estateName }: { estateName?: string }) {
+export function InviteStaffForm({
+  estateName,
+  onInvited,
+}: {
+  estateName?: string;
+  onInvited?: () => void;
+}) {
   const profile = useAuthStore((s) => s.profile);
 
   const [open, setOpen] = useState(false);
@@ -58,6 +64,7 @@ export function InviteStaffForm({ estateName }: { estateName?: string }) {
       return;
     }
     setCreated(data as StaffInvite);
+    onInvited?.();
   }
 
   if (!open) {

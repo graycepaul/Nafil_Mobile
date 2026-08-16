@@ -27,6 +27,13 @@ export default function SecurityLayout() {
         }}
       />
       <Tabs.Screen
+        name="logs"
+        options={{
+          title: 'Logs',
+          tabBarIcon: ({ color }) => <Ionicons name="file-tray-stacked-outline" color={color as string} size={22} />,
+        }}
+      />
+      <Tabs.Screen
         name="alert"
         options={{
           title: 'Alert',
