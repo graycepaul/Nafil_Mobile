@@ -3,7 +3,6 @@ import { View, Text, Pressable, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { supabase } from '../../lib/supabase';
 import { titleCase } from '../../lib/format';
-import { validatePhone } from '../../lib/validation';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Notice } from '../ui/Notice';
@@ -32,8 +31,6 @@ export function ScheduleVisitForm({
   onCancel: () => void;
 }) {
   const [visitorName, setVisitorName] = useState('');
-  const [visitorPhone, setVisitorPhone] = useState('');
-  const [phoneError, setPhoneError] = useState<string>();
   const [description, setDescription] = useState('');
   const [scheduledFor, setScheduledFor] = useState<Date>(() => {
     const d = new Date();
@@ -60,9 +57,7 @@ export function ScheduleVisitForm({
   }
 
   async function handleSchedule() {
-    const phoneErr = validatePhone(visitorPhone);
-    setPhoneError(phoneErr);
-    if (!visitorName.trim() || phoneErr || !description.trim()) return;
+    if (!visitorName.trim() || !description.trim()) return;
     const date = resolvedDate();
     if (!date) {
       setFormError(isWeb ? 'Enter a valid date (YYYY-MM-DD) and time (HH:MM).' : 'Choose a date and time.');
@@ -74,7 +69,6 @@ export function ScheduleVisitForm({
       estate_id: estateId,
       resident_id: residentId,
       visitor_name: titleCase(visitorName),
-      visitor_phone: visitorPhone.trim(),
       description: description.trim(),
       scheduled_for: date.toISOString(),
     });
@@ -103,18 +97,6 @@ export function ScheduleVisitForm({
         placeholder="e.g. Ade Johnson"
         value={visitorName}
         onChangeText={setVisitorName}
-      />
-      <Input
-        label="Visitor phone"
-        showLabel
-        placeholder="e.g. 0803 123 4567"
-        value={visitorPhone}
-        onChangeText={(v) => {
-          setVisitorPhone(v);
-          if (phoneError) setPhoneError(undefined);
-        }}
-        error={phoneError}
-        keyboardType="phone-pad"
       />
       <Input
         label="Description"
@@ -194,7 +176,7 @@ export function ScheduleVisitForm({
           label="Schedule"
           onPress={handleSchedule}
           loading={creating}
-          disabled={!visitorName.trim() || !visitorPhone.trim() || !description.trim()}
+          disabled={!visitorName.trim() || !description.trim()}
           className="flex-1"
         />
         <Button label="Cancel" variant="secondary" onPress={onCancel} className="flex-1" />
