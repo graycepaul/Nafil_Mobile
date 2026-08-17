@@ -233,7 +233,6 @@ export default function VisitorPassScreen() {
                     refetchScheduled();
                     setActiveForm('pass');
                   }}
-                  onCancel={() => setActiveForm('pass')}
                 />
               )
             )}

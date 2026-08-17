@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { createElement, useState } from 'react';
 import { View, Text, Pressable, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { supabase } from '../../lib/supabase';
 import { titleCase } from '../../lib/format';
+import { useTheme } from '../../context/theme-context';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Notice } from '../ui/Notice';
@@ -13,23 +14,19 @@ import { Card } from '../ui/Card';
  * Security matches the visitor by the name they give at the gate instead.
  *
  * @react-native-community/datetimepicker has no web build at all (iOS/
- * Android/Windows only) — real usage of this feature is on-device, so the
- * native picker is what matters there. Web (this app's dev/test surface,
- * not a realistic target for "schedule a gate visit") falls back to plain
- * date/time text inputs instead of pulling in a second picker library just
- * for parity on a platform this feature isn't really for.
+ * Android/Windows only), so web uses the browser's own native <input
+ * type="date"/"time"> pickers instead — still a real picker, no free text.
  */
 export function ScheduleVisitForm({
   residentId,
   estateId,
   onScheduled,
-  onCancel,
 }: {
   residentId: string;
   estateId: string;
   onScheduled: () => void;
-  onCancel: () => void;
 }) {
+  const { colors } = useTheme();
   const [visitorName, setVisitorName] = useState('');
   const [description, setDescription] = useState('');
   const [scheduledFor, setScheduledFor] = useState<Date>(() => {
@@ -60,7 +57,7 @@ export function ScheduleVisitForm({
     if (!visitorName.trim() || !description.trim()) return;
     const date = resolvedDate();
     if (!date) {
-      setFormError(isWeb ? 'Enter a valid date (YYYY-MM-DD) and time (HH:MM).' : 'Choose a date and time.');
+      setFormError('Choose a date and time.');
       return;
     }
     setFormError(undefined);
@@ -109,22 +106,45 @@ export function ScheduleVisitForm({
       {isWeb ? (
         <View className="mb-md flex-row gap-sm">
           <View className="flex-1">
-            <Input
-              label="Date"
-              showLabel
-              placeholder="YYYY-MM-DD"
-              value={webDate}
-              onChangeText={setWebDate}
-            />
+            <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">Date</Text>
+            {createElement('input', {
+              type: 'date',
+              value: webDate,
+              min: new Date().toISOString().slice(0, 10),
+              onChange: (e: { target: { value: string } }) => setWebDate(e.target.value),
+              style: {
+                width: '100%',
+                boxSizing: 'border-box',
+                borderWidth: 1,
+                borderStyle: 'solid',
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 14,
+                fontSize: 15,
+                color: colors.text,
+                backgroundColor: colors.inputBg,
+              },
+            })}
           </View>
           <View className="flex-1">
-            <Input
-              label="Time"
-              showLabel
-              placeholder="HH:MM"
-              value={webTime}
-              onChangeText={setWebTime}
-            />
+            <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">Time</Text>
+            {createElement('input', {
+              type: 'time',
+              value: webTime,
+              onChange: (e: { target: { value: string } }) => setWebTime(e.target.value),
+              style: {
+                width: '100%',
+                boxSizing: 'border-box',
+                borderWidth: 1,
+                borderStyle: 'solid',
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 14,
+                fontSize: 15,
+                color: colors.text,
+                backgroundColor: colors.inputBg,
+              },
+            })}
           </View>
         </View>
       ) : (
@@ -171,16 +191,12 @@ export function ScheduleVisitForm({
         />
       )}
 
-      <View className="flex-row gap-sm">
-        <Button
-          label="Schedule"
-          onPress={handleSchedule}
-          loading={creating}
-          disabled={!visitorName.trim() || !description.trim()}
-          className="flex-1"
-        />
-        <Button label="Cancel" variant="secondary" onPress={onCancel} className="flex-1" />
-      </View>
+      <Button
+        label="Schedule"
+        onPress={handleSchedule}
+        loading={creating}
+        disabled={!visitorName.trim() || !description.trim()}
+      />
     </Card>
   );
 }

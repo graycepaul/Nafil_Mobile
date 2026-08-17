@@ -77,16 +77,15 @@ export default function AdminDashboardScreen() {
     enabled: !!profile,
   });
 
-  const { data: latestAnnouncement } = useQuery({
-    queryKey: ['dashboard_latest_announcement', profile?.id],
+  const { data: recentAnnouncements } = useQuery({
+    queryKey: ['dashboard_recent_announcements', profile?.id],
     queryFn: async () => {
       const { data } = await supabase
         .from('announcements')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      return data as Announcement | null;
+        .limit(3);
+      return (data ?? []) as Announcement[];
     },
     enabled: !!profile,
   });
@@ -98,7 +97,7 @@ export default function AdminDashboardScreen() {
       queryClient.invalidateQueries({ queryKey: ['dashboard_staff_count'] }),
       queryClient.invalidateQueries({ queryKey: ['dashboard_open_issues'] }),
       queryClient.invalidateQueries({ queryKey: ['dashboard_pending_requests'] }),
-      queryClient.invalidateQueries({ queryKey: ['dashboard_latest_announcement'] }),
+      queryClient.invalidateQueries({ queryKey: ['dashboard_recent_announcements'] }),
     ]);
     setRefreshing(false);
   }
@@ -148,35 +147,39 @@ export default function AdminDashboardScreen() {
       </View>
 
       <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">
-        Latest announcement
+        Latest announcements
       </Text>
-      {latestAnnouncement ? (
-        <Pressable onPress={() => router.push('/admin/announcements')}>
-          <Card accent={latestAnnouncement.severity === 'emergency' ? 'danger' : 'default'}>
-            <View className="flex-row items-start gap-sm">
-              <View className="h-8 w-8 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
-                <Ionicons name="megaphone-outline" color={colors.primary} size={16} />
-              </View>
-              <View className="flex-1">
-                {latestAnnouncement.severity === 'emergency' && (
-                  <View className="mb-xs">
-                    <StatusBadge label={emergencyLabel(latestAnnouncement.category)} tone="danger" />
+      {recentAnnouncements && recentAnnouncements.length > 0 ? (
+        <View className="gap-md">
+          {recentAnnouncements.map((announcement) => (
+            <Pressable key={announcement.id} onPress={() => router.push('/admin/announcements')}>
+              <Card accent={announcement.severity === 'emergency' ? 'danger' : 'default'}>
+                <View className="flex-row items-start gap-sm">
+                  <View className="h-8 w-8 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
+                    <Ionicons name="megaphone-outline" color={colors.primary} size={16} />
                   </View>
-                )}
-                <Text className="text-base font-semibold text-paper-900 dark:text-ink-text" numberOfLines={1}>
-                  {latestAnnouncement.title}
-                </Text>
-                <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted" numberOfLines={2}>
-                  {latestAnnouncement.body}
-                </Text>
-                <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
-                  {relativeTime(latestAnnouncement.created_at)}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" color={colors.textMuted} size={18} />
-            </View>
-          </Card>
-        </Pressable>
+                  <View className="flex-1">
+                    {announcement.severity === 'emergency' && (
+                      <View className="mb-xs">
+                        <StatusBadge label={emergencyLabel(announcement.category)} tone="danger" />
+                      </View>
+                    )}
+                    <Text className="text-base font-semibold text-paper-900 dark:text-ink-text" numberOfLines={1}>
+                      {announcement.title}
+                    </Text>
+                    <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted" numberOfLines={2}>
+                      {announcement.body}
+                    </Text>
+                    <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
+                      {relativeTime(announcement.created_at)}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" color={colors.textMuted} size={18} />
+                </View>
+              </Card>
+            </Pressable>
+          ))}
+        </View>
       ) : (
         <Card>
           <EmptyState
