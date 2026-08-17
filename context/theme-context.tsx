@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useLayoutEffect, useMemo, type ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
 import { colorScheme as nativewindColorScheme } from 'nativewind';
 import { darkColors, lightColors, type ThemeColors } from '../constants/colors';
@@ -30,8 +30,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // default just mirrors the OS. This app has its own resolved value (mode
   // can be 'system' | 'light' | 'dark', persisted) — push that in directly
   // rather than let NativeWind re-derive it, so `dark:` classes and the
-  // theme-context colors never disagree.
-  useEffect(() => {
+  // theme-context colors never disagree. Has to run in a layout effect, not
+  // a regular effect: a regular effect fires after paint, so on a mode
+  // switch everything reading `colors` from this context (headers) flips
+  // immediately while everything styled with `dark:` classNames waits a
+  // whole extra frame for NativeWind to catch up — a visible flash where
+  // the header goes dark before the rest of the screen does.
+  useLayoutEffect(() => {
     nativewindColorScheme.set(isDark ? 'dark' : 'light');
   }, [isDark]);
 
