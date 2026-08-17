@@ -98,6 +98,7 @@ export interface ScheduledVisit {
   estate_id: string;
   resident_id: string;
   visitor_name: string;
+  visitor_phone: string | null;
   description: string | null;
   scheduled_for: string;
   status: ScheduledVisitStatus;

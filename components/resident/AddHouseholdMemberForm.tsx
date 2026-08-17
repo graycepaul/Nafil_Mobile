@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text } from "react-native";
 import { supabase } from "../../lib/supabase";
 import { pickAndUploadHouseholdAvatar } from "../../lib/avatar";
+import { validatePhone } from "../../lib/validation";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Notice } from "../ui/Notice";
@@ -37,6 +38,7 @@ export function AddHouseholdMemberForm({
   const [fullName, setFullName] = useState("");
   const [relationship, setRelationship] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState<string>();
   const [reviewFrequency, setReviewFrequency] = useState<HouseholdReviewFrequency>("quarterly");
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string>();
@@ -48,6 +50,7 @@ export function AddHouseholdMemberForm({
     setFullName("");
     setRelationship("");
     setPhone("");
+    setPhoneError(undefined);
     setReviewFrequency("quarterly");
     setFormError(undefined);
     setCreated(null);
@@ -59,7 +62,9 @@ export function AddHouseholdMemberForm({
   }
 
   async function handleCreate() {
-    if (!fullName.trim() || !relationship.trim()) return;
+    const phoneErr = validatePhone(phone);
+    setPhoneError(phoneErr);
+    if (!fullName.trim() || !relationship.trim() || phoneErr) return;
     setFormError(undefined);
     setCreating(true);
     const { data, error } = await supabase
@@ -69,7 +74,7 @@ export function AddHouseholdMemberForm({
         resident_id: residentId,
         full_name: fullName.trim(),
         relationship: relationship.trim(),
-        phone: phone.trim() || null,
+        phone: phone.trim(),
         review_frequency: reviewFrequency,
       })
       .select()
@@ -163,10 +168,14 @@ export function AddHouseholdMemberForm({
         onChangeText={setRelationship}
       />
       <Input
-        label="Phone (optional)"
-        placeholder="Phone (optional)"
+        label="Phone"
+        placeholder="Phone"
         value={phone}
-        onChangeText={setPhone}
+        onChangeText={(v) => {
+          setPhone(v);
+          if (phoneError) setPhoneError(undefined);
+        }}
+        error={phoneError}
         keyboardType="phone-pad"
       />
 
@@ -201,7 +210,7 @@ export function AddHouseholdMemberForm({
           label="Add"
           onPress={handleCreate}
           loading={creating}
-          disabled={!fullName.trim() || !relationship.trim()}
+          disabled={!fullName.trim() || !relationship.trim() || !phone.trim()}
           className="flex-1"
         />
         <Button

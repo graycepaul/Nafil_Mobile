@@ -13,6 +13,8 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { VisitorPass, VisitorPassStatus } from '../../types/database';
 
+type PassWithLog = VisitorPass & { visitor_logs: { checked_in_at: string }[] };
+
 const STATUS_TONE: Record<VisitorPassStatus, BadgeTone> = {
   pending: 'info',
   used: 'success',
@@ -64,10 +66,10 @@ export default function VisitorPassHistoryScreen() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('visitor_passes')
-        .select('*')
+        .select('*, visitor_logs(checked_in_at)')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as VisitorPass[];
+      return data as PassWithLog[];
     },
     enabled: !!profile,
   });
@@ -79,7 +81,7 @@ export default function VisitorPassHistoryScreen() {
       if (cutoff && new Date(p.created_at) < cutoff) return false;
       return !q || p.visitor_name.toLowerCase().includes(q);
     });
-    const byDay = new Map<string, VisitorPass[]>();
+    const byDay = new Map<string, PassWithLog[]>();
     for (const pass of filtered) {
       const key = dayLabel(pass.created_at);
       if (!byDay.has(key)) byDay.set(key, []);
@@ -162,19 +164,25 @@ export default function VisitorPassHistoryScreen() {
                 {section.title}
               </Text>
             )}
-            renderItem={({ item }) => (
-              <Card className="mb-sm flex-row items-center gap-md">
-                <View className="flex-1">
-                  <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
-                    {titleCase(item.visitor_name)}
-                  </Text>
-                  <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
-                    Code: {item.code}
-                  </Text>
-                </View>
-                <StatusBadge label={item.status} tone={STATUS_TONE[item.status]} />
-              </Card>
-            )}
+            renderItem={({ item }) => {
+              const checkedInAt = item.visitor_logs[0]?.checked_in_at;
+              return (
+                <Card className="mb-sm flex-row items-center gap-md">
+                  <View className="flex-1">
+                    <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
+                      {titleCase(item.visitor_name)}
+                    </Text>
+                    <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
+                      Code: {item.code}
+                      {checkedInAt
+                        ? ` · In ${new Date(checkedInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                        : ''}
+                    </Text>
+                  </View>
+                  <StatusBadge label={item.status} tone={STATUS_TONE[item.status]} />
+                </Card>
+              );
+            }}
           />
         </View>
       )}
