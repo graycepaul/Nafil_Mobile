@@ -15,8 +15,8 @@ import { emergencyLabel } from '../../components/AnnouncementsFeed';
 import type { Announcement } from '../../types/database';
 
 /**
- * super_admin sees the exact same dashboard, just with unscoped counts —
- * these queries have no .eq('estate_id', ...) filter, so RLS alone decides
+ * super_admin sees the exact same dashboard, just with unscoped counts.
+ * These queries have no .eq('estate_id', ...) filter, so RLS alone decides
  * whether a count is "my estate" (admin) or "every estate" (super_admin).
  */
 export default function AdminDashboardScreen() {
@@ -109,9 +109,14 @@ export default function AdminDashboardScreen() {
       contentContainerClassName="p-lg"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
-      <Text className="mb-lg text-[22px] font-bold tracking-[-0.2px] text-paper-900 dark:text-ink-text">
-        {isSuperAdmin ? 'All estates' : 'Dashboard'}
-      </Text>
+      {isSuperAdmin && (
+        <View className="mb-lg flex-row items-center gap-xs self-start rounded-full bg-brand-50 px-md py-xs dark:bg-brand-900">
+          <Ionicons name="globe-outline" color={colors.primary} size={14} />
+          <Text className="text-[13px] font-semibold text-brand-800 dark:text-brand-300">
+            Viewing all estates
+          </Text>
+        </View>
+      )}
 
       <View className="mb-md flex-row gap-md">
         <StatCard
