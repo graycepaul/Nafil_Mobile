@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { View, Text, Platform } from 'react-native';
+import { View, Text, Platform, ScrollView } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Notice } from '../../components/ui/Notice';
+import { ScheduledVisitLookup } from '../../components/security/ScheduledVisitLookup';
 import type { VisitorPass, HouseholdMember, Profile } from '../../types/database';
 
 type NoticeTone = 'error' | 'success' | 'info';
@@ -62,7 +63,20 @@ export default function SecurityScanScreen() {
           tone: 'error',
           message: `Revoked: ${householdMatch.full_name}'s access was revoked by the resident.`,
         });
+      } else if (householdMatch.status === 'pending_review') {
+        setNotice({
+          tone: 'error',
+          message: `Needs review: ${householdMatch.full_name}'s card is due for the resident to review before it can be used again.`,
+        });
       } else {
+        // Supabase's query/rpc builders are lazy thenables: the request
+        // only actually fires once something awaits or .then()s them, so
+        // this has to be awaited even though the result itself is ignored.
+        // Only records the scan timestamp (a DB trigger turns that into a
+        // notification to the resident) — not part of the access decision
+        // itself, so a failure here doesn't block or contradict the
+        // "Verified" message the guard already sees.
+        await supabase.rpc('record_household_member_scan', { member_id: householdMatch.id });
         setNotice({
           tone: 'success',
           message: `Verified: ${householdMatch.full_name} (${householdMatch.relationship}).`,
@@ -167,13 +181,14 @@ export default function SecurityScanScreen() {
 
   if (!canScan) {
     return (
-      <View className="flex-1 bg-white p-lg dark:bg-ink-bg">
+      <ScrollView className="flex-1 bg-white dark:bg-ink-bg" contentContainerClassName="p-lg">
         {header}
         <Text className="mb-lg text-[13px] text-paper-500 dark:text-ink-textMuted">
           QR scanning needs the camera on a phone. On web, enter the visitor&apos;s code manually.
         </Text>
         {manualEntry}
-      </View>
+        <ScheduledVisitLookup />
+      </ScrollView>
     );
   }
 
@@ -191,7 +206,7 @@ export default function SecurityScanScreen() {
   }
 
   return (
-    <View className="flex-1 bg-white p-lg dark:bg-ink-bg">
+    <ScrollView className="flex-1 bg-white dark:bg-ink-bg" contentContainerClassName="p-lg">
       {header}
       <View className="h-[320px] overflow-hidden rounded-lg bg-black">
         <CameraView
@@ -213,6 +228,7 @@ export default function SecurityScanScreen() {
       </Text>
 
       {manualEntry}
-    </View>
+      <ScheduledVisitLookup />
+    </ScrollView>
   );
 }

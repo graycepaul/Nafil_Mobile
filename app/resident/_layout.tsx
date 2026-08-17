@@ -55,6 +55,11 @@ export default function ResidentLayout() {
         // `href: null` registers the route without adding a tab bar button.
         options={{ title: 'Notifications', href: null }}
       />
+      <Tabs.Screen
+        name="visitor-pass-history"
+        // Reached via the Visitors tab header's history icon.
+        options={{ title: 'Visit history', href: null }}
+      />
     </Tabs>
   );
 }

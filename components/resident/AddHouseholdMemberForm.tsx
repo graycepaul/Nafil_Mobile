@@ -7,7 +7,14 @@ import { Input } from "../ui/Input";
 import { Notice } from "../ui/Notice";
 import { Card } from "../ui/Card";
 import { Avatar } from "../ui/Avatar";
-import type { HouseholdMember } from "../../types/database";
+import type { HouseholdMember, HouseholdReviewFrequency } from "../../types/database";
+
+const REVIEW_OPTIONS: { key: HouseholdReviewFrequency; label: string }[] = [
+  { key: "monthly", label: "Monthly" },
+  { key: "quarterly", label: "Quarterly" },
+  { key: "semiannual", label: "Every 6 months" },
+  { key: "yearly", label: "Yearly" },
+];
 
 /**
  * Adds a standing allow-list entry — a family member, a nanny, a regular
@@ -30,6 +37,7 @@ export function AddHouseholdMemberForm({
   const [fullName, setFullName] = useState("");
   const [relationship, setRelationship] = useState("");
   const [phone, setPhone] = useState("");
+  const [reviewFrequency, setReviewFrequency] = useState<HouseholdReviewFrequency>("quarterly");
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string>();
   const [created, setCreated] = useState<HouseholdMember | null>(null);
@@ -40,6 +48,7 @@ export function AddHouseholdMemberForm({
     setFullName("");
     setRelationship("");
     setPhone("");
+    setReviewFrequency("quarterly");
     setFormError(undefined);
     setCreated(null);
   }
@@ -61,6 +70,7 @@ export function AddHouseholdMemberForm({
         full_name: fullName.trim(),
         relationship: relationship.trim(),
         phone: phone.trim() || null,
+        review_frequency: reviewFrequency,
       })
       .select()
       .single();
@@ -159,6 +169,33 @@ export function AddHouseholdMemberForm({
         onChangeText={setPhone}
         keyboardType="phone-pad"
       />
+
+      <Text className="mb-xs text-[13px] font-medium text-paper-500 dark:text-ink-textMuted">
+        Review this card
+      </Text>
+      <Text className="mb-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
+        The card deactivates automatically on this schedule until you review and reactivate it.
+        A safety net in case you forget to revoke access yourself.
+      </Text>
+      <View className="mb-md flex-row flex-wrap gap-sm">
+        {REVIEW_OPTIONS.map((opt) => {
+          const active = reviewFrequency === opt.key;
+          return (
+            <Text
+              key={opt.key}
+              onPress={() => setReviewFrequency(opt.key)}
+              className={`rounded-full border px-md py-xs text-[13px] font-medium ${
+                active
+                  ? "border-brand-800 bg-brand-800 text-white dark:border-brand-300 dark:bg-brand-300 dark:text-ink-bg"
+                  : "border-paper-200 text-paper-500 dark:border-ink-border dark:text-ink-textMuted"
+              }`}
+            >
+              {opt.label}
+            </Text>
+          );
+        })}
+      </View>
+
       <View className="flex-row gap-sm">
         <Button
           label="Add"

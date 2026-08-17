@@ -18,6 +18,7 @@ const TYPE_ICON: Record<NotificationType, IoniconsIconName> = {
   visitor_pass_used: 'ticket-outline',
   join_request_approved: 'checkmark-circle-outline',
   staff_invite_accepted: 'person-add-outline',
+  household_member_scanned: 'people-outline',
 };
 
 export default function NotificationsScreen() {
