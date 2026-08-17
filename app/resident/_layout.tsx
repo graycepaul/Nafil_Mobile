@@ -53,12 +53,15 @@ export default function ResidentLayout() {
         name="notifications"
         // Reached by tapping the Home header's bell, not a tab of its own —
         // `href: null` registers the route without adding a tab bar button.
-        options={{ title: 'Notifications', href: null }}
+        // headerShown: false because the Tabs navigator's default header has
+        // no back button for a pushed href:null screen — each of these
+        // builds its own header instead, with a working back button.
+        options={{ title: 'Notifications', href: null, headerShown: false }}
       />
       <Tabs.Screen
         name="visitor-pass-history"
         // Reached via the Visitors tab header's history icon.
-        options={{ title: 'Visit history', href: null }}
+        options={{ title: 'Visit history', href: null, headerShown: false }}
       />
     </Tabs>
   );

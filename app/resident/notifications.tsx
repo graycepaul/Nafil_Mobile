@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Pressable, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
@@ -24,6 +25,7 @@ const TYPE_ICON: Record<NotificationType, IoniconsIconName> = {
 export default function NotificationsScreen() {
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [markingAll, setMarkingAll] = useState(false);
 
@@ -61,16 +63,35 @@ export default function NotificationsScreen() {
     queryClient.invalidateQueries({ queryKey: ['notifications_unread', profile.id] });
   }
 
+  const header = (
+    <View className="flex-row items-center gap-md bg-white px-lg pb-lg pt-2xl dark:bg-ink-bg">
+      <Pressable
+        onPress={() => router.back()}
+        accessibilityRole="button"
+        accessibilityLabel="Back"
+        hitSlop={8}
+      >
+        <Ionicons name="arrow-back" color={colors.onHeaderBg} size={22} />
+      </Pressable>
+      <Text className="text-[22px] font-bold text-paper-900 dark:text-ink-text">Notifications</Text>
+    </View>
+  );
+
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View className="flex-1 bg-white dark:bg-ink-bg">
+        {header}
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
       </View>
     );
   }
 
   return (
-    <FlatList
+    <View className="flex-1 bg-white dark:bg-ink-bg">
+      {header}
+      <FlatList
       className="bg-white dark:bg-ink-bg"
       contentContainerClassName="p-xl"
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
@@ -129,6 +150,7 @@ export default function NotificationsScreen() {
           </Pressable>
         );
       }}
-    />
+      />
+    </View>
   );
 }

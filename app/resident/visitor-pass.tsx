@@ -34,10 +34,10 @@ export default function VisitorPassScreen() {
   const navigation = useNavigation();
   const router = useRouter();
   const { new: openOnLoad } = useLocalSearchParams<{ new?: string }>();
-  // Open by default — generating a pass is this screen's primary action, and
-  // starting on a closed form just makes the resident tap + before they can
-  // do anything. They can still collapse it via the header toggle.
-  const [formOpen, setFormOpen] = useState(true);
+  // 'pass' is the default and the only two states share one slot — the
+  // Schedule form replaces Generate Pass rather than stacking below it, so
+  // there's never a question of which form an action applies to.
+  const [activeForm, setActiveForm] = useState<'pass' | 'schedule'>('pass');
   const [visitorName, setVisitorName] = useState('');
   const [visitorPhone, setVisitorPhone] = useState('');
   const [phoneError, setPhoneError] = useState<string>();
@@ -62,14 +62,12 @@ export default function VisitorPassScreen() {
     enabled: !!profile?.estate_id,
   });
 
-  // Deep-linked from Home's "+ Visitor pass" quick action (?new=1) — opens
-  // straight to the form instead of landing on a closed tab the user then
-  // has to tap again. Stays an effect (not derived at render) because it
-  // must re-open the form on a repeat deep link even after the resident has
-  // since closed it via the header toggle.
+  // Deep-linked from Home's "+ Visitor pass" quick action (?new=1) — lands
+  // back on the Generate Pass form in case the resident deep-links in while
+  // the Schedule form happens to be showing.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (openOnLoad) setFormOpen(true);
+    if (openOnLoad) setActiveForm('pass');
   }, [openOnLoad]);
 
   useLayoutEffect(() => {
@@ -86,20 +84,22 @@ export default function VisitorPassScreen() {
             <Ionicons name="time-outline" color={colors.onHeaderBg} size={22} />
           </Pressable>
           <Pressable
-            onPress={() => setFormOpen((v) => !v)}
+            onPress={() => setActiveForm((v) => (v === 'schedule' ? 'pass' : 'schedule'))}
             accessibilityRole="button"
-            accessibilityLabel={formOpen ? 'Close form' : 'Generate pass'}
+            accessibilityLabel={activeForm === 'schedule' ? 'Back to generate pass' : 'Schedule a visit'}
             hitSlop={8}
             className="px-lg"
           >
-            <View style={{ transform: [{ rotate: formOpen ? '45deg' : '0deg' }] }}>
-              <Ionicons name="add" color={colors.onHeaderBg} size={24} />
-            </View>
+            <Ionicons
+              name={activeForm === 'schedule' ? 'close' : 'calendar-outline'}
+              color={colors.onHeaderBg}
+              size={activeForm === 'schedule' ? 24 : 22}
+            />
           </Pressable>
         </View>
       ),
     });
-  }, [navigation, formOpen, colors.onHeaderBg, router]);
+  }, [navigation, activeForm, colors.onHeaderBg, router]);
 
   const { data: passes, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['visitor_passes', profile?.id],
@@ -148,7 +148,6 @@ export default function VisitorPassScreen() {
     }
     setVisitorName('');
     setVisitorPhone('');
-    setFormOpen(false);
     queryClient.invalidateQueries({ queryKey: ['visitor_passes', profile.id] });
     queryClient.invalidateQueries({ queryKey: ['dashboard_active_passes'] });
   }
@@ -195,7 +194,7 @@ export default function VisitorPassScreen() {
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
         ListHeaderComponent={
           <View>
-            {formOpen && (
+            {activeForm === 'pass' ? (
               <Card className="mb-lg">
                 {formError && <Notice message={formError} />}
                 {formNotice && <Notice tone="success" message={formNotice} />}
@@ -225,14 +224,18 @@ export default function VisitorPassScreen() {
                   disabled={!visitorName.trim() || !visitorPhone.trim()}
                 />
               </Card>
-            )}
-
-            {profile?.estate_id && (
-              <ScheduleVisitForm
-                residentId={profile.id}
-                estateId={profile.estate_id}
-                onScheduled={refetchScheduled}
-              />
+            ) : (
+              profile?.estate_id && (
+                <ScheduleVisitForm
+                  residentId={profile.id}
+                  estateId={profile.estate_id}
+                  onScheduled={() => {
+                    refetchScheduled();
+                    setActiveForm('pass');
+                  }}
+                  onCancel={() => setActiveForm('pass')}
+                />
+              )
             )}
 
             {scheduledVisits && scheduledVisits.length > 0 && (

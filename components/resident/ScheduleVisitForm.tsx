@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Pressable, Platform } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { supabase } from '../../lib/supabase';
 import { titleCase } from '../../lib/format';
 import { Button } from '../ui/Button';
@@ -7,81 +8,69 @@ import { Input } from '../ui/Input';
 import { Notice } from '../ui/Notice';
 import { Card } from '../ui/Card';
 
-const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
-
-function nextDays(count: number): { label: string; date: Date }[] {
-  const out: { label: string; date: Date }[] = [];
-  for (let i = 0; i < count; i++) {
-    const date = new Date();
-    date.setDate(date.getDate() + i);
-    const label =
-      i === 0
-        ? 'Today'
-        : i === 1
-          ? 'Tomorrow'
-          : date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
-    out.push({ label, date });
-  }
-  return out;
-}
-
-const DAY_OPTIONS = nextDays(7);
-
 /**
  * "I'm expecting someone at 6pm" without generating a code ahead of time.
  * Security matches the visitor by the name they give at the gate instead.
- * No date-picker native module: a week of day chips plus a plain HH:MM
- * field covers the real use case (same-day or next-few-days expectations)
- * without a dependency that would need a fresh native build to test.
+ *
+ * @react-native-community/datetimepicker has no web build at all (iOS/
+ * Android/Windows only) — real usage of this feature is on-device, so the
+ * native picker is what matters there. Web (this app's dev/test surface,
+ * not a realistic target for "schedule a gate visit") falls back to plain
+ * date/time text inputs instead of pulling in a second picker library just
+ * for parity on a platform this feature isn't really for.
  */
 export function ScheduleVisitForm({
   residentId,
   estateId,
   onScheduled,
+  onCancel,
 }: {
   residentId: string;
   estateId: string;
   onScheduled: () => void;
+  onCancel: () => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [visitorName, setVisitorName] = useState('');
   const [description, setDescription] = useState('');
-  const [dayIndex, setDayIndex] = useState(0);
-  const [time, setTime] = useState('');
-  const [timeError, setTimeError] = useState<string>();
+  const [scheduledFor, setScheduledFor] = useState<Date>(() => {
+    const d = new Date();
+    d.setMinutes(0, 0, 0);
+    d.setHours(d.getHours() + 1);
+    return d;
+  });
+  const [webDate, setWebDate] = useState('');
+  const [webTime, setWebTime] = useState('');
+  const [pickerMode, setPickerMode] = useState<'date' | 'time' | null>(null);
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string>();
 
-  function reset() {
-    setOpen(false);
-    setVisitorName('');
-    setDescription('');
-    setDayIndex(0);
-    setTime('');
-    setTimeError(undefined);
-    setFormError(undefined);
+  const isWeb = Platform.OS === 'web';
+
+  function resolvedDate(): Date | null {
+    if (!isWeb) return scheduledFor;
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(webDate.trim());
+    const timeMatch = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(webTime.trim());
+    if (!match || !timeMatch) return null;
+    const d = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    d.setHours(Number(timeMatch[1]), Number(timeMatch[2]), 0, 0);
+    return d;
   }
 
   async function handleSchedule() {
     if (!visitorName.trim()) return;
-    const match = TIME_RE.exec(time.trim());
-    if (!match) {
-      setTimeError('Enter a time as HH:MM, e.g. 18:00.');
+    const date = resolvedDate();
+    if (!date) {
+      setFormError(isWeb ? 'Enter a valid date (YYYY-MM-DD) and time (HH:MM).' : 'Choose a date and time.');
       return;
     }
-    setTimeError(undefined);
     setFormError(undefined);
-
-    const scheduledFor = new Date(DAY_OPTIONS[dayIndex].date);
-    scheduledFor.setHours(Number(match[1]), Number(match[2]), 0, 0);
-
     setCreating(true);
     const { error } = await supabase.from('scheduled_visits').insert({
       estate_id: estateId,
       resident_id: residentId,
       visitor_name: titleCase(visitorName),
       description: description.trim() || null,
-      scheduled_for: scheduledFor.toISOString(),
+      scheduled_for: date.toISOString(),
     });
     setCreating(false);
 
@@ -89,28 +78,17 @@ export function ScheduleVisitForm({
       setFormError(error.message);
       return;
     }
-    reset();
     onScheduled();
   }
 
-  if (!open) {
-    return (
-      <Button
-        label="+ Schedule a visit"
-        variant="secondary"
-        onPress={() => setOpen(true)}
-        className="mb-xl"
-      />
-    );
-  }
-
   return (
-    <Card className="mb-xl">
+    <Card className="mb-lg">
       <Text className="mb-xs text-base font-semibold text-paper-900 dark:text-ink-text">
         Schedule a visit
       </Text>
       <Text className="mb-md text-[13px] text-paper-500 dark:text-ink-textMuted">
-        Tell us who to expect. At the gate they just give their name, no code needed.
+        Let us know who to expect and when. At the gate, they just give their name instead of a
+        code.
       </Text>
       {formError && <Notice message={formError} />}
       <Input
@@ -128,49 +106,80 @@ export function ScheduleVisitForm({
         onChangeText={setDescription}
       />
 
-      <Text className="mb-xs text-[13px] font-medium text-paper-500 dark:text-ink-textMuted">Day</Text>
-      <View className="mb-md flex-row flex-wrap gap-sm">
-        {DAY_OPTIONS.map((opt, index) => {
-          const active = dayIndex === index;
-          return (
-            <Text
-              key={opt.label}
-              onPress={() => setDayIndex(index)}
-              className={`rounded-full border px-md py-xs text-[13px] font-medium ${
-                active
-                  ? 'border-brand-800 bg-brand-800 text-white dark:border-brand-300 dark:bg-brand-300 dark:text-ink-bg'
-                  : 'border-paper-200 text-paper-500 dark:border-ink-border dark:text-ink-textMuted'
-              }`}
-            >
-              {opt.label}
+      {isWeb ? (
+        <View className="mb-md flex-row gap-sm">
+          <View className="flex-1">
+            <Input
+              label="Date"
+              showLabel
+              placeholder="YYYY-MM-DD"
+              value={webDate}
+              onChangeText={setWebDate}
+            />
+          </View>
+          <View className="flex-1">
+            <Input
+              label="Time"
+              showLabel
+              placeholder="HH:MM"
+              value={webTime}
+              onChangeText={setWebTime}
+            />
+          </View>
+        </View>
+      ) : (
+        <View className="mb-md flex-row gap-sm">
+          <Pressable
+            onPress={() => setPickerMode('date')}
+            className="flex-1 rounded-md border border-paper-200 px-md py-md dark:border-ink-border"
+          >
+            <Text className="text-[13px] text-paper-500 dark:text-ink-textMuted">Date</Text>
+            <Text className="text-base text-paper-900 dark:text-ink-text">
+              {scheduledFor.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
             </Text>
-          );
-        })}
-      </View>
+          </Pressable>
+          <Pressable
+            onPress={() => setPickerMode('time')}
+            className="flex-1 rounded-md border border-paper-200 px-md py-md dark:border-ink-border"
+          >
+            <Text className="text-[13px] text-paper-500 dark:text-ink-textMuted">Time</Text>
+            <Text className="text-base text-paper-900 dark:text-ink-text">
+              {scheduledFor.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </Pressable>
+        </View>
+      )}
 
-      <Input
-        label="Time"
-        showLabel
-        placeholder="e.g. 18:00"
-        value={time}
-        onChangeText={(v) => {
-          setTime(v);
-          if (timeError) setTimeError(undefined);
-        }}
-        error={timeError}
-        hint="24-hour format, e.g. 18:00 for 6pm"
-        keyboardType="numbers-and-punctuation"
-      />
+      {pickerMode && (
+        <DateTimePicker
+          value={scheduledFor}
+          mode={pickerMode}
+          minimumDate={pickerMode === 'date' ? new Date() : undefined}
+          onChange={(event, selected) => {
+            setPickerMode(Platform.OS === 'ios' ? pickerMode : null);
+            if (event.type === 'dismissed' || !selected) return;
+            setScheduledFor((prev) => {
+              const next = new Date(prev);
+              if (pickerMode === 'date') {
+                next.setFullYear(selected.getFullYear(), selected.getMonth(), selected.getDate());
+              } else {
+                next.setHours(selected.getHours(), selected.getMinutes(), 0, 0);
+              }
+              return next;
+            });
+          }}
+        />
+      )}
 
       <View className="flex-row gap-sm">
         <Button
           label="Schedule"
           onPress={handleSchedule}
           loading={creating}
-          disabled={!visitorName.trim() || !time.trim()}
+          disabled={!visitorName.trim()}
           className="flex-1"
         />
-        <Button label="Cancel" variant="secondary" onPress={reset} className="flex-1" />
+        <Button label="Cancel" variant="secondary" onPress={onCancel} className="flex-1" />
       </View>
     </Card>
   );

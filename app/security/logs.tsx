@@ -126,8 +126,9 @@ export default function VisitorLogsScreen() {
         </View>
       </View>
 
+      <View className="flex-1 px-xl">
       <SectionList
-        contentContainerClassName="px-xl pb-xl"
+        contentContainerStyle={{ paddingBottom: 24 }}
         sections={sections}
         keyExtractor={(item) => item.id}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
@@ -164,6 +165,7 @@ export default function VisitorLogsScreen() {
           </Card>
         )}
       />
+      </View>
     </View>
   );
 }
