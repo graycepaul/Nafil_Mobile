@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { View, Text, Platform, ScrollView } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,11 @@ import { ScheduledVisitLookup } from '../../components/security/ScheduledVisitLo
 import { ScanResultModal, type ScanResult } from '../../components/security/ScanResultModal';
 import type { VisitorPass, HouseholdMember, Profile, VisitorLogMethod } from '../../types/database';
 
+function formatTime(iso?: string | null): string {
+  const date = iso ? new Date(iso) : new Date();
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 export default function SecurityScanScreen() {
   const profile = useAuthStore((s) => s.profile);
   const queryClient = useQueryClient();
@@ -18,10 +23,17 @@ export default function SecurityScanScreen() {
   const [manualCode, setManualCode] = useState('');
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
+  // CameraView can fire onBarcodeScanned several times for the same code
+  // before React re-renders with the prop that would disable it (`scanning`
+  // flipping to false only takes effect next render) — a ref is checked and
+  // set synchronously, so it blocks every scan after the first one even
+  // within the same frame, unlike the `processing` state check below.
+  const scanLockRef = useRef(false);
 
   function closeResult() {
     setResult(null);
     setScanning(true);
+    scanLockRef.current = false;
   }
 
   function refreshLogs() {
@@ -49,12 +61,16 @@ export default function SecurityScanScreen() {
       .maybeSingle<Profile>();
 
     if (residentMatch) {
-      await supabase.from('visitor_logs').insert({
-        estate_id: profile.estate_id,
-        security_id: profile.id,
-        visitor_name: residentMatch.full_name ?? 'Resident',
-        method: via,
-      });
+      const { data: logRow } = await supabase
+        .from('visitor_logs')
+        .insert({
+          estate_id: profile.estate_id,
+          security_id: profile.id,
+          visitor_name: residentMatch.full_name ?? 'Resident',
+          method: via,
+        })
+        .select('checked_in_at')
+        .single();
       refreshLogs();
       setResult({
         tone: 'success',
@@ -62,6 +78,7 @@ export default function SecurityScanScreen() {
         rows: [
           { label: 'Name', value: residentMatch.full_name ?? 'Resident' },
           { label: 'Unit', value: residentMatch.unit_no ?? 'N/A' },
+          { label: 'Checked in', value: formatTime(logRow?.checked_in_at) },
         ],
       });
       setManualCode('');
@@ -98,12 +115,16 @@ export default function SecurityScanScreen() {
         // itself, so a failure here doesn't block or contradict the
         // "Verified" message the guard already sees.
         await supabase.rpc('record_household_member_scan', { member_id: householdMatch.id });
-        await supabase.from('visitor_logs').insert({
-          estate_id: profile.estate_id,
-          security_id: profile.id,
-          visitor_name: householdMatch.full_name,
-          method: via,
-        });
+        const { data: logRow } = await supabase
+          .from('visitor_logs')
+          .insert({
+            estate_id: profile.estate_id,
+            security_id: profile.id,
+            visitor_name: householdMatch.full_name,
+            method: via,
+          })
+          .select('checked_in_at')
+          .single();
         refreshLogs();
         setResult({
           tone: 'success',
@@ -111,6 +132,7 @@ export default function SecurityScanScreen() {
           rows: [
             { label: 'Name', value: householdMatch.full_name },
             { label: 'Relationship', value: householdMatch.relationship },
+            { label: 'Checked in', value: formatTime(logRow?.checked_in_at) },
           ],
         });
       }
@@ -169,14 +191,18 @@ export default function SecurityScanScreen() {
       .eq('id', pass.id);
 
     if (!updateError) {
-      await supabase.from('visitor_logs').insert({
-        estate_id: profile.estate_id,
-        pass_id: pass.id,
-        security_id: profile.id,
-        visitor_name: pass.visitor_name,
-        vehicle_plate: pass.vehicle_plate,
-        method: via,
-      });
+      const { data: logRow } = await supabase
+        .from('visitor_logs')
+        .insert({
+          estate_id: profile.estate_id,
+          pass_id: pass.id,
+          security_id: profile.id,
+          visitor_name: pass.visitor_name,
+          vehicle_plate: pass.vehicle_plate,
+          method: via,
+        })
+        .select('checked_in_at')
+        .single();
       refreshLogs();
       setResult({
         tone: 'success',
@@ -184,6 +210,7 @@ export default function SecurityScanScreen() {
         rows: [
           { label: 'Name', value: pass.visitor_name },
           ...(pass.vehicle_plate ? [{ label: 'Vehicle', value: pass.vehicle_plate }] : []),
+          { label: 'Checked in', value: formatTime(logRow?.checked_in_at) },
         ],
       });
     } else {
@@ -251,6 +278,8 @@ export default function SecurityScanScreen() {
           onBarcodeScanned={
             scanning
               ? ({ data }) => {
+                  if (scanLockRef.current) return;
+                  scanLockRef.current = true;
                   setScanning(false);
                   checkInByCode(data, 'qr');
                 }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, Pressable, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
@@ -26,6 +27,7 @@ export default function NotificationsScreen() {
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [markingAll, setMarkingAll] = useState(false);
 
@@ -64,7 +66,10 @@ export default function NotificationsScreen() {
   }
 
   const header = (
-    <View className="flex-row items-center gap-md bg-white px-lg pb-lg pt-2xl dark:bg-ink-bg">
+    <View
+      style={{ paddingTop: insets.top + 16 }}
+      className="flex-row items-center gap-md bg-white px-lg pb-lg dark:bg-ink-bg"
+    >
       <Pressable
         onPress={() => router.back()}
         accessibilityRole="button"
