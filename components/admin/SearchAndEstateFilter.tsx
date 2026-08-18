@@ -1,7 +1,17 @@
-import { View, Pressable, Text } from 'react-native';
-import { Input } from '../ui/Input';
+import { useState } from 'react';
+import { View, Pressable, Text, TextInput, Platform } from 'react-native';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
+import { useTheme } from '../../context/theme-context';
 
-/** Search box + (super_admin only, when there's more than one estate) an estate filter chip row. Shared by Residents, Staff, Issues, and Announcements. */
+const suppressBrowserOutline = Platform.select({ web: { outlineStyle: 'none' } as object, default: {} });
+
+/**
+ * Search bar with a filter icon button beside it — tapping the icon reveals
+ * the estate chip row below rather than showing it inline all the time.
+ * Deliberately not the shared `Input` component: its py-[16px] is sized for
+ * primary form fields, and comes out too tall for a compact list toolbar.
+ * Shared by Residents, Staff, Issues, and Announcements.
+ */
 export function SearchAndEstateFilter({
   search,
   onSearchChange,
@@ -13,16 +23,54 @@ export function SearchAndEstateFilter({
   search: string;
   onSearchChange: (value: string) => void;
   placeholder: string;
-  /** Pass only when isSuperAdmin — omitting hides the estate row entirely. */
+  /** Pass only when isSuperAdmin — omitting hides the filter button entirely. */
   estates?: { id: string; name: string }[];
   estateFilter?: string;
   onEstateFilterChange?: (estateId: string | undefined) => void;
 }) {
+  const { colors } = useTheme();
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const showFilterButton = estates && estates.length > 1;
+  const filterActive = estateFilter !== undefined;
+
   return (
-    <View>
-      <Input placeholder={placeholder} value={search} onChangeText={onSearchChange} />
-      {estates && estates.length > 1 && (
-        <View className="mb-lg -mt-sm flex-row flex-wrap gap-sm">
+    <View className="mb-lg">
+      <View className="flex-row items-center gap-sm">
+        <View className="h-[40px] flex-1 flex-row items-center rounded-md border border-paper-200 bg-white pl-md pr-sm dark:border-ink-border dark:bg-ink-surface">
+          <Ionicons name="search-outline" size={16} color={colors.textMuted} />
+          <TextInput
+            placeholder={placeholder}
+            placeholderTextColor={colors.textMuted}
+            value={search}
+            onChangeText={onSearchChange}
+            accessibilityLabel={placeholder}
+            className="ml-sm flex-1 bg-transparent text-[14px] text-paper-900 dark:text-ink-text"
+            style={suppressBrowserOutline}
+          />
+        </View>
+        {showFilterButton && (
+          <Pressable
+            onPress={() => setFiltersOpen((v) => !v)}
+            accessibilityRole="button"
+            accessibilityLabel={filtersOpen ? 'Hide filters' : 'Filter by estate'}
+            accessibilityState={{ expanded: filtersOpen }}
+            className={`h-[40px] w-[40px] items-center justify-center rounded-md border ${
+              filterActive || filtersOpen
+                ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
+                : 'border-paper-200 bg-white dark:border-ink-border dark:bg-ink-surface'
+            }`}
+          >
+            <Ionicons
+              name="options-outline"
+              size={18}
+              color={filterActive || filtersOpen ? colors.onButtonFill : colors.textMuted}
+            />
+          </Pressable>
+        )}
+      </View>
+
+      {showFilterButton && filtersOpen && (
+        <View className="mt-md flex-row flex-wrap gap-sm">
           {[{ id: undefined, name: 'All estates' }, ...estates].map((e) => {
             const active = estateFilter === e.id;
             return (

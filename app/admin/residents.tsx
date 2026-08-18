@@ -122,8 +122,21 @@ export default function AdminResidentsScreen() {
 
   const pendingCount = requests?.length ?? 0;
 
+  const searchFilter = (
+    <View className="pt-lg">
+      <SearchAndEstateFilter
+        search={search}
+        onSearchChange={setSearch}
+        placeholder="Search by name"
+        estates={isSuperAdmin ? estates : undefined}
+        estateFilter={estateFilter}
+        onEstateFilterChange={setEstateFilter}
+      />
+    </View>
+  );
+
   const tabs = (
-    <View className="flex-row gap-sm px-xl pt-lg">
+    <View className="flex-row border-b border-paper-200 dark:border-ink-border">
       {(
         [
           { key: 'all' as const, label: 'All residents' },
@@ -137,15 +150,13 @@ export default function AdminResidentsScreen() {
             onPress={() => setActiveTab(t.key)}
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
-            className={`flex-1 items-center rounded-full border py-sm ${
-              active
-                ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
-                : 'border-paper-200 dark:border-ink-border'
+            className={`flex-1 items-center border-b-2 pb-sm ${
+              active ? 'border-brand-800 dark:border-brand-300' : 'border-transparent'
             }`}
           >
             <Text
-              className={`text-[13px] font-semibold ${
-                active ? 'text-white dark:text-ink-bg' : 'text-paper-500 dark:text-ink-textMuted'
+              className={`text-[14px] font-semibold ${
+                active ? 'text-brand-800 dark:text-brand-300' : 'text-paper-500 dark:text-ink-textMuted'
               }`}
             >
               {t.label}
@@ -168,16 +179,9 @@ export default function AdminResidentsScreen() {
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
           <View>
+            {searchFilter}
             {tabs}
             <View className="h-lg" />
-            <SearchAndEstateFilter
-              search={search}
-              onSearchChange={setSearch}
-              placeholder="Search by name"
-              estates={isSuperAdmin ? estates : undefined}
-              estateFilter={estateFilter}
-              onEstateFilterChange={setEstateFilter}
-            />
             {formError && <Notice message={formError} />}
           </View>
         }
@@ -220,16 +224,9 @@ export default function AdminResidentsScreen() {
       keyExtractor={(item) => item.id}
       ListHeaderComponent={
         <View>
+          {searchFilter}
           {tabs}
           <View className="h-lg" />
-          <SearchAndEstateFilter
-            search={search}
-            onSearchChange={setSearch}
-            placeholder="Search by name"
-            estates={isSuperAdmin ? estates : undefined}
-            estateFilter={estateFilter}
-            onEstateFilterChange={setEstateFilter}
-          />
         </View>
       }
       ListEmptyComponent={
