@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, FlatList } from 'react-native';
+import { View, Text, FlatList, RefreshControl } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
@@ -12,37 +12,50 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { JoinRequestWithApplicant, Profile } from '../../types/database';
 
+type WithEstateName<T> = T & { estate: { name: string } | null };
+
 export default function AdminResidentsScreen() {
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
   const queryClient = useQueryClient();
   const [formError, setFormError] = useState<string>();
+  const isSuperAdmin = profile?.role === 'super_admin';
 
-  const { data: requests } = useQuery({
+  const {
+    data: requests,
+    refetch: refetchRequests,
+    isRefetching: isRefetchingRequests,
+  } = useQuery({
     queryKey: ['join_requests_pending', profile?.estate_id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('estate_join_requests')
-        .select('*, applicant:profiles!estate_join_requests_profile_id_fkey(full_name, phone, avatar_url)')
+        .select(
+          '*, applicant:profiles!estate_join_requests_profile_id_fkey(full_name, phone, avatar_url), estate:estates(name)'
+        )
         .eq('status', 'pending')
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return data as JoinRequestWithApplicant[];
+      return data as WithEstateName<JoinRequestWithApplicant>[];
     },
     enabled: !!profile,
   });
 
-  const { data: residents } = useQuery({
+  const {
+    data: residents,
+    refetch: refetchResidents,
+    isRefetching: isRefetchingResidents,
+  } = useQuery({
     queryKey: ['residents_approved', profile?.estate_id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('*, estate:estates(name)')
         .eq('role', 'resident')
         .eq('approved', true)
         .order('full_name');
       if (error) throw error;
-      return data as Profile[];
+      return data as WithEstateName<Profile>[];
     },
     enabled: !!profile,
   });
@@ -50,6 +63,10 @@ export default function AdminResidentsScreen() {
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: ['join_requests_pending', profile?.estate_id] });
     queryClient.invalidateQueries({ queryKey: ['residents_approved', profile?.estate_id] });
+  }
+
+  async function onRefresh() {
+    await Promise.all([refetchRequests(), refetchResidents()]);
   }
 
   async function approve(requestId: string) {
@@ -70,6 +87,13 @@ export default function AdminResidentsScreen() {
     <FlatList
       className="bg-white dark:bg-ink-bg"
       contentContainerClassName="p-xl"
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefetchingRequests || isRefetchingResidents}
+          onRefresh={onRefresh}
+          tintColor={colors.primary}
+        />
+      }
       data={residents ?? []}
       keyExtractor={(item) => item.id}
       ListHeaderComponent={
@@ -97,6 +121,7 @@ export default function AdminResidentsScreen() {
                   <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
                     Unit {req.unit_no}
                     {req.applicant?.phone ? ` · ${req.applicant.phone}` : ''}
+                    {isSuperAdmin && req.estate?.name ? ` · ${req.estate.name}` : ''}
                   </Text>
                 </View>
               </View>
@@ -133,6 +158,7 @@ export default function AdminResidentsScreen() {
             </Text>
             <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
               Unit {item.unit_no ?? 'N/A'}
+              {isSuperAdmin && item.estate?.name ? ` · ${item.estate.name}` : ''}
             </Text>
           </View>
         </Card>

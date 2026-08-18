@@ -17,22 +17,28 @@ const NEXT_STATUS: Record<IssueStatus, IssueStatus | null> = {
   resolved: null,
 };
 
+type IssueWithContext = Issue & {
+  reporter: { full_name: string | null; unit_no: string | null } | null;
+  estate: { name: string } | null;
+};
+
 export default function AdminIssuesScreen() {
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
   const queryClient = useQueryClient();
   const [advancingId, setAdvancingId] = useState<string | null>(null);
   const [error, setError] = useState<string>();
+  const isSuperAdmin = profile?.role === 'super_admin';
 
   const { data: issues, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['issues_admin', profile?.estate_id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('issues')
-        .select('*')
+        .select('*, reporter:profiles!issues_resident_id_fkey(full_name, unit_no), estate:estates(name)')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as Issue[];
+      return data as IssueWithContext[];
     },
     enabled: !!profile,
   });
@@ -89,6 +95,11 @@ export default function AdminIssuesScreen() {
             </Text>
             <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
               {item.description}
+            </Text>
+            <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
+              Reported by {item.reporter?.full_name ?? 'Unknown resident'}
+              {item.reporter?.unit_no ? ` · Unit ${item.reporter.unit_no}` : ''}
+              {isSuperAdmin && item.estate?.name ? ` · ${item.estate.name}` : ''}
             </Text>
             <Text
               className={`mt-sm capitalize text-[13px] text-brand-800 dark:text-brand-300 ${

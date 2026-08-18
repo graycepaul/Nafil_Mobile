@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { shareStaffInvite } from '../../lib/share-staff-invite';
 import { useAuthStore } from '../../store/auth-store';
@@ -19,19 +19,26 @@ import type { StaffInvite } from '../../types/database';
  */
 export function InviteStaffForm({
   estateName,
+  estates,
   onInvited,
 }: {
   estateName?: string;
+  /** super_admin only — lets them pick which estate the invite belongs to instead of it silently defaulting to their own home estate. */
+  estates?: { id: string; name: string }[];
   onInvited?: () => void;
 }) {
   const profile = useAuthStore((s) => s.profile);
 
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
+  const [estateId, setEstateId] = useState<string | undefined>(profile?.estate_id ?? undefined);
   const [error, setError] = useState<string>();
   const [formError, setFormError] = useState<string>();
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState<StaffInvite | null>(null);
+
+  const targetEstateId = estates && estates.length > 0 ? estateId : profile?.estate_id;
+  const targetEstateName = estates?.find((e) => e.id === targetEstateId)?.name ?? estateName;
 
   function reset() {
     setOpen(false);
@@ -45,12 +52,12 @@ export function InviteStaffForm({
     const emailError = validateEmail(email);
     setError(emailError);
     setFormError(undefined);
-    if (emailError || !profile?.estate_id) return;
+    if (emailError || !targetEstateId) return;
 
     setCreating(true);
     const { data, error: insertError } = await supabase
       .from('staff_invites')
-      .insert({ estate_id: profile.estate_id, role: 'security', email: email.trim(), invited_by: profile.id })
+      .insert({ estate_id: targetEstateId, role: 'security', email: email.trim(), invited_by: profile!.id })
       .select()
       .single();
     setCreating(false);
@@ -86,7 +93,11 @@ export function InviteStaffForm({
           </Text>
         </View>
         <View className="flex-row gap-sm">
-          <Button label="Share invite" onPress={() => shareStaffInvite(created, estateName)} className="flex-1" />
+          <Button
+            label="Share invite"
+            onPress={() => shareStaffInvite(created, targetEstateName)}
+            className="flex-1"
+          />
           <Button label="Done" variant="secondary" onPress={reset} className="flex-1" />
         </View>
       </Card>
@@ -97,6 +108,37 @@ export function InviteStaffForm({
     <Card className="mb-xl">
       <Text className="mb-md text-base font-semibold text-paper-900 dark:text-ink-text">Invite staff</Text>
       {formError && <Notice message={formError} />}
+      {estates && estates.length > 1 && (
+        <View className="mb-lg">
+          <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">Estate</Text>
+          <View className="flex-row flex-wrap gap-sm">
+            {estates.map((e) => {
+              const active = estateId === e.id;
+              return (
+                <Pressable
+                  key={e.id}
+                  onPress={() => setEstateId(e.id)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  className={`rounded-full border px-md py-xs ${
+                    active
+                      ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
+                      : 'border-paper-200 dark:border-ink-border'
+                  }`}
+                >
+                  <Text
+                    className={`text-[13px] font-medium ${
+                      active ? 'text-white dark:text-ink-bg' : 'text-paper-500 dark:text-ink-textMuted'
+                    }`}
+                  >
+                    {e.name}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      )}
       <Input
         label="Email"
         placeholder="Email"

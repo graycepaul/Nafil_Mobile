@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { useQueryClient } from '@tanstack/react-query';
+import { View, Text, Pressable, Keyboard } from 'react-native';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { apiPost } from '../../lib/api';
 import { useAuthStore } from '../../store/auth-store';
@@ -14,21 +14,35 @@ import type { AlertCategory } from '../../types/database';
 export default function AdminAnnouncementsScreen() {
   const profile = useAuthStore((s) => s.profile);
   const queryClient = useQueryClient();
+  const isSuperAdmin = profile?.role === 'super_admin';
   const [emergency, setEmergency] = useState(false);
   const [category, setCategory] = useState<AlertCategory>('other');
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [estateId, setEstateId] = useState<string | undefined>(profile?.estate_id ?? undefined);
   const [posting, setPosting] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'error' | 'success'; message: string }>();
 
+  const { data: estates } = useQuery({
+    queryKey: ['all_estates'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('estates').select('id, name').order('name');
+      if (error) throw error;
+      return data as { id: string; name: string }[];
+    },
+    enabled: isSuperAdmin,
+  });
+
+  const targetEstateId = isSuperAdmin ? estateId : profile?.estate_id;
+
   async function post() {
-    if (!title.trim() || !body.trim() || !profile?.estate_id) return;
+    if (!title.trim() || !body.trim() || !targetEstateId) return;
     setPosting(true);
     setNotice(undefined);
 
     const { error } = await supabase.from('announcements').insert({
-      estate_id: profile.estate_id,
-      author_id: profile.id,
+      estate_id: targetEstateId,
+      author_id: profile!.id,
       title: title.trim(),
       body: body.trim(),
       severity: emergency ? 'emergency' : 'info',
@@ -53,6 +67,7 @@ export default function AdminAnnouncementsScreen() {
           title: title.trim(),
           body: body.trim(),
           category,
+          estate_id: targetEstateId,
         });
         setNotice({
           tone: 'success',
@@ -76,9 +91,42 @@ export default function AdminAnnouncementsScreen() {
 
   return (
     <AnnouncementsFeed
+      showEstate={isSuperAdmin}
       ListHeaderComponent={
         <View>
           {notice && <Notice tone={notice.tone} message={notice.message} />}
+
+          {isSuperAdmin && estates && estates.length > 1 && (
+            <View className="mb-lg">
+              <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">Estate</Text>
+              <View className="flex-row flex-wrap gap-sm">
+                {estates.map((e) => {
+                  const active = estateId === e.id;
+                  return (
+                    <Pressable
+                      key={e.id}
+                      onPress={() => setEstateId(e.id)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active }}
+                      className={`rounded-full border px-md py-xs ${
+                        active
+                          ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
+                          : 'border-paper-200 dark:border-ink-border'
+                      }`}
+                    >
+                      <Text
+                        className={`text-[13px] font-medium ${
+                          active ? 'text-white dark:text-ink-bg' : 'text-paper-500 dark:text-ink-textMuted'
+                        }`}
+                      >
+                        {e.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          )}
 
           <Pressable
             onPress={() => setEmergency((v) => !v)}
@@ -105,8 +153,23 @@ export default function AdminAnnouncementsScreen() {
 
           {emergency && <AlertCategoryPicker value={category} onChange={setCategory} />}
 
-          <Input label="Title" value={title} onChangeText={setTitle} />
-          <Input label="Message" value={body} onChangeText={setBody} multiline />
+          <Input
+            label="Title"
+            showLabel
+            placeholder="e.g. New visitor gate hours"
+            value={title}
+            onChangeText={setTitle}
+            returnKeyType="done"
+            onSubmitEditing={() => Keyboard.dismiss()}
+          />
+          <Input
+            label="Message"
+            showLabel
+            placeholder="What do residents need to know?"
+            value={body}
+            onChangeText={setBody}
+            multiline
+          />
           <Button
             label={emergency ? 'Send emergency alert' : 'Post announcement'}
             variant={emergency ? 'danger' : 'primary'}

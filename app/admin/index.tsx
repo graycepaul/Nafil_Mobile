@@ -82,10 +82,10 @@ export default function AdminDashboardScreen() {
     queryFn: async () => {
       const { data } = await supabase
         .from('announcements')
-        .select('*')
+        .select('*, estate:estates(name)')
         .order('created_at', { ascending: false })
         .limit(3);
-      return (data ?? []) as Announcement[];
+      return (data ?? []) as (Announcement & { estate: { name: string } | null })[];
     },
     enabled: !!profile,
   });
@@ -172,6 +172,7 @@ export default function AdminDashboardScreen() {
                     </Text>
                     <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
                       {relativeTime(announcement.created_at)}
+                      {isSuperAdmin && announcement.estate?.name ? ` · ${announcement.estate.name}` : ''}
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" color={colors.textMuted} size={18} />

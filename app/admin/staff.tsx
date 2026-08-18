@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, FlatList } from 'react-native';
+import { View, Text, FlatList, RefreshControl } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
@@ -13,12 +13,15 @@ import { InviteStaffForm } from '../../components/admin/InviteStaffForm';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { Estate, Profile, StaffInvite } from '../../types/database';
 
+type WithEstateName<T> = T & { estate: { name: string } | null };
+
 export default function AdminStaffScreen() {
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
   const queryClient = useQueryClient();
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [error, setError] = useState<string>();
+  const isSuperAdmin = profile?.role === 'super_admin';
 
   const { data: estate } = useQuery({
     queryKey: ['my_estate', profile?.estate_id],
@@ -34,31 +37,53 @@ export default function AdminStaffScreen() {
     enabled: !!profile?.estate_id,
   });
 
-  const { data: invites } = useQuery({
+  // Only fetched for the picker inside InviteStaffForm — super_admin oversees
+  // every estate and needs to choose which one a new hire belongs to, rather
+  // than the invite silently landing in whichever estate happens to be their
+  // own home one.
+  const { data: estates } = useQuery({
+    queryKey: ['all_estates'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('estates').select('id, name').order('name');
+      if (error) throw error;
+      return data as { id: string; name: string }[];
+    },
+    enabled: isSuperAdmin,
+  });
+
+  const {
+    data: invites,
+    refetch: refetchInvites,
+    isRefetching: isRefetchingInvites,
+  } = useQuery({
     queryKey: ['staff_invites_pending', profile?.estate_id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('staff_invites')
-        .select('*')
+        .select('*, estate:estates(name)')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as StaffInvite[];
+      return data as WithEstateName<StaffInvite>[];
     },
     enabled: !!profile,
   });
 
-  const { data: staff } = useQuery({
+  const {
+    data: staff,
+    refetch: refetchStaff,
+    isRefetching: isRefetchingStaff,
+  } = useQuery({
     queryKey: ['staff_members', profile?.estate_id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('*, estate:estates(name)')
         .in('role', ['security', 'admin'])
         .eq('approved', true)
         .order('full_name');
       if (error) throw error;
-      return data as Profile[];
+      return data as WithEstateName<Profile>[];
     },
     enabled: !!profile,
   });
@@ -66,6 +91,10 @@ export default function AdminStaffScreen() {
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: ['staff_invites_pending', profile?.estate_id] });
     queryClient.invalidateQueries({ queryKey: ['staff_members', profile?.estate_id] });
+  }
+
+  async function onRefresh() {
+    await Promise.all([refetchInvites(), refetchStaff()]);
   }
 
   async function revoke(inviteId: string) {
@@ -84,13 +113,24 @@ export default function AdminStaffScreen() {
     <FlatList
       className="bg-white dark:bg-ink-bg"
       contentContainerClassName="p-xl"
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefetchingInvites || isRefetchingStaff}
+          onRefresh={onRefresh}
+          tintColor={colors.primary}
+        />
+      }
       data={staff ?? []}
       keyExtractor={(item) => item.id}
       ListHeaderComponent={
         <View>
           {error && <Notice message={error} />}
 
-          <InviteStaffForm estateName={estate?.name} onInvited={invalidate} />
+          <InviteStaffForm
+            estateName={estate?.name}
+            estates={isSuperAdmin ? estates : undefined}
+            onInvited={invalidate}
+          />
 
           {invites && invites.length > 0 && (
             <>
@@ -105,6 +145,7 @@ export default function AdminStaffScreen() {
                     </Text>
                     <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
                       {invite.role} · code {invite.code}
+                      {isSuperAdmin && invite.estate?.name ? ` · ${invite.estate.name}` : ''}
                     </Text>
                   </View>
                   <Button
@@ -140,6 +181,7 @@ export default function AdminStaffScreen() {
             </Text>
             <Text className="mt-0.5 text-[13px] capitalize text-paper-500 dark:text-ink-textMuted">
               {item.role}
+              {isSuperAdmin && item.estate?.name ? ` · ${item.estate.name}` : ''}
             </Text>
           </View>
         </Card>

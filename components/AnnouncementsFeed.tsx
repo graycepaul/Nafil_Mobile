@@ -18,8 +18,11 @@ export function emergencyLabel(category: Announcement['category']) {
 
 export function AnnouncementsFeed({
   ListHeaderComponent,
+  showEstate,
 }: {
   ListHeaderComponent?: React.ReactElement;
+  /** super_admin only — the feed is cross-estate for them, so each card needs to say which estate it's from. */
+  showEstate?: boolean;
 }) {
   const { colors } = useTheme();
   const queryClient = useQueryClient();
@@ -30,10 +33,10 @@ export function AnnouncementsFeed({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('announcements')
-        .select('*')
+        .select('*, estate:estates(name)')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as Announcement[];
+      return data as (Announcement & { estate: { name: string } | null })[];
     },
   });
 
@@ -55,6 +58,8 @@ export function AnnouncementsFeed({
     <FlatList
       className="bg-white dark:bg-ink-bg"
       contentContainerClassName="p-xl"
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       ListHeaderComponent={ListHeaderComponent}
       data={announcements ?? []}
@@ -79,6 +84,7 @@ export function AnnouncementsFeed({
             <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">{item.body}</Text>
             <Text className="mt-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
               {relativeTime(item.created_at)}
+              {showEstate && item.estate?.name ? ` · ${item.estate.name}` : ''}
             </Text>
           </Card>
         );
