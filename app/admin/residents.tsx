@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { View, Text, FlatList, RefreshControl } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
@@ -13,13 +14,22 @@ import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { JoinRequestWithApplicant, Profile } from '../../types/database';
 
 type WithEstateName<T> = T & { estate: { name: string } | null };
+type ResidentsTab = 'all' | 'pending';
 
 export default function AdminResidentsScreen() {
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
   const queryClient = useQueryClient();
+  const { tab: openOnLoad } = useLocalSearchParams<{ tab?: string }>();
   const [formError, setFormError] = useState<string>();
+  const [activeTab, setActiveTab] = useState<ResidentsTab>('all');
   const isSuperAdmin = profile?.role === 'super_admin';
+
+  // Deep-linked from the Dashboard's "Pending requests" stat card.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (openOnLoad === 'pending') setActiveTab('pending');
+  }, [openOnLoad]);
 
   const {
     data: requests,
@@ -65,10 +75,6 @@ export default function AdminResidentsScreen() {
     queryClient.invalidateQueries({ queryKey: ['residents_approved', profile?.estate_id] });
   }
 
-  async function onRefresh() {
-    await Promise.all([refetchRequests(), refetchResidents()]);
-  }
-
   async function approve(requestId: string) {
     setFormError(undefined);
     const { error } = await supabase.rpc('approve_join_request', { request_id: requestId });
@@ -83,65 +89,97 @@ export default function AdminResidentsScreen() {
     else invalidate();
   }
 
+  const pendingCount = requests?.length ?? 0;
+
+  const tabs = (
+    <View className="flex-row gap-sm px-xl pt-lg">
+      {(
+        [
+          { key: 'all' as const, label: 'All residents' },
+          { key: 'pending' as const, label: `Pending${pendingCount > 0 ? ` (${pendingCount})` : ''}` },
+        ]
+      ).map((t) => {
+        const active = activeTab === t.key;
+        return (
+          <Pressable
+            key={t.key}
+            onPress={() => setActiveTab(t.key)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active }}
+            className={`flex-1 items-center rounded-full border py-sm ${
+              active
+                ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
+                : 'border-paper-200 dark:border-ink-border'
+            }`}
+          >
+            <Text
+              className={`text-[13px] font-semibold ${
+                active ? 'text-white dark:text-ink-bg' : 'text-paper-500 dark:text-ink-textMuted'
+              }`}
+            >
+              {t.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+
+  if (activeTab === 'pending') {
+    return (
+      <FlatList
+        className="bg-white dark:bg-ink-bg"
+        contentContainerClassName="px-xl pb-xl"
+        refreshControl={
+          <RefreshControl refreshing={isRefetchingRequests} onRefresh={refetchRequests} tintColor={colors.primary} />
+        }
+        data={requests ?? []}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={
+          <View>
+            {tabs}
+            {formError && <Notice message={formError} />}
+            <View className="h-lg" />
+          </View>
+        }
+        ListEmptyComponent={
+          <EmptyState title="All caught up" message="No join requests waiting on you." />
+        }
+        renderItem={({ item: req }) => (
+          <Card className="mb-md">
+            <View className="flex-row items-center gap-md">
+              <Avatar uri={req.applicant?.avatar_url} name={req.applicant?.full_name} size={44} />
+              <View className="flex-1">
+                <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
+                  {req.applicant?.full_name ?? 'Unnamed'}
+                </Text>
+                <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
+                  Unit {req.unit_no}
+                  {req.applicant?.phone ? ` · ${req.applicant.phone}` : ''}
+                  {isSuperAdmin && req.estate?.name ? ` · ${req.estate.name}` : ''}
+                </Text>
+              </View>
+            </View>
+            <View className="mt-md flex-row gap-sm">
+              <Button label="Approve" onPress={() => approve(req.id)} className="flex-1" />
+              <Button label="Reject" variant="secondary" onPress={() => reject(req.id)} className="flex-1" />
+            </View>
+          </Card>
+        )}
+      />
+    );
+  }
+
   return (
     <FlatList
       className="bg-white dark:bg-ink-bg"
-      contentContainerClassName="p-xl"
+      contentContainerClassName="px-xl pb-xl"
       refreshControl={
-        <RefreshControl
-          refreshing={isRefetchingRequests || isRefetchingResidents}
-          onRefresh={onRefresh}
-          tintColor={colors.primary}
-        />
+        <RefreshControl refreshing={isRefetchingResidents} onRefresh={refetchResidents} tintColor={colors.primary} />
       }
       data={residents ?? []}
       keyExtractor={(item) => item.id}
-      ListHeaderComponent={
-        <View>
-          {formError && <Notice message={formError} />}
-
-          <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">
-            Pending requests {requests && requests.length > 0 ? `(${requests.length})` : ''}
-          </Text>
-
-          {(!requests || requests.length === 0) && (
-            <View className="mb-lg">
-              <EmptyState title="All caught up" message="No join requests waiting on you." />
-            </View>
-          )}
-
-          {requests?.map((req) => (
-            <Card key={req.id} className="mb-md">
-              <View className="flex-row items-center gap-md">
-                <Avatar uri={req.applicant?.avatar_url} name={req.applicant?.full_name} size={44} />
-                <View className="flex-1">
-                  <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
-                    {req.applicant?.full_name ?? 'Unnamed'}
-                  </Text>
-                  <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
-                    Unit {req.unit_no}
-                    {req.applicant?.phone ? ` · ${req.applicant.phone}` : ''}
-                    {isSuperAdmin && req.estate?.name ? ` · ${req.estate.name}` : ''}
-                  </Text>
-                </View>
-              </View>
-              <View className="mt-md flex-row gap-sm">
-                <Button label="Approve" onPress={() => approve(req.id)} className="flex-1" />
-                <Button
-                  label="Reject"
-                  variant="secondary"
-                  onPress={() => reject(req.id)}
-                  className="flex-1"
-                />
-              </View>
-            </Card>
-          ))}
-
-          <Text className="mb-md mt-xl text-lg font-semibold text-paper-900 dark:text-ink-text">
-            Residents
-          </Text>
-        </View>
-      }
+      ListHeaderComponent={<View>{tabs}<View className="h-lg" /></View>}
       ListEmptyComponent={
         <EmptyState
           icon={<Ionicons name="person-outline" color={colors.textMuted} size={26} />}

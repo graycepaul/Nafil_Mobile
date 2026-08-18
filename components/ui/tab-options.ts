@@ -22,6 +22,7 @@ export function themedTabOptions(colors: ThemeColors, bottomInset: number = 0) {
     },
     headerShadowVisible: false,
     headerTintColor: colors.onHeaderBg,
+    headerTitleAlign: 'left' as const,
     headerTitleStyle: { fontWeight: '700' as const },
     tabBarActiveTintColor: colors.primary,
     tabBarInactiveTintColor: colors.textMuted,

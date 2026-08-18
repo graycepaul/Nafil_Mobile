@@ -7,12 +7,13 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { relativeTime } from '../../lib/format';
+import { Avatar } from '../../components/ui/Avatar';
 import { Card } from '../../components/ui/Card';
 import { StatCard } from '../../components/ui/StatCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { emergencyLabel } from '../../components/AnnouncementsFeed';
-import type { Announcement } from '../../types/database';
+import type { Announcement, Estate } from '../../types/database';
 
 /**
  * super_admin sees the exact same dashboard, just with unscoped counts.
@@ -26,6 +27,20 @@ export default function AdminDashboardScreen() {
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
   const isSuperAdmin = profile?.role === 'super_admin';
+
+  const { data: estate } = useQuery({
+    queryKey: ['my_estate', profile?.estate_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('estates')
+        .select('*')
+        .eq('id', profile!.estate_id!)
+        .single();
+      if (error) throw error;
+      return data as Estate;
+    },
+    enabled: !!profile?.estate_id,
+  });
 
   const { data: residentCount } = useQuery({
     queryKey: ['dashboard_resident_count', profile?.id],
@@ -108,14 +123,44 @@ export default function AdminDashboardScreen() {
       contentContainerClassName="p-lg"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
-      {isSuperAdmin && (
-        <View className="mb-lg flex-row items-center gap-xs self-start rounded-full bg-brand-50 px-md py-xs dark:bg-brand-900">
-          <Ionicons name="globe-outline" color={colors.primary} size={14} />
-          <Text className="text-[13px] font-semibold text-brand-800 dark:text-brand-300">
-            Viewing all estates
-          </Text>
+      <Card className="mb-lg">
+        <View className="flex-row items-center gap-md">
+          <Avatar uri={profile?.avatar_url} name={profile?.full_name} size={56} />
+          <View className="flex-1">
+            <Text className="text-[22px] font-bold tracking-[-0.2px] text-paper-900 dark:text-ink-text">
+              {profile?.full_name ?? 'Welcome back'}
+            </Text>
+            {isSuperAdmin ? (
+              <View className="mt-1 flex-row items-center gap-xs self-start rounded-full bg-brand-50 px-sm py-[2px] dark:bg-brand-900">
+                <Ionicons name="globe-outline" color={colors.primary} size={12} />
+                <Text className="text-[13px] font-semibold text-brand-800 dark:text-brand-300">
+                  Viewing all estates
+                </Text>
+              </View>
+            ) : (
+              <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
+                {estate?.name ?? '...fetching estate'}
+              </Text>
+            )}
+          </View>
         </View>
-      )}
+        <View className="mt-lg flex-row gap-md">
+          <Pressable
+            onPress={() => router.push('/admin/staff?invite=1')}
+            className="flex-1 items-center rounded-md bg-brand-800 py-md active:opacity-90 dark:bg-brand-500"
+          >
+            <Text className="text-base font-semibold text-white">+ Invite staff</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push('/admin/announcements')}
+            className="flex-1 items-center rounded-md border border-paper-200 bg-paper-50 py-md active:opacity-80 dark:border-ink-border dark:bg-ink-surface"
+          >
+            <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
+              Post announcement
+            </Text>
+          </Pressable>
+        </View>
+      </Card>
 
       <View className="mb-md flex-row gap-md">
         <StatCard
@@ -142,7 +187,7 @@ export default function AdminDashboardScreen() {
           icon={<Ionicons name="person-add-outline" color={colors.primary} size={18} />}
           value={pendingRequestCount ?? 0}
           label="Pending requests"
-          onPress={() => router.push('/admin/residents')}
+          onPress={() => router.push('/admin/residents?tab=pending')}
         />
       </View>
 

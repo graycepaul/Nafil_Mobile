@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { View, Text, FlatList, RefreshControl } from 'react-native';
+import { useEffect, useLayoutEffect, useState } from 'react';
+import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
@@ -18,10 +19,35 @@ type WithEstateName<T> = T & { estate: { name: string } | null };
 export default function AdminStaffScreen() {
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
+  const navigation = useNavigation();
+  const { invite: openOnLoad } = useLocalSearchParams<{ invite?: string }>();
   const queryClient = useQueryClient();
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [error, setError] = useState<string>();
+  const [inviting, setInviting] = useState(false);
   const isSuperAdmin = profile?.role === 'super_admin';
+
+  // Deep-linked from the Dashboard's "+ Invite staff" quick action (?invite=1).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (openOnLoad) setInviting(true);
+  }, [openOnLoad]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable
+          onPress={() => setInviting((v) => !v)}
+          accessibilityRole="button"
+          accessibilityLabel={inviting ? 'Cancel invite' : 'Invite staff'}
+          hitSlop={8}
+          className="px-lg"
+        >
+          <Ionicons name={inviting ? 'close' : 'person-add-outline'} color={colors.onHeaderBg} size={22} />
+        </Pressable>
+      ),
+    });
+  }, [navigation, inviting, colors.onHeaderBg]);
 
   const { data: estate } = useQuery({
     queryKey: ['my_estate', profile?.estate_id],
@@ -126,11 +152,14 @@ export default function AdminStaffScreen() {
         <View>
           {error && <Notice message={error} />}
 
-          <InviteStaffForm
-            estateName={estate?.name}
-            estates={isSuperAdmin ? estates : undefined}
-            onInvited={invalidate}
-          />
+          {inviting && (
+            <InviteStaffForm
+              estateName={estate?.name}
+              estates={isSuperAdmin ? estates : undefined}
+              onInvited={invalidate}
+              onClose={() => setInviting(false)}
+            />
+          )}
 
           {invites && invites.length > 0 && (
             <>

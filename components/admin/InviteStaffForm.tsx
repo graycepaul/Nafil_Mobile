@@ -10,27 +10,37 @@ import { Card } from '../ui/Card';
 import { validateEmail } from '../../lib/validation';
 import type { StaffInvite } from '../../types/database';
 
+const ROLES: { value: StaffInvite['role']; label: string }[] = [
+  { value: 'security', label: 'Security' },
+  { value: 'admin', label: 'Admin' },
+];
+
 /**
  * Creates a staff invite and hands the admin a code to share — through
  * whatever channel they'd already use to reach a new hire (WhatsApp, SMS,
  * in person), the same way visitor pass codes are shared. No email gets sent
  * automatically; that would need server-side infrastructure (an email
  * provider, a backend endpoint) that isn't wired up yet. This works today.
+ *
+ * Open/closed state lives in the parent (toggled from the Staff header) so
+ * the header button and this form agree on whether it's showing.
  */
 export function InviteStaffForm({
   estateName,
   estates,
   onInvited,
+  onClose,
 }: {
   estateName?: string;
   /** super_admin only — lets them pick which estate the invite belongs to instead of it silently defaulting to their own home estate. */
   estates?: { id: string; name: string }[];
   onInvited?: () => void;
+  onClose: () => void;
 }) {
   const profile = useAuthStore((s) => s.profile);
 
-  const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
+  const [role, setRole] = useState<StaffInvite['role']>('security');
   const [estateId, setEstateId] = useState<string | undefined>(profile?.estate_id ?? undefined);
   const [error, setError] = useState<string>();
   const [formError, setFormError] = useState<string>();
@@ -39,14 +49,6 @@ export function InviteStaffForm({
 
   const targetEstateId = estates && estates.length > 0 ? estateId : profile?.estate_id;
   const targetEstateName = estates?.find((e) => e.id === targetEstateId)?.name ?? estateName;
-
-  function reset() {
-    setOpen(false);
-    setEmail('');
-    setError(undefined);
-    setFormError(undefined);
-    setCreated(null);
-  }
 
   async function handleCreate() {
     const emailError = validateEmail(email);
@@ -57,7 +59,7 @@ export function InviteStaffForm({
     setCreating(true);
     const { data, error: insertError } = await supabase
       .from('staff_invites')
-      .insert({ estate_id: targetEstateId, role: 'security', email: email.trim(), invited_by: profile!.id })
+      .insert({ estate_id: targetEstateId, role, email: email.trim(), invited_by: profile!.id })
       .select()
       .single();
     setCreating(false);
@@ -72,12 +74,6 @@ export function InviteStaffForm({
     }
     setCreated(data as StaffInvite);
     onInvited?.();
-  }
-
-  if (!open) {
-    return (
-      <Button label="+ Invite staff" variant="secondary" onPress={() => setOpen(true)} className="mb-xl" />
-    );
   }
 
   if (created) {
@@ -98,7 +94,7 @@ export function InviteStaffForm({
             onPress={() => shareStaffInvite(created, targetEstateName)}
             className="flex-1"
           />
-          <Button label="Done" variant="secondary" onPress={reset} className="flex-1" />
+          <Button label="Done" variant="secondary" onPress={onClose} className="flex-1" />
         </View>
       </Card>
     );
@@ -108,6 +104,35 @@ export function InviteStaffForm({
     <Card className="mb-xl">
       <Text className="mb-md text-base font-semibold text-paper-900 dark:text-ink-text">Invite staff</Text>
       {formError && <Notice message={formError} />}
+
+      <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">Role</Text>
+      <View className="mb-lg flex-row gap-sm">
+        {ROLES.map((r) => {
+          const active = role === r.value;
+          return (
+            <Pressable
+              key={r.value}
+              onPress={() => setRole(r.value)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              className={`rounded-full border px-md py-xs ${
+                active
+                  ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
+                  : 'border-paper-200 dark:border-ink-border'
+              }`}
+            >
+              <Text
+                className={`text-[13px] font-medium ${
+                  active ? 'text-white dark:text-ink-bg' : 'text-paper-500 dark:text-ink-textMuted'
+                }`}
+              >
+                {r.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       {estates && estates.length > 1 && (
         <View className="mb-lg">
           <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">Estate</Text>
@@ -153,7 +178,7 @@ export function InviteStaffForm({
       />
       <View className="flex-row gap-sm">
         <Button label="Send invite" onPress={handleCreate} loading={creating} className="flex-1" />
-        <Button label="Cancel" variant="secondary" onPress={reset} className="flex-1" />
+        <Button label="Cancel" variant="secondary" onPress={onClose} className="flex-1" />
       </View>
     </Card>
   );
