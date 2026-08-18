@@ -39,7 +39,9 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Nafil Estates to access your camera to scan visitor QR codes."
+          "cameraPermission": "Allow Nafil Estates to access your camera to scan visitor QR codes.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
         }
       ],
       "expo-splash-screen",
@@ -47,7 +49,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Nafil Estates to access your photos so you can set a profile picture."
+          "photosPermission": "Allow Nafil Estates to access your photos so you can set a profile picture.",
+          "microphonePermission": false
         }
       ],
       "expo-sharing",
@@ -69,6 +72,12 @@
         "projectId": "9628b28f-924b-49a3-b652-e0327360c7d9"
       }
     },
-    "owner": "graycepaul"
+    "owner": "graycepaul",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/9628b28f-924b-49a3-b652-e0327360c7d9"
+    }
   }
 }

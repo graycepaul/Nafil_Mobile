@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, Pressable, ScrollView, Platform } from 'react-native';
+import { View, Text, Pressable, ScrollView, Platform, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/theme-context';
@@ -123,6 +123,28 @@ export default function SettingsScreen() {
         )}
 
         <Text className="mb-sm text-sm font-medium text-paper-500 dark:text-ink-textMuted">
+          LEGAL
+        </Text>
+        <Card className="p-xs">
+          <Pressable
+            onPress={() => Linking.openURL('https://nafilestates.com/privacy')}
+            accessibilityRole="link"
+            className="flex-row items-center justify-between px-md py-md"
+          >
+            <Text className="text-base text-paper-900 dark:text-ink-text">Privacy Policy</Text>
+            <Ionicons name="open-outline" size={18} color={colors.textMuted} />
+          </Pressable>
+          <Pressable
+            onPress={() => Linking.openURL('https://nafilestates.com/terms')}
+            accessibilityRole="link"
+            className="flex-row items-center justify-between border-t border-paper-200 px-md py-md dark:border-ink-border"
+          >
+            <Text className="text-base text-paper-900 dark:text-ink-text">Terms of Service</Text>
+            <Ionicons name="open-outline" size={18} color={colors.textMuted} />
+          </Pressable>
+        </Card>
+
+        <Text className="mb-sm mt-xl text-sm font-medium text-paper-500 dark:text-ink-textMuted">
           ACCOUNT
         </Text>
         <Card className="items-start shadow-sm">
