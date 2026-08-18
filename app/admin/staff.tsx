@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
@@ -11,6 +11,7 @@ import { Card } from '../../components/ui/Card';
 import { Notice } from '../../components/ui/Notice';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { InviteStaffForm } from '../../components/admin/InviteStaffForm';
+import { SearchAndEstateFilter } from '../../components/admin/SearchAndEstateFilter';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { Estate, Profile, StaffInvite } from '../../types/database';
 
@@ -25,6 +26,8 @@ export default function AdminStaffScreen() {
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [error, setError] = useState<string>();
   const [inviting, setInviting] = useState(false);
+  const [search, setSearch] = useState('');
+  const [estateFilter, setEstateFilter] = useState<string | undefined>();
   const isSuperAdmin = profile?.role === 'super_admin';
 
   // Deep-linked from the Dashboard's "+ Invite staff" quick action (?invite=1).
@@ -128,6 +131,15 @@ export default function AdminStaffScreen() {
     enabled: !!profile,
   });
 
+  const filteredStaff = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (staff ?? []).filter((s) => {
+      if (estateFilter && s.estate_id !== estateFilter) return false;
+      if (q && !s.full_name?.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [staff, search, estateFilter]);
+
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: ['staff_invites_pending', profile?.estate_id] });
     queryClient.invalidateQueries({ queryKey: ['staff_members', profile?.estate_id] });
@@ -160,11 +172,20 @@ export default function AdminStaffScreen() {
           tintColor={colors.primary}
         />
       }
-      data={staff ?? []}
+      data={filteredStaff}
       keyExtractor={(item) => item.id}
       ListHeaderComponent={
         <View>
           {error && <Notice message={error} />}
+
+          <SearchAndEstateFilter
+            search={search}
+            onSearchChange={setSearch}
+            placeholder="Search by name"
+            estates={isSuperAdmin ? estates : undefined}
+            estateFilter={estateFilter}
+            onEstateFilterChange={setEstateFilter}
+          />
 
           {inviting && (
             <InviteStaffForm

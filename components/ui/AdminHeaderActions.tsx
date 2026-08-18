@@ -27,7 +27,7 @@ export function AdminHeaderActions() {
   });
 
   return (
-    <View className="flex-row items-center gap-md">
+    <View className="flex-row items-center gap-md pr-lg">
       <Pressable
         onPress={() => router.push('/admin/notifications')}
         accessibilityRole="button"

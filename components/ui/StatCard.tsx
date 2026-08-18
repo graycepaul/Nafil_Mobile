@@ -18,7 +18,7 @@ export function StatCard({
       onPress={onPress}
       disabled={!onPress}
       accessibilityRole={onPress ? 'button' : undefined}
-      className="flex-1 rounded-lg border border-paper-200 bg-paper-50 p-md shadow-sm active:opacity-85 dark:border-ink-border dark:bg-ink-surface"
+      className="flex-1 rounded-lg border border-paper-200 bg-paper-50 p-md active:opacity-85 dark:border-ink-border dark:bg-ink-surface"
     >
       <View className="mb-sm h-8 w-8 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
         {icon}

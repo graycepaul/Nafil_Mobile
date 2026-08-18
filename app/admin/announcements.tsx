@@ -12,6 +12,7 @@ import { Notice } from '../../components/ui/Notice';
 import { Overlay } from '../../components/ui/Overlay';
 import { AnnouncementsFeed, type AnnouncementSort } from '../../components/AnnouncementsFeed';
 import { AlertCategoryPicker } from '../../components/AlertCategoryPicker';
+import { SearchAndEstateFilter } from '../../components/admin/SearchAndEstateFilter';
 import type { AlertCategory } from '../../types/database';
 
 const SORT_LABELS: Record<AnnouncementSort, string> = {
@@ -35,6 +36,8 @@ export default function AdminAnnouncementsScreen() {
   const [sortBy, setSortBy] = useState<AnnouncementSort>('date');
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const sortOptions: AnnouncementSort[] = isSuperAdmin ? ['date', 'estate', 'type'] : ['date', 'type'];
+  const [listSearch, setListSearch] = useState('');
+  const [listEstateFilter, setListEstateFilter] = useState<string | undefined>();
 
   const { data: estates } = useQuery({
     queryKey: ['all_estates'],
@@ -107,6 +110,8 @@ export default function AdminAnnouncementsScreen() {
     <AnnouncementsFeed
       showEstate={isSuperAdmin}
       sortBy={sortBy}
+      search={listSearch}
+      estateFilter={listEstateFilter}
       ListHeaderComponent={
         <View>
           {notice && <Notice tone={notice.tone} message={notice.message} />}
@@ -208,6 +213,14 @@ export default function AdminAnnouncementsScreen() {
               </Text>
             </Pressable>
           </View>
+          <SearchAndEstateFilter
+            search={listSearch}
+            onSearchChange={setListSearch}
+            placeholder="Search announcements"
+            estates={isSuperAdmin ? estates : undefined}
+            estateFilter={listEstateFilter}
+            onEstateFilterChange={setListEstateFilter}
+          />
         </View>
       }
     />

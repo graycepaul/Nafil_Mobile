@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Notice } from '../../components/ui/Notice';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SearchAndEstateFilter } from '../../components/admin/SearchAndEstateFilter';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { Issue, IssueStatus } from '../../types/database';
 
@@ -28,6 +29,8 @@ export default function AdminIssuesScreen() {
   const queryClient = useQueryClient();
   const [advancingId, setAdvancingId] = useState<string | null>(null);
   const [error, setError] = useState<string>();
+  const [search, setSearch] = useState('');
+  const [estateFilter, setEstateFilter] = useState<string | undefined>();
   const isSuperAdmin = profile?.role === 'super_admin';
 
   const { data: issues, isLoading, refetch, isRefetching } = useQuery({
@@ -42,6 +45,31 @@ export default function AdminIssuesScreen() {
     },
     enabled: !!profile,
   });
+
+  const { data: estates } = useQuery({
+    queryKey: ['all_estates'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('estates').select('id, name').order('name');
+      if (error) throw error;
+      return data as { id: string; name: string }[];
+    },
+    enabled: isSuperAdmin,
+  });
+
+  const filteredIssues = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (issues ?? []).filter((issue) => {
+      if (estateFilter && issue.estate_id !== estateFilter) return false;
+      if (
+        q &&
+        !issue.category.toLowerCase().includes(q) &&
+        !issue.description.toLowerCase().includes(q) &&
+        !issue.reporter?.full_name?.toLowerCase().includes(q)
+      )
+        return false;
+      return true;
+    });
+  }, [issues, search, estateFilter]);
 
   async function advance(issue: Issue) {
     const next = NEXT_STATUS[issue.status];
@@ -76,8 +104,20 @@ export default function AdminIssuesScreen() {
       className="bg-white dark:bg-ink-bg"
       contentContainerClassName="p-xl"
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
-      ListHeaderComponent={error ? <Notice message={error} /> : null}
-      data={issues ?? []}
+      ListHeaderComponent={
+        <View>
+          {error && <Notice message={error} />}
+          <SearchAndEstateFilter
+            search={search}
+            onSearchChange={setSearch}
+            placeholder="Search by category, description, or reporter"
+            estates={isSuperAdmin ? estates : undefined}
+            estateFilter={estateFilter}
+            onEstateFilterChange={setEstateFilter}
+          />
+        </View>
+      }
+      data={filteredIssues}
       keyExtractor={(item) => item.id}
       ListEmptyComponent={
         <EmptyState

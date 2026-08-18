@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Notice } from '../../components/ui/Notice';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SearchAndEstateFilter } from '../../components/admin/SearchAndEstateFilter';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { JoinRequestWithApplicant, Profile } from '../../types/database';
 
@@ -23,6 +24,8 @@ export default function AdminResidentsScreen() {
   const { tab: openOnLoad } = useLocalSearchParams<{ tab?: string }>();
   const [formError, setFormError] = useState<string>();
   const [activeTab, setActiveTab] = useState<ResidentsTab>('all');
+  const [search, setSearch] = useState('');
+  const [estateFilter, setEstateFilter] = useState<string | undefined>();
   const isSuperAdmin = profile?.role === 'super_admin';
 
   // Deep-linked from the Dashboard's "Pending requests" stat card.
@@ -30,6 +33,16 @@ export default function AdminResidentsScreen() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (openOnLoad === 'pending') setActiveTab('pending');
   }, [openOnLoad]);
+
+  const { data: estates } = useQuery({
+    queryKey: ['all_estates'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('estates').select('id, name').order('name');
+      if (error) throw error;
+      return data as { id: string; name: string }[];
+    },
+    enabled: isSuperAdmin,
+  });
 
   const {
     data: requests,
@@ -89,6 +102,24 @@ export default function AdminResidentsScreen() {
     else invalidate();
   }
 
+  const filteredRequests = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (requests ?? []).filter((req) => {
+      if (estateFilter && req.estate_id !== estateFilter) return false;
+      if (q && !req.applicant?.full_name?.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [requests, search, estateFilter]);
+
+  const filteredResidents = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (residents ?? []).filter((r) => {
+      if (estateFilter && r.estate_id !== estateFilter) return false;
+      if (q && !r.full_name?.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [residents, search, estateFilter]);
+
   const pendingCount = requests?.length ?? 0;
 
   const tabs = (
@@ -133,13 +164,21 @@ export default function AdminResidentsScreen() {
         refreshControl={
           <RefreshControl refreshing={isRefetchingRequests} onRefresh={refetchRequests} tintColor={colors.primary} />
         }
-        data={requests ?? []}
+        data={filteredRequests}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
           <View>
             {tabs}
-            {formError && <Notice message={formError} />}
             <View className="h-lg" />
+            <SearchAndEstateFilter
+              search={search}
+              onSearchChange={setSearch}
+              placeholder="Search by name"
+              estates={isSuperAdmin ? estates : undefined}
+              estateFilter={estateFilter}
+              onEstateFilterChange={setEstateFilter}
+            />
+            {formError && <Notice message={formError} />}
           </View>
         }
         ListEmptyComponent={
@@ -177,9 +216,22 @@ export default function AdminResidentsScreen() {
       refreshControl={
         <RefreshControl refreshing={isRefetchingResidents} onRefresh={refetchResidents} tintColor={colors.primary} />
       }
-      data={residents ?? []}
+      data={filteredResidents}
       keyExtractor={(item) => item.id}
-      ListHeaderComponent={<View>{tabs}<View className="h-lg" /></View>}
+      ListHeaderComponent={
+        <View>
+          {tabs}
+          <View className="h-lg" />
+          <SearchAndEstateFilter
+            search={search}
+            onSearchChange={setSearch}
+            placeholder="Search by name"
+            estates={isSuperAdmin ? estates : undefined}
+            estateFilter={estateFilter}
+            onEstateFilterChange={setEstateFilter}
+          />
+        </View>
+      }
       ListEmptyComponent={
         <EmptyState
           icon={<Ionicons name="person-outline" color={colors.textMuted} size={26} />}

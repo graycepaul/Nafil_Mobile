@@ -46,11 +46,15 @@ export function AnnouncementsFeed({
   ListHeaderComponent,
   showEstate,
   sortBy = 'date',
+  search = '',
+  estateFilter,
 }: {
   ListHeaderComponent?: React.ReactElement;
   /** super_admin only — the feed is cross-estate for them, so each card needs to say which estate it's from. */
   showEstate?: boolean;
   sortBy?: AnnouncementSort;
+  search?: string;
+  estateFilter?: string;
 }) {
   const { colors } = useTheme();
   const queryClient = useQueryClient();
@@ -68,7 +72,13 @@ export function AnnouncementsFeed({
     },
   });
 
-  const sorted = sortAnnouncements(announcements ?? [], sortBy);
+  const q = search.trim().toLowerCase();
+  const filtered = (announcements ?? []).filter((a) => {
+    if (estateFilter && a.estate_id !== estateFilter) return false;
+    if (q && !a.title.toLowerCase().includes(q) && !a.body.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const sorted = sortAnnouncements(filtered, sortBy);
 
   async function onRefresh() {
     setRefreshing(true);
