@@ -16,13 +16,41 @@ export function emergencyLabel(category: Announcement['category']) {
   return ALERT_CATEGORIES.find((c) => c.value === category)?.label ?? 'Emergency';
 }
 
+export type AnnouncementSort = 'date' | 'type' | 'estate';
+
+function sortAnnouncements<T extends Announcement & { estate: { name: string } | null }>(
+  items: T[],
+  sortBy: AnnouncementSort
+): T[] {
+  if (sortBy === 'date') return items;
+  const byDateDesc = (a: T, b: T) => b.created_at.localeCompare(a.created_at);
+  if (sortBy === 'estate') {
+    return [...items].sort(
+      (a, b) => (a.estate?.name ?? '').localeCompare(b.estate?.name ?? '') || byDateDesc(a, b)
+    );
+  }
+  // 'type': emergencies first (grouped by category), then plain announcements.
+  return [...items].sort((a, b) => {
+    const aEmergency = a.severity === 'emergency';
+    const bEmergency = b.severity === 'emergency';
+    if (aEmergency !== bEmergency) return aEmergency ? -1 : 1;
+    if (aEmergency && bEmergency) {
+      const cat = emergencyLabel(a.category).localeCompare(emergencyLabel(b.category));
+      if (cat !== 0) return cat;
+    }
+    return byDateDesc(a, b);
+  });
+}
+
 export function AnnouncementsFeed({
   ListHeaderComponent,
   showEstate,
+  sortBy = 'date',
 }: {
   ListHeaderComponent?: React.ReactElement;
   /** super_admin only — the feed is cross-estate for them, so each card needs to say which estate it's from. */
   showEstate?: boolean;
+  sortBy?: AnnouncementSort;
 }) {
   const { colors } = useTheme();
   const queryClient = useQueryClient();
@@ -39,6 +67,8 @@ export function AnnouncementsFeed({
       return data as (Announcement & { estate: { name: string } | null })[];
     },
   });
+
+  const sorted = sortAnnouncements(announcements ?? [], sortBy);
 
   async function onRefresh() {
     setRefreshing(true);
@@ -62,7 +92,7 @@ export function AnnouncementsFeed({
       keyboardDismissMode="on-drag"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       ListHeaderComponent={ListHeaderComponent}
-      data={announcements ?? []}
+      data={sorted}
       keyExtractor={(item) => item.id}
       ListEmptyComponent={
         <EmptyState

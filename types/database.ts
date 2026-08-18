@@ -158,7 +158,8 @@ export type NotificationType =
   | 'visitor_pass_used'
   | 'join_request_approved'
   | 'staff_invite_accepted'
-  | 'household_member_scanned';
+  | 'household_member_scanned'
+  | 'issue_reported';
 
 export interface Notification {
   id: string;

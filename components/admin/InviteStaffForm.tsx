@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { shareStaffInvite } from '../../lib/share-staff-invite';
 import { useAuthStore } from '../../store/auth-store';
@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Notice } from '../ui/Notice';
 import { Card } from '../ui/Card';
+import { Select } from '../ui/Select';
 import { validateEmail } from '../../lib/validation';
 import type { StaffInvite } from '../../types/database';
 
@@ -105,64 +106,27 @@ export function InviteStaffForm({
       <Text className="mb-md text-base font-semibold text-paper-900 dark:text-ink-text">Invite staff</Text>
       {formError && <Notice message={formError} />}
 
-      <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">Role</Text>
-      <View className="mb-lg flex-row gap-sm">
-        {ROLES.map((r) => {
-          const active = role === r.value;
-          return (
-            <Pressable
-              key={r.value}
-              onPress={() => setRole(r.value)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-              className={`rounded-full border px-md py-xs ${
-                active
-                  ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
-                  : 'border-paper-200 dark:border-ink-border'
-              }`}
-            >
-              <Text
-                className={`text-[13px] font-medium ${
-                  active ? 'text-white dark:text-ink-bg' : 'text-paper-500 dark:text-ink-textMuted'
-                }`}
-              >
-                {r.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {estates && estates.length > 1 && (
-        <View className="mb-lg">
-          <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">Estate</Text>
-          <View className="flex-row flex-wrap gap-sm">
-            {estates.map((e) => {
-              const active = estateId === e.id;
-              return (
-                <Pressable
-                  key={e.id}
-                  onPress={() => setEstateId(e.id)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: active }}
-                  className={`rounded-full border px-md py-xs ${
-                    active
-                      ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
-                      : 'border-paper-200 dark:border-ink-border'
-                  }`}
-                >
-                  <Text
-                    className={`text-[13px] font-medium ${
-                      active ? 'text-white dark:text-ink-bg' : 'text-paper-500 dark:text-ink-textMuted'
-                    }`}
-                  >
-                    {e.name}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+      {estates && estates.length > 1 ? (
+        <View className="flex-row gap-sm">
+          <Select
+            label="Estate"
+            showLabel
+            value={estateId ?? estates[0].id}
+            options={estates.map((e) => ({ value: e.id, label: e.name }))}
+            onChange={setEstateId}
+            className="flex-1"
+          />
+          <Select
+            label="Role"
+            showLabel
+            value={role}
+            options={ROLES}
+            onChange={setRole}
+            className="flex-1"
+          />
         </View>
+      ) : (
+        <Select label="Role" showLabel value={role} options={ROLES} onChange={setRole} />
       )}
       <Input
         label="Email"

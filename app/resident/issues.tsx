@@ -117,12 +117,15 @@ export default function IssuesScreen() {
               {formError && <Notice message={formError} />}
               <Input
                 label="Category"
+                showLabel
                 placeholder="e.g. Plumbing, Electrical, Security"
                 value={category}
                 onChangeText={setCategory}
               />
               <Input
                 label="Description"
+                showLabel
+                placeholder="What's the issue, and where?"
                 value={description}
                 onChangeText={setDescription}
                 multiline

@@ -41,13 +41,27 @@ export default function AdminStaffScreen() {
           accessibilityRole="button"
           accessibilityLabel={inviting ? 'Cancel invite' : 'Invite staff'}
           hitSlop={8}
-          className="px-lg"
+          className={`mr-lg flex-row items-center gap-xs rounded-full px-md py-sm ${
+            inviting ? 'border border-paper-200 dark:border-ink-border' : 'bg-brand-800 dark:bg-brand-500'
+          }`}
         >
-          <Ionicons name={inviting ? 'close' : 'person-add-outline'} color={colors.onHeaderBg} size={22} />
+          <Ionicons
+            name={inviting ? 'close' : 'person-add-outline'}
+            color={inviting ? colors.onHeaderBg : colors.onButtonFill}
+            size={16}
+          />
+          <Text
+            className={`text-[13px] font-semibold ${
+              inviting ? 'text-paper-900 dark:text-ink-text' : ''
+            }`}
+            style={inviting ? undefined : { color: colors.onButtonFill }}
+          >
+            {inviting ? 'Cancel' : 'Invite staff'}
+          </Text>
         </Pressable>
       ),
     });
-  }, [navigation, inviting, colors.onHeaderBg]);
+  }, [navigation, inviting, colors.onHeaderBg, colors.onButtonFill]);
 
   const { data: estate } = useQuery({
     queryKey: ['my_estate', profile?.estate_id],
@@ -188,10 +202,6 @@ export default function AdminStaffScreen() {
               ))}
             </>
           )}
-
-          <Text className="mb-md mt-xl text-lg font-semibold text-paper-900 dark:text-ink-text">
-            Staff
-          </Text>
         </View>
       }
       ListEmptyComponent={
