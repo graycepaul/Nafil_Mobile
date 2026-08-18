@@ -40,7 +40,7 @@ export default function RoleSelectScreen() {
         <RoleCard
           icon={<Ionicons name="home-outline" size={22} color={role === 'resident' ? colors.onButtonFill : colors.textMuted} />}
           title="Resident"
-          description="Manage visitors, pay dues, and report issues in your home."
+          description="Manage visitors, track household access, and report issues in your home."
           selected={role === 'resident'}
           onPress={() => setRole('resident')}
         />
