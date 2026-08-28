@@ -187,36 +187,6 @@ export default function ProfileScreen() {
               className="mb-2xl mt-md"
             />
 
-            <Text className="mb-sm text-sm font-medium text-paper-500 dark:text-ink-textMuted">
-              PAYMENTS
-            </Text>
-            <Card className="mb-2xl p-xs">
-              <Pressable
-                onPress={() => router.push('/resident/wallet')}
-                accessibilityRole="button"
-                className="flex-row items-center gap-md px-md py-md"
-              >
-                <View className="h-9 w-9 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
-                  <Ionicons name="wallet-outline" color={colors.primary} size={18} />
-                </View>
-                <Text className="flex-1 text-base text-paper-900 dark:text-ink-text">Wallet</Text>
-                <Ionicons name="chevron-forward" color={colors.textMuted} size={18} />
-              </Pressable>
-              <Pressable
-                onPress={() => router.push('/resident/dues')}
-                accessibilityRole="button"
-                className="flex-row items-center gap-md border-t border-paper-200 px-md py-md dark:border-ink-border"
-              >
-                <View className="h-9 w-9 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
-                  <Ionicons name="receipt-outline" color={colors.primary} size={18} />
-                </View>
-                <Text className="flex-1 text-base text-paper-900 dark:text-ink-text">
-                  Dues & Subscription
-                </Text>
-                <Ionicons name="chevron-forward" color={colors.textMuted} size={18} />
-              </Pressable>
-            </Card>
-
             <Text className="mb-xs text-lg font-semibold text-paper-900 dark:text-ink-text">
               Household & frequent visitors
             </Text>
@@ -317,6 +287,39 @@ export default function ProfileScreen() {
             )}
           </Card>
         )}
+        ListFooterComponent={
+          <View className="mt-xl">
+            <Text className="mb-sm text-sm font-medium text-paper-500 dark:text-ink-textMuted">
+              PAYMENTS
+            </Text>
+            <Card className="p-xs">
+              <Pressable
+                onPress={() => router.push('/resident/wallet')}
+                accessibilityRole="button"
+                className="flex-row items-center gap-md px-md py-md"
+              >
+                <View className="h-9 w-9 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
+                  <Ionicons name="wallet-outline" color={colors.primary} size={18} />
+                </View>
+                <Text className="flex-1 text-base text-paper-900 dark:text-ink-text">Wallet</Text>
+                <Ionicons name="chevron-forward" color={colors.textMuted} size={18} />
+              </Pressable>
+              <Pressable
+                onPress={() => router.push('/resident/dues')}
+                accessibilityRole="button"
+                className="flex-row items-center gap-md border-t border-paper-200 px-md py-md dark:border-ink-border"
+              >
+                <View className="h-9 w-9 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
+                  <Ionicons name="receipt-outline" color={colors.primary} size={18} />
+                </View>
+                <Text className="flex-1 text-base text-paper-900 dark:text-ink-text">
+                  Dues & Subscription
+                </Text>
+                <Ionicons name="chevron-forward" color={colors.textMuted} size={18} />
+              </Pressable>
+            </Card>
+          </View>
+        }
       />
 
       <Toast

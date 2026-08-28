@@ -28,17 +28,17 @@ export default function ResidentLayout() {
         }}
       />
       <Tabs.Screen
-        name="issues"
-        options={{
-          title: 'Issues',
-          tabBarIcon: ({ color }) => <Ionicons name="build-outline" color={color as string} size={22} />,
-        }}
-      />
-      <Tabs.Screen
         name="marketplace"
         options={{
           title: 'Market',
           tabBarIcon: ({ color }) => <Ionicons name="storefront-outline" color={color as string} size={22} />,
+        }}
+      />
+      <Tabs.Screen
+        name="issues"
+        options={{
+          title: 'Issues',
+          tabBarIcon: ({ color }) => <Ionicons name="build-outline" color={color as string} size={22} />,
         }}
       />
       <Tabs.Screen
