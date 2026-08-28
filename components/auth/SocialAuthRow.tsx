@@ -79,8 +79,8 @@ export function GoogleAuthButton({ onError }: { onError: (message: string) => vo
         <ActivityIndicator size="small" color={colors.primary} />
       ) : (
         <>
-          <GoogleIcon />
-          <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
+          <GoogleIcon size={22} />
+          <Text className="text-lg font-semibold text-paper-900 dark:text-ink-text">
             Continue with Google
           </Text>
         </>
