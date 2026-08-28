@@ -3,7 +3,7 @@ import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { AuthShell, AuthLink } from '../../components/auth/AuthShell';
-import { OrDivider, GoogleAuthButton } from '../../components/auth/SocialAuthRow';
+import { OrDivider, GoogleAuthButton, AppleAuthButton } from '../../components/auth/SocialAuthRow';
 import { TermsNotice } from '../../components/auth/TermsNotice';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -137,7 +137,10 @@ export default function SignupScreen() {
       </Text>
 
       <OrDivider label="- Or sign up with -" />
-      <GoogleAuthButton onError={setFormError} />
+      <View className="gap-md">
+        <AppleAuthButton onError={setFormError} />
+        <GoogleAuthButton onError={setFormError} />
+      </View>
     </AuthShell>
   );
 }
