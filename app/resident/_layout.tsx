@@ -79,6 +79,11 @@ export default function ResidentLayout() {
         options={{ title: 'Wallet', href: null, headerShown: false }}
       />
       <Tabs.Screen
+        name="wallet-transactions"
+        // Reached via "See all" on the Wallet screen.
+        options={{ title: 'All transactions', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
         name="announcements"
         // Reached via the floating icon on the Issues tab — moved out of the
         // tab bar to keep it at 5 tabs.

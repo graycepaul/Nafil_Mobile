@@ -11,45 +11,39 @@ import { Input } from '../../components/ui/Input';
 import { Overlay } from '../../components/ui/Overlay';
 import { Toast } from '../../components/ui/Toast';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { PaymentMethodSheet, type PaymentMethod } from '../../components/resident/PaymentMethodSheet';
-import {
-  MOCK_DUES,
-  MOCK_WALLET_BALANCE,
-  MOCK_WALLET_TRANSACTIONS,
-  type DuesInfo,
-  type WalletTransaction,
-} from '../../components/resident/marketplace-mock';
+import { useWalletMockStore } from '../../store/wallet-mock-store';
 
-const DUES_STATUS_TONE: Record<DuesInfo['status'], BadgeTone> = {
-  paid: 'success',
-  due: 'warning',
-  overdue: 'danger',
-};
+const INLINE_ACTIVITY_LIMIT = 3;
 
-const DUES_STATUS_LABEL: Record<DuesInfo['status'], string> = {
-  paid: 'Paid',
-  due: 'Due',
-  overdue: 'Overdue',
-};
+const MORE_SERVICES: { icon: string; label: string }[] = [
+  { icon: 'shield-checkmark-outline', label: 'Security' },
+  { icon: 'construct-outline', label: 'Service fee' },
+];
 
 /**
- * Frontend-only wallet mockup. Balance and transactions live in local state
- * seeded from `marketplace-mock.ts`, not Supabase. There's no `wallets` or
- * `wallet_transactions` table yet; this exists to get the UI approved before
- * that backend gets built (see the marketplace/dues/wallet feature work).
+ * Frontend-only wallet mockup. Balance, transactions, and dues live in
+ * `store/wallet-mock-store.ts` rather than Supabase. There's no `wallets`,
+ * `wallet_transactions`, or `dues` table yet; this exists to get the UI
+ * approved before that backend gets built (see the marketplace/wallet
+ * feature work).
  */
 export default function WalletScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
 
-  const [balance, setBalance] = useState(MOCK_WALLET_BALANCE);
-  const [transactions, setTransactions] = useState<WalletTransaction[]>(MOCK_WALLET_TRANSACTIONS);
+  const balance = useWalletMockStore((s) => s.balance);
+  const transactions = useWalletMockStore((s) => s.transactions);
+  const dues = useWalletMockStore((s) => s.dues);
+  const adjustBalance = useWalletMockStore((s) => s.adjustBalance);
+  const addTransaction = useWalletMockStore((s) => s.addTransaction);
+  const markDuesPaid = useWalletMockStore((s) => s.markDuesPaid);
+
   const [funding, setFunding] = useState(false);
   const [fundAmount, setFundAmount] = useState('10000');
-  const [dues, setDues] = useState<DuesInfo>(MOCK_DUES);
   const [payingDues, setPayingDues] = useState(false);
+  const [moreServicesOpen, setMoreServicesOpen] = useState(false);
   const [notice, setNotice] = useState<string>();
 
   async function handleConfirmFund(method: PaymentMethod) {
@@ -57,17 +51,11 @@ export default function WalletScreen() {
     await new Promise((r) => setTimeout(r, 900));
 
     if (method === 'transfer') {
-      setTransactions((prev) => [
-        { id: `t${Date.now()}`, label: 'Wallet top-up · Bank transfer', amount, status: 'pending', date: new Date().toISOString() },
-        ...prev,
-      ]);
+      addTransaction({ label: 'Wallet top-up · Bank transfer', amount, status: 'pending' });
       setNotice("Thanks. We'll credit your wallet once the transfer is confirmed.");
     } else {
-      setBalance((b) => b + amount);
-      setTransactions((prev) => [
-        { id: `t${Date.now()}`, label: 'Wallet top-up · Card', amount, status: 'completed', date: new Date().toISOString() },
-        ...prev,
-      ]);
+      adjustBalance(amount);
+      addTransaction({ label: 'Wallet top-up · Card', amount, status: 'completed' });
       setNotice('Wallet funded successfully.');
     }
     setFunding(false);
@@ -79,22 +67,20 @@ export default function WalletScreen() {
     if (method === 'transfer') {
       setNotice("Thanks. We'll mark your dues as paid once the transfer is confirmed.");
     } else {
-      if (method === 'wallet') setBalance((b) => b - dues.amountDue);
-      setTransactions((prev) => [
-        {
-          id: `t${Date.now()}`,
-          label: `Estate dues · ${dues.period}`,
-          amount: -dues.amountDue,
-          status: 'completed',
-          date: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
-      setDues((d) => ({ ...d, status: 'paid' }));
+      if (method === 'wallet') adjustBalance(-dues.amountDue);
+      addTransaction({
+        label: `Estate dues · ${dues.period}`,
+        amount: -dues.amountDue,
+        status: 'completed',
+      });
+      markDuesPaid();
       setNotice('Estate dues paid successfully.');
     }
     setPayingDues(false);
   }
+
+  const visibleTransactions = transactions.slice(0, INLINE_ACTIVITY_LIMIT);
+  const duesPending = dues.status !== 'paid';
 
   return (
     <View className="flex-1 bg-paper-50 dark:bg-ink-bg">
@@ -109,7 +95,7 @@ export default function WalletScreen() {
       </View>
 
       <ScrollView contentContainerClassName="p-lg">
-        <Card className="mb-lg items-center bg-brand-800 py-xl dark:bg-brand-900">
+        <Card className="mb-xl items-center bg-brand-800 py-xl dark:bg-brand-900">
           <Text className="text-[13px] text-white/70">Available balance</Text>
           <Text className="mt-xs text-[34px] font-bold text-white">{formatNaira(balance)}</Text>
           <Button
@@ -120,27 +106,57 @@ export default function WalletScreen() {
           />
         </Card>
 
-        <Text className="mb-sm text-sm font-medium text-paper-500 dark:text-ink-textMuted">ESTATE DUES</Text>
-        <Card className="mb-xl">
-          <View className="flex-row items-start justify-between">
-            <View>
-              <Text className="text-[13px] text-paper-500 dark:text-ink-textMuted">{dues.period}</Text>
-              <Text className="mt-xs text-[22px] font-bold text-paper-900 dark:text-ink-text">
-                {formatNaira(dues.amountDue)}
-              </Text>
-            </View>
-            <StatusBadge label={DUES_STATUS_LABEL[dues.status]} tone={DUES_STATUS_TONE[dues.status]} />
+        <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">Services</Text>
+        <Card className="mb-xl flex-row justify-around py-lg">
+          <View className="items-center gap-sm">
+            <Pressable
+              onPress={() => setPayingDues(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Estate dues"
+              className="relative h-14 w-14 items-center justify-center rounded-full bg-brand-50 active:opacity-80 dark:bg-brand-900"
+            >
+              <Ionicons name="receipt-outline" size={24} color={colors.primary} />
+              {duesPending && (
+                <View className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-paper-50 bg-danger dark:border-ink-surface" />
+              )}
+            </Pressable>
+            <Text className="text-[13px] text-paper-900 dark:text-ink-text">Dues</Text>
           </View>
-          <Text className="mt-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
-            Due {new Date(dues.dueDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
-          </Text>
-          {dues.status !== 'paid' && (
-            <Button label={`Pay ${formatNaira(dues.amountDue)}`} onPress={() => setPayingDues(true)} className="mt-lg" />
-          )}
+
+          <View className="items-center gap-sm">
+            <Pressable
+              onPress={() => router.push('/resident/marketplace')}
+              accessibilityRole="button"
+              accessibilityLabel="Marketplace"
+              className="h-14 w-14 items-center justify-center rounded-full bg-brand-50 active:opacity-80 dark:bg-brand-900"
+            >
+              <Ionicons name="storefront-outline" size={24} color={colors.primary} />
+            </Pressable>
+            <Text className="text-[13px] text-paper-900 dark:text-ink-text">Market</Text>
+          </View>
+
+          <View className="items-center gap-sm">
+            <Pressable
+              onPress={() => setMoreServicesOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="More services"
+              className="h-14 w-14 items-center justify-center rounded-full bg-brand-50 active:opacity-80 dark:bg-brand-900"
+            >
+              <Ionicons name="grid-outline" size={24} color={colors.primary} />
+            </Pressable>
+            <Text className="text-[13px] text-paper-900 dark:text-ink-text">More</Text>
+          </View>
         </Card>
 
-        <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">Recent activity</Text>
-        {transactions.length === 0 ? (
+        <View className="mb-md flex-row items-center justify-between">
+          <Text className="text-lg font-semibold text-paper-900 dark:text-ink-text">Recent activity</Text>
+          {transactions.length > 0 && (
+            <Pressable onPress={() => router.push('/resident/wallet-transactions')} accessibilityRole="button">
+              <Text className="text-[13px] font-semibold text-brand-800 dark:text-brand-300">See all</Text>
+            </Pressable>
+          )}
+        </View>
+        {visibleTransactions.length === 0 ? (
           <Card>
             <EmptyState
               icon={<Ionicons name="wallet-outline" color={colors.textMuted} size={26} />}
@@ -149,7 +165,7 @@ export default function WalletScreen() {
             />
           </Card>
         ) : (
-          transactions.map((tx) => (
+          visibleTransactions.map((tx) => (
             <Card key={tx.id} className="flex-row items-center gap-sm">
               <View
                 className={`h-9 w-9 items-center justify-center rounded-md ${
@@ -220,6 +236,17 @@ export default function WalletScreen() {
       </Overlay>
 
       <Overlay visible={payingDues} onDismiss={() => setPayingDues(false)}>
+        <Card className="mb-md bg-white p-lg dark:bg-ink-surface">
+          <Text className="text-[13px] text-paper-500 dark:text-ink-textMuted">{dues.period}</Text>
+          <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
+            Due{' '}
+            {new Date(dues.dueDate).toLocaleDateString(undefined, {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            })}
+          </Text>
+        </Card>
         <PaymentMethodSheet
           title="Pay estate dues"
           amount={dues.amountDue}
@@ -228,6 +255,32 @@ export default function WalletScreen() {
           onConfirm={handlePayDues}
           onCancel={() => setPayingDues(false)}
         />
+      </Overlay>
+
+      <Overlay visible={moreServicesOpen} onDismiss={() => setMoreServicesOpen(false)}>
+        <Card className="bg-white p-lg dark:bg-ink-surface">
+          <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">More services</Text>
+          <View className="gap-sm">
+            {MORE_SERVICES.map((service) => (
+              <Pressable
+                key={service.label}
+                onPress={() => {
+                  setMoreServicesOpen(false);
+                  setNotice(`${service.label} isn’t available yet. Coming soon.`);
+                }}
+                accessibilityRole="button"
+                className="flex-row items-center gap-md rounded-md border border-paper-200 p-md active:opacity-80 dark:border-ink-border"
+              >
+                <View className="h-9 w-9 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
+                  <Ionicons name={service.icon as never} size={18} color={colors.primary} />
+                </View>
+                <Text className="flex-1 text-base text-paper-900 dark:text-ink-text">{service.label}</Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </Pressable>
+            ))}
+          </View>
+          <Button label="Close" variant="ghost" onPress={() => setMoreServicesOpen(false)} className="mt-md" />
+        </Card>
       </Overlay>
 
       <Toast message={notice} tone="success" onDismiss={() => setNotice(undefined)} />
