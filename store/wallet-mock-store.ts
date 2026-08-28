@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import {
-  MOCK_DUES,
+  MOCK_DUE_ITEMS,
   MOCK_WALLET_BALANCE,
   MOCK_WALLET_TRANSACTIONS,
-  type DuesInfo,
+  type DueItem,
   type WalletTransaction,
 } from '../components/resident/marketplace-mock';
 
@@ -18,16 +18,16 @@ import {
 interface WalletMockState {
   balance: number;
   transactions: WalletTransaction[];
-  dues: DuesInfo;
+  dueItems: DueItem[];
   adjustBalance: (delta: number) => void;
   addTransaction: (tx: Omit<WalletTransaction, 'id' | 'date'>) => void;
-  markDuesPaid: () => void;
+  markDueItemsPaid: (ids: string[]) => void;
 }
 
 export const useWalletMockStore = create<WalletMockState>((set) => ({
   balance: MOCK_WALLET_BALANCE,
   transactions: MOCK_WALLET_TRANSACTIONS,
-  dues: MOCK_DUES,
+  dueItems: MOCK_DUE_ITEMS,
   adjustBalance: (delta) => set((s) => ({ balance: s.balance + delta })),
   addTransaction: (tx) =>
     set((s) => ({
@@ -36,5 +36,8 @@ export const useWalletMockStore = create<WalletMockState>((set) => ({
         ...s.transactions,
       ],
     })),
-  markDuesPaid: () => set((s) => ({ dues: { ...s.dues, status: 'paid' } })),
+  markDueItemsPaid: (ids) =>
+    set((s) => ({
+      dueItems: s.dueItems.map((item) => (ids.includes(item.id) ? { ...item, status: 'paid' } : item)),
+    })),
 }));

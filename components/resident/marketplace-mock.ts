@@ -115,17 +115,42 @@ export const MOCK_WALLET_TRANSACTIONS: WalletTransaction[] = [
   },
 ];
 
-export interface DuesInfo {
-  amountDue: number;
-  period: string;
+export interface DueItem {
+  id: string;
+  label: string;
+  amount: number;
   dueDate: string;
   status: 'paid' | 'due' | 'overdue';
 }
 
-export const MOCK_DUES: DuesInfo = {
-  amountDue: 15000,
-  period: 'September 2026',
-  dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 6).toISOString(),
-  status: 'due',
-};
+export const MOCK_DUE_ITEMS: DueItem[] = [
+  {
+    id: 'due-1',
+    label: 'September 2026 service charge',
+    amount: 15000,
+    dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 6).toISOString(),
+    status: 'due',
+  },
+  {
+    id: 'due-2',
+    label: 'Security levy · Q3',
+    amount: 8000,
+    dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 6).toISOString(),
+    status: 'due',
+  },
+  {
+    id: 'due-3',
+    label: 'August 2026 service charge',
+    amount: 15000,
+    dueDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 25).toISOString(),
+    status: 'overdue',
+  },
+  {
+    id: 'due-4',
+    label: 'July 2026 service charge',
+    amount: 15000,
+    dueDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 55).toISOString(),
+    status: 'paid',
+  },
+];
 

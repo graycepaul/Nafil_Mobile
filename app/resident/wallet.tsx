@@ -12,6 +12,7 @@ import { Overlay } from '../../components/ui/Overlay';
 import { Toast } from '../../components/ui/Toast';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { PaymentMethodSheet, type PaymentMethod } from '../../components/resident/PaymentMethodSheet';
+import { DuesPaymentFlow } from '../../components/resident/DuesPaymentFlow';
 import { useWalletMockStore } from '../../store/wallet-mock-store';
 
 const INLINE_ACTIVITY_LIMIT = 3;
@@ -35,10 +36,10 @@ export default function WalletScreen() {
 
   const balance = useWalletMockStore((s) => s.balance);
   const transactions = useWalletMockStore((s) => s.transactions);
-  const dues = useWalletMockStore((s) => s.dues);
+  const dueItems = useWalletMockStore((s) => s.dueItems);
   const adjustBalance = useWalletMockStore((s) => s.adjustBalance);
   const addTransaction = useWalletMockStore((s) => s.addTransaction);
-  const markDuesPaid = useWalletMockStore((s) => s.markDuesPaid);
+  const markDueItemsPaid = useWalletMockStore((s) => s.markDueItemsPaid);
 
   const [funding, setFunding] = useState(false);
   const [fundAmount, setFundAmount] = useState('10000');
@@ -61,26 +62,33 @@ export default function WalletScreen() {
     setFunding(false);
   }
 
-  async function handlePayDues(method: PaymentMethod) {
+  const unpaidDues = dueItems.filter((item) => item.status !== 'paid');
+
+  async function handlePayDues(selectedIds: string[], method: PaymentMethod) {
+    const selectedItems = unpaidDues.filter((item) => selectedIds.includes(item.id));
+    const total = selectedItems.reduce((sum, item) => sum + item.amount, 0);
     await new Promise((r) => setTimeout(r, 900));
 
     if (method === 'transfer') {
       setNotice("Thanks. We'll mark your dues as paid once the transfer is confirmed.");
     } else {
-      if (method === 'wallet') adjustBalance(-dues.amountDue);
+      if (method === 'wallet') adjustBalance(-total);
       addTransaction({
-        label: `Estate dues · ${dues.period}`,
-        amount: -dues.amountDue,
+        label:
+          selectedItems.length === 1
+            ? `Estate dues · ${selectedItems[0].label}`
+            : `Estate dues · ${selectedItems.length} items`,
+        amount: -total,
         status: 'completed',
       });
-      markDuesPaid();
+      markDueItemsPaid(selectedIds);
       setNotice('Estate dues paid successfully.');
     }
     setPayingDues(false);
   }
 
   const visibleTransactions = transactions.slice(0, INLINE_ACTIVITY_LIMIT);
-  const duesPending = dues.status !== 'paid';
+  const duesPending = unpaidDues.length > 0;
 
   return (
     <View className="flex-1 bg-paper-50 dark:bg-ink-bg">
@@ -236,21 +244,8 @@ export default function WalletScreen() {
       </Overlay>
 
       <Overlay visible={payingDues} onDismiss={() => setPayingDues(false)}>
-        <Card className="mb-md bg-white p-lg dark:bg-ink-surface">
-          <Text className="text-[13px] text-paper-500 dark:text-ink-textMuted">{dues.period}</Text>
-          <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
-            Due{' '}
-            {new Date(dues.dueDate).toLocaleDateString(undefined, {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric',
-            })}
-          </Text>
-        </Card>
-        <PaymentMethodSheet
-          title="Pay estate dues"
-          amount={dues.amountDue}
-          methods={['wallet', 'card', 'transfer']}
+        <DuesPaymentFlow
+          items={unpaidDues}
           walletBalance={balance}
           onConfirm={handlePayDues}
           onCancel={() => setPayingDues(false)}
