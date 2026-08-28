@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { View, Text, FlatList, RefreshControl, ActivityIndicator, Pressable } from 'react-native';
 import ViewShot, { type ViewShotRef } from 'react-native-view-shot';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { shareHouseholdCardImage } from '../../lib/share-id-card';
@@ -20,6 +22,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import type { Estate, HouseholdMember } from '../../types/database';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
   const refreshProfile = useAuthStore((s) => s.refreshProfile);
   const { colors } = useTheme();
@@ -183,6 +186,36 @@ export default function ProfileScreen() {
               onPress={() => setConfirmingRegenerate(true)}
               className="mb-2xl mt-md"
             />
+
+            <Text className="mb-sm text-sm font-medium text-paper-500 dark:text-ink-textMuted">
+              PAYMENTS
+            </Text>
+            <Card className="mb-2xl p-xs">
+              <Pressable
+                onPress={() => router.push('/resident/wallet')}
+                accessibilityRole="button"
+                className="flex-row items-center gap-md px-md py-md"
+              >
+                <View className="h-9 w-9 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
+                  <Ionicons name="wallet-outline" color={colors.primary} size={18} />
+                </View>
+                <Text className="flex-1 text-base text-paper-900 dark:text-ink-text">Wallet</Text>
+                <Ionicons name="chevron-forward" color={colors.textMuted} size={18} />
+              </Pressable>
+              <Pressable
+                onPress={() => router.push('/resident/dues')}
+                accessibilityRole="button"
+                className="flex-row items-center gap-md border-t border-paper-200 px-md py-md dark:border-ink-border"
+              >
+                <View className="h-9 w-9 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
+                  <Ionicons name="receipt-outline" color={colors.primary} size={18} />
+                </View>
+                <Text className="flex-1 text-base text-paper-900 dark:text-ink-text">
+                  Dues & Subscription
+                </Text>
+                <Ionicons name="chevron-forward" color={colors.textMuted} size={18} />
+              </Pressable>
+            </Card>
 
             <Text className="mb-xs text-lg font-semibold text-paper-900 dark:text-ink-text">
               Household & frequent visitors

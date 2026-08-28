@@ -42,13 +42,6 @@ export default function ResidentLayout() {
         }}
       />
       <Tabs.Screen
-        name="announcements"
-        options={{
-          title: 'Announcements',
-          tabBarIcon: ({ color }) => <Ionicons name="megaphone-outline" color={color as string} size={22} />,
-        }}
-      />
-      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
@@ -82,13 +75,19 @@ export default function ResidentLayout() {
       />
       <Tabs.Screen
         name="wallet"
-        // Reached via the Home screen's quick actions.
+        // Reached via the Profile screen.
         options={{ title: 'Wallet', href: null, headerShown: false }}
       />
       <Tabs.Screen
         name="dues"
-        // Reached via the Home screen's quick actions.
+        // Reached via the Profile screen.
         options={{ title: 'Dues & Subscription', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
+        name="announcements"
+        // Reached via the floating icon on the Issues tab — moved out of the
+        // tab bar to keep it at 5 tabs.
+        options={{ title: 'Announcements', href: null, headerShown: false }}
       />
     </Tabs>
   );
