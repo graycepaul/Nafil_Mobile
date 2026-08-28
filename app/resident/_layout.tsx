@@ -4,7 +4,7 @@ import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme } from '../../context/theme-context';
 import { themedTabOptions } from '../../components/ui/tab-options';
 import { HomeHeader } from '../../components/ui/HomeHeader';
-import { SettingsHeaderButton } from '../../components/ui/SettingsHeaderButton';
+import { ProfileHeaderActions } from '../../components/ui/ProfileHeaderActions';
 
 export default function ResidentLayout() {
   const { colors } = useTheme();
@@ -45,7 +45,7 @@ export default function ResidentLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          headerRight: () => <SettingsHeaderButton />,
+          headerRight: () => <ProfileHeaderActions />,
           tabBarIcon: ({ color }) => <Ionicons name="person-outline" color={color as string} size={22} />,
         }}
       />
@@ -75,13 +75,8 @@ export default function ResidentLayout() {
       />
       <Tabs.Screen
         name="wallet"
-        // Reached via the Profile screen.
+        // Reached via the Profile header's wallet icon. Estate dues live here too.
         options={{ title: 'Wallet', href: null, headerShown: false }}
-      />
-      <Tabs.Screen
-        name="dues"
-        // Reached via the Profile screen.
-        options={{ title: 'Dues & Subscription', href: null, headerShown: false }}
       />
       <Tabs.Screen
         name="announcements"

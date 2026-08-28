@@ -11,12 +11,27 @@ import { Input } from '../../components/ui/Input';
 import { Overlay } from '../../components/ui/Overlay';
 import { Toast } from '../../components/ui/Toast';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { PaymentMethodSheet, type PaymentMethod } from '../../components/resident/PaymentMethodSheet';
 import {
+  MOCK_DUES,
   MOCK_WALLET_BALANCE,
   MOCK_WALLET_TRANSACTIONS,
+  type DuesInfo,
   type WalletTransaction,
 } from '../../components/resident/marketplace-mock';
+
+const DUES_STATUS_TONE: Record<DuesInfo['status'], BadgeTone> = {
+  paid: 'success',
+  due: 'warning',
+  overdue: 'danger',
+};
+
+const DUES_STATUS_LABEL: Record<DuesInfo['status'], string> = {
+  paid: 'Paid',
+  due: 'Due',
+  overdue: 'Overdue',
+};
 
 /**
  * Frontend-only wallet mockup. Balance and transactions live in local state
@@ -33,6 +48,8 @@ export default function WalletScreen() {
   const [transactions, setTransactions] = useState<WalletTransaction[]>(MOCK_WALLET_TRANSACTIONS);
   const [funding, setFunding] = useState(false);
   const [fundAmount, setFundAmount] = useState('10000');
+  const [dues, setDues] = useState<DuesInfo>(MOCK_DUES);
+  const [payingDues, setPayingDues] = useState(false);
   const [notice, setNotice] = useState<string>();
 
   async function handleConfirmFund(method: PaymentMethod) {
@@ -54,6 +71,29 @@ export default function WalletScreen() {
       setNotice('Wallet funded successfully.');
     }
     setFunding(false);
+  }
+
+  async function handlePayDues(method: PaymentMethod) {
+    await new Promise((r) => setTimeout(r, 900));
+
+    if (method === 'transfer') {
+      setNotice("Thanks. We'll mark your dues as paid once the transfer is confirmed.");
+    } else {
+      if (method === 'wallet') setBalance((b) => b - dues.amountDue);
+      setTransactions((prev) => [
+        {
+          id: `t${Date.now()}`,
+          label: `Estate dues · ${dues.period}`,
+          amount: -dues.amountDue,
+          status: 'completed',
+          date: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
+      setDues((d) => ({ ...d, status: 'paid' }));
+      setNotice('Estate dues paid successfully.');
+    }
+    setPayingDues(false);
   }
 
   return (
@@ -78,6 +118,25 @@ export default function WalletScreen() {
             onPress={() => setFunding(true)}
             className="mt-lg w-full border-white/40"
           />
+        </Card>
+
+        <Text className="mb-sm text-sm font-medium text-paper-500 dark:text-ink-textMuted">ESTATE DUES</Text>
+        <Card className="mb-xl">
+          <View className="flex-row items-start justify-between">
+            <View>
+              <Text className="text-[13px] text-paper-500 dark:text-ink-textMuted">{dues.period}</Text>
+              <Text className="mt-xs text-[22px] font-bold text-paper-900 dark:text-ink-text">
+                {formatNaira(dues.amountDue)}
+              </Text>
+            </View>
+            <StatusBadge label={DUES_STATUS_LABEL[dues.status]} tone={DUES_STATUS_TONE[dues.status]} />
+          </View>
+          <Text className="mt-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
+            Due {new Date(dues.dueDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+          </Text>
+          {dues.status !== 'paid' && (
+            <Button label={`Pay ${formatNaira(dues.amountDue)}`} onPress={() => setPayingDues(true)} className="mt-lg" />
+          )}
         </Card>
 
         <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">Recent activity</Text>
@@ -157,6 +216,17 @@ export default function WalletScreen() {
           methods={['card', 'transfer']}
           onConfirm={handleConfirmFund}
           onCancel={() => setFunding(false)}
+        />
+      </Overlay>
+
+      <Overlay visible={payingDues} onDismiss={() => setPayingDues(false)}>
+        <PaymentMethodSheet
+          title="Pay estate dues"
+          amount={dues.amountDue}
+          methods={['wallet', 'card', 'transfer']}
+          walletBalance={balance}
+          onConfirm={handlePayDues}
+          onCancel={() => setPayingDues(false)}
         />
       </Overlay>
 

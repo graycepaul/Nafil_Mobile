@@ -129,29 +129,3 @@ export const MOCK_DUES: DuesInfo = {
   status: 'due',
 };
 
-export interface SubscriptionPlan {
-  id: string;
-  name: string;
-  price: number;
-  interval: 'month';
-  features: string[];
-  current?: boolean;
-}
-
-export const MOCK_SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
-  {
-    id: 'basic',
-    name: 'Basic',
-    price: 0,
-    interval: 'month',
-    features: ['Browse the marketplace', 'Up to 2 active listings'],
-    current: true,
-  },
-  {
-    id: 'seller-pro',
-    name: 'Seller Pro',
-    price: 2000,
-    interval: 'month',
-    features: ['Unlimited listings', 'Featured placement', 'Priority support'],
-  },
-];
