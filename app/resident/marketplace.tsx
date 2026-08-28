@@ -12,7 +12,14 @@ import {
   LISTING_CATEGORIES,
   MOCK_LISTINGS,
   type ListingCategory,
+  type ListingType,
 } from '../../components/resident/marketplace-mock';
+
+const TYPE_FILTERS: { value: ListingType | 'all'; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'good', label: 'Goods' },
+  { value: 'service', label: 'Services' },
+];
 
 /** Frontend-only mockup. See `wallet.tsx` for the "no backend yet" disclaimer. */
 export default function MarketplaceScreen() {
@@ -21,6 +28,7 @@ export default function MarketplaceScreen() {
   const { colors } = useTheme();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<ListingCategory | 'All'>('All');
+  const [typeFilter, setTypeFilter] = useState<ListingType | 'all'>('all');
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -40,11 +48,12 @@ export default function MarketplaceScreen() {
 
   const listings = useMemo(() => {
     return MOCK_LISTINGS.filter((listing) => {
+      const matchesType = typeFilter === 'all' || listing.type === typeFilter;
       const matchesCategory = category === 'All' || listing.category === category;
       const matchesQuery = listing.title.toLowerCase().includes(query.trim().toLowerCase());
-      return matchesCategory && matchesQuery;
+      return matchesType && matchesCategory && matchesQuery;
     });
-  }, [query, category]);
+  }, [query, category, typeFilter]);
 
   return (
     <FlatList
@@ -56,6 +65,31 @@ export default function MarketplaceScreen() {
       keyExtractor={(item) => item.id}
       ListHeaderComponent={
         <View className="mb-md">
+          <View className="mb-md flex-row overflow-hidden rounded-md border border-paper-200 dark:border-ink-border">
+            {TYPE_FILTERS.map((filter, index) => {
+              const active = typeFilter === filter.value;
+              return (
+                <Pressable
+                  key={filter.value}
+                  onPress={() => setTypeFilter(filter.value)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  className={`flex-1 items-center py-sm ${index > 0 ? 'border-l border-paper-200 dark:border-ink-border' : ''} ${
+                    active ? 'bg-brand-800 dark:bg-brand-500' : 'bg-white dark:bg-ink-surface'
+                  }`}
+                >
+                  <Text
+                    className={`text-[13px] font-semibold ${
+                      active ? 'text-white' : 'text-paper-900 dark:text-ink-text'
+                    }`}
+                  >
+                    {filter.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
           <Input
             placeholder="Search the marketplace"
             value={query}

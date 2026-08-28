@@ -29,16 +29,31 @@ export const CATEGORY_ICON: Record<ListingCategory, string> = {
   Other: 'pricetag-outline',
 };
 
+/** Goods are bought and delivered/picked up; services are booked and coordinated directly with the provider. */
+export type ListingType = 'good' | 'service';
+
+export interface DeliveryOptions {
+  pickup: boolean;
+  homeDelivery: boolean;
+  /** Only meaningful when `homeDelivery` is true. 0 means free delivery. */
+  deliveryFee: number;
+}
+
 export interface MarketplaceListing {
   id: string;
   title: string;
   price: number;
   category: ListingCategory;
+  type: ListingType;
   description: string;
   sellerName: string;
   sellerType: 'resident' | 'vendor';
   sellerUnit?: string;
   postedAt: string;
+  /** Goods only. */
+  delivery?: DeliveryOptions;
+  /** Services only, e.g. "2348012345678". Required so "Message on WhatsApp" has somewhere to go. */
+  whatsapp?: string;
 }
 
 export const MOCK_LISTINGS: MarketplaceListing[] = [
@@ -47,44 +62,64 @@ export const MOCK_LISTINGS: MarketplaceListing[] = [
     title: '3-seater fabric sofa',
     price: 85000,
     category: 'Furniture',
+    type: 'good',
     description:
-      "Barely used, moving out of the estate and it won't fit the new place. Grey fabric, no stains or tears. Pickup only.",
+      "Barely used, moving out of the estate and it won't fit the new place. Grey fabric, no stains or tears.",
     sellerName: 'Damilola',
     sellerType: 'resident',
     sellerUnit: 'B12',
     postedAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
+    delivery: { pickup: true, homeDelivery: true, deliveryFee: 3000 },
   },
   {
     id: '2',
     title: 'Generator servicing & repairs',
     price: 5000,
     category: 'Home Services',
+    type: 'service',
     description:
       'Certified technician offering same-day generator servicing, oil changes, and fault diagnosis within the estate.',
     sellerName: 'PowerFix Services',
     sellerType: 'vendor',
     postedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+    whatsapp: '2348012345678',
   },
   {
     id: '3',
     title: 'iPhone 13, 128GB',
     price: 420000,
     category: 'Electronics',
+    type: 'good',
     description: 'Good condition, battery health 87%. Comes with original box and charger.',
     sellerName: 'Ani Precious',
     sellerType: 'resident',
     sellerUnit: 'A4',
     postedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
+    delivery: { pickup: true, homeDelivery: false, deliveryFee: 0 },
   },
   {
     id: '4',
     title: 'Homemade small chops (per tray)',
     price: 12000,
     category: 'Food',
+    type: 'good',
     description: 'Puff-puff, spring rolls, samosa. Order a day ahead for events and gatherings.',
     sellerName: "Temitope's Kitchen",
     sellerType: 'vendor',
     postedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
+    delivery: { pickup: true, homeDelivery: true, deliveryFee: 0 },
+  },
+  {
+    id: '5',
+    title: 'Home cleaning, 2-bedroom flat',
+    price: 15000,
+    category: 'Home Services',
+    type: 'service',
+    description: 'Deep cleaning for living areas, kitchen, and bathrooms. Bring your own supplies or add ₦2,000.',
+    sellerName: 'SparkleCare Cleaning',
+    sellerType: 'vendor',
+    postedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4).toISOString(),
+    whatsapp: '2348023456789',
   },
 ];
 

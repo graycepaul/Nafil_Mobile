@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, Linking } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
@@ -11,8 +11,10 @@ import { Overlay } from '../../components/ui/Overlay';
 import { Toast } from '../../components/ui/Toast';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Avatar } from '../../components/ui/Avatar';
-import { PaymentMethodSheet, type PaymentMethod } from '../../components/resident/PaymentMethodSheet';
-import { CATEGORY_ICON, MOCK_LISTINGS, MOCK_WALLET_BALANCE } from '../../components/resident/marketplace-mock';
+import { MarketplaceCheckoutFlow } from '../../components/resident/MarketplaceCheckoutFlow';
+import type { PaymentMethod } from '../../components/resident/PaymentMethodSheet';
+import { CATEGORY_ICON, MOCK_LISTINGS } from '../../components/resident/marketplace-mock';
+import { useWalletMockStore } from '../../store/wallet-mock-store';
 
 /** Frontend-only mockup. See `wallet.tsx` for the "no backend yet" disclaimer. */
 export default function MarketplaceListingScreen() {
@@ -22,6 +24,10 @@ export default function MarketplaceListingScreen() {
   const { colors } = useTheme();
   const [buying, setBuying] = useState(false);
   const [notice, setNotice] = useState<string>();
+
+  const balance = useWalletMockStore((s) => s.balance);
+  const adjustBalance = useWalletMockStore((s) => s.adjustBalance);
+  const addTransaction = useWalletMockStore((s) => s.addTransaction);
 
   const listing = MOCK_LISTINGS.find((l) => l.id === id);
 
@@ -33,14 +39,27 @@ export default function MarketplaceListingScreen() {
     );
   }
 
-  async function handleBuy(method: PaymentMethod) {
+  async function handleBuy(details: { total: number }, method: PaymentMethod) {
     await new Promise((r) => setTimeout(r, 900));
     setBuying(false);
-    setNotice(
-      method === 'transfer'
-        ? "Thanks. We'll notify the seller once your transfer is confirmed."
-        : "Purchase request sent. The seller will confirm and arrange handover."
-    );
+
+    if (method === 'transfer') {
+      setNotice("Thanks. We'll notify the seller once your transfer is confirmed.");
+      return;
+    }
+
+    if (method === 'wallet') adjustBalance(-details.total);
+    addTransaction({
+      label: `Marketplace · ${listing!.title}`,
+      amount: -details.total,
+      status: 'completed',
+    });
+    setNotice('Purchase request sent. The seller will confirm and arrange handover.');
+  }
+
+  function messageOnWhatsApp() {
+    if (!listing!.whatsapp) return;
+    Linking.openURL(`https://wa.me/${listing!.whatsapp}`);
   }
 
   return (
@@ -79,6 +98,27 @@ export default function MarketplaceListingScreen() {
           </View>
         </Card>
 
+        {listing.delivery && (
+          <Card className="mb-lg">
+            <Text className="mb-sm text-base font-semibold text-paper-900 dark:text-ink-text">Delivery</Text>
+            {listing.delivery.pickup && (
+              <View className="mb-xs flex-row items-center gap-sm">
+                <Ionicons name="storefront-outline" size={16} color={colors.textMuted} />
+                <Text className="text-[13px] text-paper-900 dark:text-ink-text">Pickup from seller · Free</Text>
+              </View>
+            )}
+            {listing.delivery.homeDelivery && (
+              <View className="flex-row items-center gap-sm">
+                <Ionicons name="bicycle-outline" size={16} color={colors.textMuted} />
+                <Text className="text-[13px] text-paper-900 dark:text-ink-text">
+                  Home delivery ·{' '}
+                  {listing.delivery.deliveryFee === 0 ? 'Free' : formatNaira(listing.delivery.deliveryFee)}
+                </Text>
+              </View>
+            )}
+          </Card>
+        )}
+
         <Text className="mb-xs text-base font-semibold text-paper-900 dark:text-ink-text">Description</Text>
         <Text className="text-[15px] leading-[22px] text-paper-900 dark:text-ink-text">{listing.description}</Text>
         <Text className="mt-md text-[13px] text-paper-500 dark:text-ink-textMuted">
@@ -87,21 +127,16 @@ export default function MarketplaceListingScreen() {
       </ScrollView>
 
       <View className="flex-row gap-sm p-lg pt-0">
-        <Button
-          label="Message seller"
-          variant="secondary"
-          onPress={() => setNotice('Messaging isn’t available yet. Coming soon.')}
-          className="flex-1"
-        />
+        {listing.type === 'service' && (
+          <Button label="Message on WhatsApp" variant="secondary" onPress={messageOnWhatsApp} className="flex-1" />
+        )}
         <Button label="Buy now" onPress={() => setBuying(true)} className="flex-1" />
       </View>
 
       <Overlay visible={buying} onDismiss={() => setBuying(false)}>
-        <PaymentMethodSheet
-          title={`Buy "${listing.title}"`}
-          amount={listing.price}
-          methods={['wallet', 'card', 'transfer']}
-          walletBalance={MOCK_WALLET_BALANCE}
+        <MarketplaceCheckoutFlow
+          listing={listing}
+          walletBalance={balance}
           onConfirm={handleBuy}
           onCancel={() => setBuying(false)}
         />

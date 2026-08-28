@@ -1,33 +1,68 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme } from '../../context/theme-context';
+import { pickPhoto } from '../../lib/pick-photo';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
 import { Notice } from '../../components/ui/Notice';
-import { LISTING_CATEGORIES, type ListingCategory } from '../../components/resident/marketplace-mock';
+import {
+  LISTING_CATEGORIES,
+  type ListingCategory,
+  type ListingType,
+} from '../../components/resident/marketplace-mock';
+
+const MAX_PHOTOS = 6;
+
+const TYPE_OPTIONS: { value: ListingType; label: string; hint: string }[] = [
+  { value: 'good', label: 'Good', hint: 'An item you’re selling or swapping' },
+  { value: 'service', label: 'Service', hint: 'Work you or your business offers' },
+];
 
 /**
  * Frontend-only mockup. See `wallet.tsx` for the "no backend yet" disclaimer.
  * Submitting doesn't persist anywhere; it just confirms the form works and
- * sends the resident back to the (still mock) listings feed.
+ * sends the resident back to the (still mock) listings feed. Photos are
+ * picked for real via `pickPhoto` (local URIs only, no upload) so the
+ * multi-photo UI itself can be reviewed before there's a `listing_photos`
+ * bucket to send them to.
  */
 export default function NewMarketplaceListingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
 
+  const [type, setType] = useState<ListingType>('good');
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState<ListingCategory>('Other');
   const [description, setDescription] = useState('');
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [pickupAvailable, setPickupAvailable] = useState(true);
+  const [homeDeliveryAvailable, setHomeDeliveryAvailable] = useState(false);
+  const [deliveryFee, setDeliveryFee] = useState('');
+  const [freeDelivery, setFreeDelivery] = useState(false);
+  const [whatsapp, setWhatsapp] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>();
 
-  const canSubmit = title.trim() && Number(price) > 0 && description.trim();
+  async function addPhoto() {
+    if (photos.length >= MAX_PHOTOS) return;
+    const result = await pickPhoto();
+    if ('uri' in result) setPhotos((prev) => [...prev, result.uri]);
+    else if ('error' in result) setError(result.error);
+  }
+
+  function removePhoto(uri: string) {
+    setPhotos((prev) => prev.filter((p) => p !== uri));
+  }
+
+  const deliveryValid = type !== 'good' || pickupAvailable || homeDeliveryAvailable;
+  const whatsappValid = type !== 'service' || whatsapp.trim().length > 0;
+  const canSubmit = title.trim() && Number(price) > 0 && description.trim() && deliveryValid && whatsappValid;
 
   async function handleSubmit() {
     if (!canSubmit) return;
@@ -52,6 +87,29 @@ export default function NewMarketplaceListingScreen() {
 
       <ScrollView contentContainerClassName="p-lg">
         {error && <Notice message={error} />}
+
+        <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">What are you listing?</Text>
+        <View className="mb-lg flex-row gap-sm">
+          {TYPE_OPTIONS.map((option) => {
+            const active = type === option.value;
+            return (
+              <Pressable
+                key={option.value}
+                onPress={() => setType(option.value)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                className={`flex-1 rounded-md border p-md ${
+                  active
+                    ? 'border-brand-800 bg-paper-50 dark:border-brand-300 dark:bg-ink-surface'
+                    : 'border-paper-200 bg-white dark:border-ink-border dark:bg-ink-surface'
+                }`}
+              >
+                <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">{option.label}</Text>
+                <Text className="mt-0.5 text-[12px] text-paper-500 dark:text-ink-textMuted">{option.hint}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
         <Input label="Title" showLabel placeholder="e.g. 3-seater fabric sofa" value={title} onChangeText={setTitle} />
 
@@ -81,10 +139,117 @@ export default function NewMarketplaceListingScreen() {
           multiline
         />
 
-        <Text className="mb-lg text-[13px] text-paper-500 dark:text-ink-textMuted">
-          Photos aren&apos;t supported yet in this preview. They&apos;ll be added once the listing
-          form is wired up to the backend.
+        {type === 'good' && (
+          <View className="mb-lg">
+            <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">Delivery method</Text>
+            <Pressable
+              onPress={() => setPickupAvailable((v) => !v)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: pickupAvailable }}
+              className="mb-sm flex-row items-center gap-md rounded-md border border-paper-200 p-md dark:border-ink-border"
+            >
+              <View
+                className={`h-5 w-5 items-center justify-center rounded border-[1.5px] ${
+                  pickupAvailable ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300' : 'border-paper-200 dark:border-ink-border'
+                }`}
+              >
+                {pickupAvailable && <Ionicons name="checkmark" size={13} color={colors.onButtonFill} />}
+              </View>
+              <Text className="flex-1 text-base text-paper-900 dark:text-ink-text">Available for pickup</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => setHomeDeliveryAvailable((v) => !v)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: homeDeliveryAvailable }}
+              className="flex-row items-center gap-md rounded-md border border-paper-200 p-md dark:border-ink-border"
+            >
+              <View
+                className={`h-5 w-5 items-center justify-center rounded border-[1.5px] ${
+                  homeDeliveryAvailable ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300' : 'border-paper-200 dark:border-ink-border'
+                }`}
+              >
+                {homeDeliveryAvailable && <Ionicons name="checkmark" size={13} color={colors.onButtonFill} />}
+              </View>
+              <Text className="flex-1 text-base text-paper-900 dark:text-ink-text">Offer home delivery</Text>
+            </Pressable>
+
+            {homeDeliveryAvailable && (
+              <View className="mt-sm pl-lg">
+                <Input
+                  label="Delivery fee (₦)"
+                  showLabel
+                  placeholder="e.g. 2000"
+                  keyboardType="number-pad"
+                  editable={!freeDelivery}
+                  value={freeDelivery ? '' : deliveryFee}
+                  onChangeText={(v) => setDeliveryFee(v.replace(/[^0-9]/g, ''))}
+                />
+                <Pressable
+                  onPress={() => setFreeDelivery((v) => !v)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: freeDelivery }}
+                  className="mb-lg flex-row items-center gap-md"
+                >
+                  <View
+                    className={`h-5 w-5 items-center justify-center rounded border-[1.5px] ${
+                      freeDelivery ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300' : 'border-paper-200 dark:border-ink-border'
+                    }`}
+                  >
+                    {freeDelivery && <Ionicons name="checkmark" size={13} color={colors.onButtonFill} />}
+                  </View>
+                  <Text className="text-base text-paper-900 dark:text-ink-text">Delivery is free</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {!deliveryValid && (
+              <Text className="mt-sm text-[13px] text-danger">Choose at least one delivery method.</Text>
+            )}
+          </View>
+        )}
+
+        {type === 'service' && (
+          <Input
+            label="WhatsApp number"
+            showLabel
+            placeholder="e.g. 2348012345678"
+            keyboardType="phone-pad"
+            hint="Buyers tap “Message on WhatsApp” to reach you directly to book or ask questions."
+            value={whatsapp}
+            onChangeText={setWhatsapp}
+          />
+        )}
+
+        <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">
+          Photos ({photos.length}/{MAX_PHOTOS})
         </Text>
+        <View className="mb-lg flex-row flex-wrap gap-sm">
+          {photos.map((uri) => (
+            <View key={uri} className="relative">
+              <Image source={{ uri }} className="h-20 w-20 rounded-md" />
+              <Pressable
+                onPress={() => removePhoto(uri)}
+                accessibilityRole="button"
+                accessibilityLabel="Remove photo"
+                hitSlop={8}
+                className="absolute -right-1.5 -top-1.5 h-5 w-5 items-center justify-center rounded-full bg-danger"
+              >
+                <Ionicons name="close" size={12} color="#fff" />
+              </Pressable>
+            </View>
+          ))}
+          {photos.length < MAX_PHOTOS && (
+            <Pressable
+              onPress={addPhoto}
+              accessibilityRole="button"
+              accessibilityLabel="Add photo"
+              className="h-20 w-20 items-center justify-center rounded-md border border-dashed border-paper-300 dark:border-ink-borderStrong"
+            >
+              <Ionicons name="camera-outline" size={22} color={colors.textMuted} />
+            </Pressable>
+          )}
+        </View>
 
         <Button label="Publish listing" onPress={handleSubmit} loading={submitting} disabled={!canSubmit} />
       </ScrollView>
