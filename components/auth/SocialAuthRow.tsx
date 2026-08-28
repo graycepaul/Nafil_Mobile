@@ -28,8 +28,10 @@ export function AppleAuthButton({ onError }: { onError: (message: string) => voi
   if (Platform.OS !== 'ios') return null;
 
   async function handlePress() {
+    console.log('[AppleAuth] button tapped');
     setLoading(true);
     const { error, cancelled } = await signInWithApple();
+    console.log('[AppleAuth] signInWithApple returned:', { cancelled, error: error?.message });
     setLoading(false);
     if (cancelled) return;
     if (error) onError(authErrorMessage(error) ?? 'Sign-in failed.');

@@ -10,6 +10,7 @@ import { Input } from '../../components/ui/Input';
 import { Notice } from '../../components/ui/Notice';
 import { PasswordMeter } from '../../components/auth/PasswordMeter';
 import { authErrorMessage } from '../../lib/auth-errors';
+import { SOCIAL_AUTH_ENABLED } from '../../constants/auth-config';
 import {
   validateConfirmation,
   validateEmail,
@@ -136,11 +137,15 @@ export default function SignupScreen() {
         granted.
       </Text>
 
-      <OrDivider label="- Or sign up with -" />
-      <View className="gap-md">
-        <AppleAuthButton onError={setFormError} />
-        <GoogleAuthButton onError={setFormError} />
-      </View>
+      {SOCIAL_AUTH_ENABLED && (
+        <>
+          <OrDivider label="- Or sign up with -" />
+          <View className="gap-md">
+            <AppleAuthButton onError={setFormError} />
+            <GoogleAuthButton onError={setFormError} />
+          </View>
+        </>
+      )}
     </AuthShell>
   );
 }

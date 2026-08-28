@@ -17,3 +17,17 @@
  *   3. Flip this to true.
  */
 export const GOOGLE_OAUTH_ENABLED = false;
+
+/**
+ * Whether to show the "Or sign in/up with" social row at all (Apple + Google).
+ *
+ * Off for the App Store resubmission: Guideline 4.8 only applies when the app
+ * offers a third-party login in the first place — email/password alone isn't
+ * subject to it. Turning this off removes the whole obligation rather than
+ * requiring a working Sign in with Apple, which is still failing on-device
+ * with a generic `ASAuthorizationError.canceled` we haven't root-caused yet
+ * (see `lib/oauth.ts` — `signInWithApple`).
+ *
+ * Flip back to true once that's fixed; the implementation itself is untouched.
+ */
+export const SOCIAL_AUTH_ENABLED = false;

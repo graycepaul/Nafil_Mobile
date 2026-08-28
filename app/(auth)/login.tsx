@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Notice } from '../../components/ui/Notice';
 import { authErrorMessage } from '../../lib/auth-errors';
+import { SOCIAL_AUTH_ENABLED } from '../../constants/auth-config';
 import { validateEmail } from '../../lib/validation';
 
 export default function LoginScreen() {
@@ -91,11 +92,15 @@ export default function LoginScreen() {
         <AuthLink label="Forgot password?" onPress={() => router.push('/forgot-password')} />
       </View>
 
-      <OrDivider label="- Or sign in with -" />
-      <View className="gap-md">
-        <AppleAuthButton onError={setFormError} />
-        <GoogleAuthButton onError={setFormError} />
-      </View>
+      {SOCIAL_AUTH_ENABLED && (
+        <>
+          <OrDivider label="- Or sign in with -" />
+          <View className="gap-md">
+            <AppleAuthButton onError={setFormError} />
+            <GoogleAuthButton onError={setFormError} />
+          </View>
+        </>
+      )}
     </AuthShell>
   );
 }
