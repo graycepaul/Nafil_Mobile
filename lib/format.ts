@@ -1,3 +1,8 @@
+/** 45000 -> "₦45,000.00" */
+export function formatNaira(amount: number): string {
+  return `₦${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 /** "grace balogun" -> "Grace Balogun" — normalizes free-text name entry for display/storage. */
 export function titleCase(input: string): string {
   return input

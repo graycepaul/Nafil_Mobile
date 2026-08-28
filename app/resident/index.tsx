@@ -164,6 +164,32 @@ export default function ResidentHome() {
       </View>
 
       {/* ── Quick actions ────────────────────────────────────────── */}
+      <View className="mb-lg flex-row gap-md">
+        <Pressable
+          onPress={() => router.push("/resident/wallet")}
+          className="flex-1 flex-row items-center gap-sm rounded-lg border border-paper-200 bg-paper-50 p-md active:opacity-85 dark:border-ink-border dark:bg-ink-surface"
+        >
+          <View className="h-9 w-9 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
+            <Ionicons name="wallet-outline" color={colors.primary} size={18} />
+          </View>
+          <Text className="flex-1 text-[15px] font-semibold text-paper-900 dark:text-ink-text">
+            Wallet
+          </Text>
+          <Ionicons name="chevron-forward" color={colors.textMuted} size={16} />
+        </Pressable>
+        <Pressable
+          onPress={() => router.push("/resident/dues")}
+          className="flex-1 flex-row items-center gap-sm rounded-lg border border-paper-200 bg-paper-50 p-md active:opacity-85 dark:border-ink-border dark:bg-ink-surface"
+        >
+          <View className="h-9 w-9 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
+            <Ionicons name="receipt-outline" color={colors.primary} size={18} />
+          </View>
+          <Text className="flex-1 text-[15px] font-semibold text-paper-900 dark:text-ink-text">
+            Dues
+          </Text>
+          <Ionicons name="chevron-forward" color={colors.textMuted} size={16} />
+        </Pressable>
+      </View>
 
       {/* ── Recent announcements ─────────────────────────────────── */}
       <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">

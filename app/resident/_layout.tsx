@@ -35,6 +35,13 @@ export default function ResidentLayout() {
         }}
       />
       <Tabs.Screen
+        name="marketplace"
+        options={{
+          title: 'Market',
+          tabBarIcon: ({ color }) => <Ionicons name="storefront-outline" color={color as string} size={22} />,
+        }}
+      />
+      <Tabs.Screen
         name="announcements"
         options={{
           title: 'Announcements',
@@ -62,6 +69,26 @@ export default function ResidentLayout() {
         name="visitor-pass-history"
         // Reached via the Visitors tab header's history icon.
         options={{ title: 'Visit history', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
+        name="marketplace-listing"
+        // Reached by tapping a listing on the Market tab.
+        options={{ title: 'Listing', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
+        name="marketplace-new"
+        // Reached via the Market tab header's + icon.
+        options={{ title: 'New listing', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
+        name="wallet"
+        // Reached via the Home screen's quick actions.
+        options={{ title: 'Wallet', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
+        name="dues"
+        // Reached via the Home screen's quick actions.
+        options={{ title: 'Dues & Subscription', href: null, headerShown: false }}
       />
     </Tabs>
   );
