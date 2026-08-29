@@ -5,7 +5,6 @@ import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme } from '../../context/theme-context';
 import { formatNaira, relativeTime } from '../../lib/format';
 import { Input } from '../../components/ui/Input';
-import { StatusBadge } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import {
   CATEGORY_ICON,
@@ -15,10 +14,10 @@ import {
   type ListingType,
 } from '../../components/resident/marketplace-mock';
 
-const TYPE_FILTERS: { value: ListingType | 'all'; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'good', label: 'Goods' },
-  { value: 'service', label: 'Services' },
+const TYPE_FILTERS: { value: ListingType | 'all'; label: string; icon: string }[] = [
+  { value: 'all', label: 'All', icon: 'apps-outline' },
+  { value: 'good', label: 'Goods', icon: 'pricetag-outline' },
+  { value: 'service', label: 'Services', icon: 'construct-outline' },
 ];
 
 /** Frontend-only mockup. See `wallet.tsx` for the "no backend yet" disclaimer. */
@@ -65,8 +64,8 @@ export default function MarketplaceScreen() {
       keyExtractor={(item) => item.id}
       ListHeaderComponent={
         <View className="mb-md">
-          <View className="mb-md flex-row overflow-hidden rounded-md border border-paper-200 dark:border-ink-border">
-            {TYPE_FILTERS.map((filter, index) => {
+          <View className="mb-md flex-row gap-sm">
+            {TYPE_FILTERS.map((filter) => {
               const active = typeFilter === filter.value;
               return (
                 <Pressable
@@ -74,10 +73,17 @@ export default function MarketplaceScreen() {
                   onPress={() => setTypeFilter(filter.value)}
                   accessibilityRole="button"
                   accessibilityState={{ selected: active }}
-                  className={`flex-1 items-center py-sm ${index > 0 ? 'border-l border-paper-200 dark:border-ink-border' : ''} ${
-                    active ? 'bg-brand-800 dark:bg-brand-500' : 'bg-white dark:bg-ink-surface'
+                  className={`flex-1 flex-row items-center justify-center gap-xs rounded-full border py-sm ${
+                    active
+                      ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-500'
+                      : 'border-paper-200 bg-white dark:border-ink-border dark:bg-ink-surface'
                   }`}
                 >
+                  <Ionicons
+                    name={filter.icon as never}
+                    size={15}
+                    color={active ? '#fff' : colors.textMuted}
+                  />
                   <Text
                     className={`text-[13px] font-semibold ${
                       active ? 'text-white' : 'text-paper-900 dark:text-ink-text'
@@ -144,13 +150,14 @@ export default function MarketplaceScreen() {
             <Ionicons name={CATEGORY_ICON[item.category] as never} size={32} color={colors.primary} />
           </View>
           <View className="p-md">
-            {item.sellerType === 'vendor' && (
-              <View className="mb-xs self-start">
-                <StatusBadge label="Vendor" tone="info" />
-              </View>
-            )}
             <Text className="text-[13px] font-semibold text-paper-900 dark:text-ink-text" numberOfLines={1}>
               {item.title}
+            </Text>
+            <Text
+              className="mt-xs text-[12px] leading-[16px] text-paper-500 dark:text-ink-textMuted"
+              numberOfLines={2}
+            >
+              {item.description}
             </Text>
             <Text className="mt-xs text-base font-bold text-paper-900 dark:text-ink-text">
               {formatNaira(item.price)}
@@ -158,6 +165,14 @@ export default function MarketplaceScreen() {
             <Text className="mt-xs text-[11px] text-paper-500 dark:text-ink-textMuted">
               {relativeTime(item.postedAt)}
             </Text>
+            <Pressable
+              onPress={() => router.push(`/resident/marketplace-listing?id=${item.id}`)}
+              className="mt-sm items-center rounded-md bg-brand-800 py-sm active:opacity-90 dark:bg-brand-500"
+            >
+              <Text className="text-[13px] font-semibold text-white">
+                {item.type === 'service' ? 'Message' : 'Buy now'}
+              </Text>
+            </Pressable>
           </View>
         </Pressable>
       )}
