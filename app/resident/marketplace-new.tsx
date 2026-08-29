@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Image } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, ScrollView, Pressable, Image, ActivityIndicator } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
@@ -18,7 +18,7 @@ import {
   SERVICE_CATEGORIES,
   type ListingCategory,
 } from '../../components/resident/marketplace-categories';
-import type { ListingType } from '../../types/database';
+import type { Listing, ListingType } from '../../types/database';
 
 const MAX_PHOTOS = 6;
 
@@ -33,25 +33,58 @@ const DESCRIPTION_PLACEHOLDER: Record<ListingType, string> = {
 };
 
 export default function NewMarketplaceListingScreen() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const isEditing = !!id;
+  const { colors } = useTheme();
+
+  const { data: existingListing, isLoading: loadingExisting } = useQuery({
+    queryKey: ['listing', id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('listings').select('*').eq('id', id).single();
+      if (error) throw error;
+      return data as Listing;
+    },
+    enabled: isEditing,
+  });
+
+  if (isEditing && loadingExisting) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  // Keyed by listing id so a fresh mount (and fresh initial state below) happens
+  // per listing rather than reusing state across a back-then-edit-another navigation.
+  return <MarketplaceForm key={id ?? 'new'} listingId={id} initial={existingListing} />;
+}
+
+function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?: Listing }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const profile = useAuthStore((s) => s.profile);
   const queryClient = useQueryClient();
+  const isEditing = !!listingId;
 
-  const [type, setType] = useState<ListingType>('good');
-  const [title, setTitle] = useState('');
-  const [price, setPrice] = useState('');
-  const [priceTo, setPriceTo] = useState('');
-  const [category, setCategory] = useState<ListingCategory>(GOOD_CATEGORIES[0]);
-  const [description, setDescription] = useState('');
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [pickupAvailable, setPickupAvailable] = useState(true);
-  const [pickupAddress, setPickupAddress] = useState('');
-  const [homeDeliveryAvailable, setHomeDeliveryAvailable] = useState(false);
-  const [deliveryFee, setDeliveryFee] = useState('');
-  const [freeDelivery, setFreeDelivery] = useState(false);
-  const [whatsapp, setWhatsapp] = useState('');
+  const [type, setType] = useState<ListingType>(initial?.type ?? 'good');
+  const [title, setTitle] = useState(initial?.title ?? '');
+  const [price, setPrice] = useState(initial ? String(initial.price) : '');
+  const [priceTo, setPriceTo] = useState(initial?.price_max ? String(initial.price_max) : '');
+  const [category, setCategory] = useState<ListingCategory>(
+    (initial?.category as ListingCategory) ?? GOOD_CATEGORIES[0]
+  );
+  const [description, setDescription] = useState(initial?.description ?? '');
+  const [photos, setPhotos] = useState<string[]>(initial?.photo_urls ?? []);
+  const [pickupAvailable, setPickupAvailable] = useState(initial?.pickup ?? true);
+  const [pickupAddress, setPickupAddress] = useState(initial?.pickup_address ?? '');
+  const [homeDeliveryAvailable, setHomeDeliveryAvailable] = useState(initial?.home_delivery ?? false);
+  const [deliveryFee, setDeliveryFee] = useState(initial?.delivery_fee ? String(initial.delivery_fee) : '');
+  const [freeDelivery, setFreeDelivery] = useState(
+    initial ? initial.home_delivery && initial.delivery_fee === 0 : false
+  );
+  const [whatsapp, setWhatsapp] = useState(initial?.whatsapp ?? '');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -87,11 +120,12 @@ export default function NewMarketplaceListingScreen() {
     setSubmitting(true);
 
     try {
-      const photoUrls = photos.length > 0 ? await uploadListingPhotos(profile.id, photos) : [];
+      const existingUrls = photos.filter((p) => p.startsWith('http'));
+      const newLocalUris = photos.filter((p) => !p.startsWith('http'));
+      const uploadedUrls = newLocalUris.length > 0 ? await uploadListingPhotos(profile.id, newLocalUris) : [];
+      const photoUrls = [...existingUrls, ...uploadedUrls];
 
-      const { error: insertError } = await supabase.from('listings').insert({
-        estate_id: profile.estate_id,
-        seller_id: profile.id,
+      const fields = {
         type,
         title: title.trim(),
         description: description.trim(),
@@ -104,10 +138,23 @@ export default function NewMarketplaceListingScreen() {
         home_delivery: type === 'good' && homeDeliveryAvailable,
         delivery_fee: type === 'good' && homeDeliveryAvailable && !freeDelivery ? Number(deliveryFee) || 0 : 0,
         whatsapp: type === 'service' ? whatsapp.trim() : null,
-      });
-      if (insertError) throw insertError;
+      };
+
+      if (isEditing) {
+        const { error: updateError } = await supabase.from('listings').update(fields).eq('id', listingId);
+        if (updateError) throw updateError;
+        await queryClient.invalidateQueries({ queryKey: ['listing', listingId] });
+      } else {
+        const { error: insertError } = await supabase.from('listings').insert({
+          estate_id: profile.estate_id,
+          seller_id: profile.id,
+          ...fields,
+        });
+        if (insertError) throw insertError;
+      }
 
       await queryClient.invalidateQueries({ queryKey: ['listings'] });
+      await queryClient.invalidateQueries({ queryKey: ['store_listings', profile.id] });
       router.back();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not publish this listing. Please try again.');
@@ -125,7 +172,9 @@ export default function NewMarketplaceListingScreen() {
         <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" hitSlop={8}>
           <Ionicons name="arrow-back" color={colors.onHeaderBg} size={22} />
         </Pressable>
-        <Text className="text-[22px] font-bold text-paper-900 dark:text-ink-text">New listing</Text>
+        <Text className="text-[22px] font-bold text-paper-900 dark:text-ink-text">
+          {isEditing ? 'Edit listing' : 'New listing'}
+        </Text>
       </View>
 
       <ScrollView contentContainerClassName="p-lg">
@@ -341,7 +390,12 @@ export default function NewMarketplaceListingScreen() {
           )}
         </View>
 
-        <Button label="Publish listing" onPress={handleSubmit} loading={submitting} disabled={!canSubmit} />
+        <Button
+          label={isEditing ? 'Save changes' : 'Publish listing'}
+          onPress={handleSubmit}
+          loading={submitting}
+          disabled={!canSubmit}
+        />
       </ScrollView>
     </View>
   );

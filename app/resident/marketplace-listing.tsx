@@ -17,7 +17,7 @@ import { Avatar } from '../../components/ui/Avatar';
 import { MarketplaceCheckoutFlow } from '../../components/resident/MarketplaceCheckoutFlow';
 import type { PaymentMethod } from '../../components/resident/PaymentMethodSheet';
 import { CATEGORY_ICON, formatListingPrice, type ListingCategory } from '../../components/resident/marketplace-categories';
-import type { ListingWithSeller, Wallet } from '../../types/database';
+import type { Listing, PublicProfile, Wallet } from '../../types/database';
 
 export default function MarketplaceListingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -43,15 +43,24 @@ export default function MarketplaceListingScreen() {
   const { data: listing, isLoading } = useQuery({
     queryKey: ['listing', id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('listings')
-        .select('*, seller:profiles(full_name, unit_no)')
-        .eq('id', id)
-        .single();
+      const { data, error } = await supabase.from('listings').select('*').eq('id', id).single();
       if (error) throw error;
-      return data as ListingWithSeller;
+      return data as Listing;
     },
     enabled: !!id,
+  });
+
+  // profiles_select doesn't let one resident read another's row directly (it
+  // would also expose resident_code, the gate QR code), so the seller's
+  // display name comes from this narrow RPC instead of an embedded join.
+  const { data: seller } = useQuery({
+    queryKey: ['public_profile', listing?.seller_id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_public_profiles', { profile_ids: [listing!.seller_id] });
+      if (error) throw error;
+      return (data as PublicProfile[])[0] ?? null;
+    },
+    enabled: !!listing,
   });
 
   if (isLoading) {
@@ -99,6 +108,8 @@ export default function MarketplaceListingScreen() {
         label,
       });
       if (transferErr) return setError(transferErr.message);
+      queryClient.invalidateQueries({ queryKey: ['listing', id] });
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
       setNotice("Thanks. We'll notify the seller once your transfer is confirmed.");
       return;
     }
@@ -126,6 +137,8 @@ export default function MarketplaceListingScreen() {
     if (orderErr) return setError(orderErr.message);
     queryClient.invalidateQueries({ queryKey: ['wallet', profile?.id] });
     queryClient.invalidateQueries({ queryKey: ['wallet_transactions', profile?.id] });
+    queryClient.invalidateQueries({ queryKey: ['listing', id] });
+    queryClient.invalidateQueries({ queryKey: ['listings'] });
     setNotice('Purchase complete. The seller will arrange handover.');
   }
 
@@ -164,13 +177,13 @@ export default function MarketplaceListingScreen() {
         </Text>
 
         <Card className="my-lg flex-row items-center gap-sm">
-          <Avatar name={listing.seller?.full_name} size={40} />
+          <Avatar name={seller?.full_name} size={40} />
           <View className="flex-1">
             <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
-              {listing.seller?.full_name ?? 'Resident'}
+              {seller?.full_name ?? 'Resident'}
             </Text>
             <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
-              {listing.seller?.unit_no ? `Resident · Unit ${listing.seller.unit_no}` : 'Resident'}
+              {seller?.unit_no ? `Resident · Unit ${seller.unit_no}` : 'Resident'}
             </Text>
           </View>
         </Card>

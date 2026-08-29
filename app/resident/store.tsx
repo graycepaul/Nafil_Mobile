@@ -15,7 +15,9 @@ import { StatCard } from '../../components/ui/StatCard';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Toast } from '../../components/ui/Toast';
-import type { ListingStatus, ListingWithSeller, OrderStatus, OrderWithContext } from '../../types/database';
+import type { ListingStatus, ListingWithSeller, Order, OrderStatus, PublicProfile } from '../../types/database';
+
+type OrderWithListing = Order & { listing: { title: string } | null };
 
 const ORDER_STATUS_TONE: Record<OrderStatus, BadgeTone> = {
   pending_transfer: 'warning',
@@ -34,7 +36,13 @@ const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
 const LISTING_STATUS_TONE: Record<ListingStatus, BadgeTone> = {
   active: 'success',
   sold: 'info',
-  removed: 'danger',
+  removed: 'neutral',
+};
+
+const LISTING_STATUS_LABEL: Record<ListingStatus, string> = {
+  active: 'active',
+  sold: 'sold',
+  removed: 'unlisted',
 };
 
 /** Seller's own view: what sold, what's outstanding, what they've earned. Reached only by residents who have listed at least one item. */
@@ -45,6 +53,7 @@ export default function StoreScreen() {
   const profile = useAuthStore((s) => s.profile);
   const queryClient = useQueryClient();
   const [completingId, setCompletingId] = useState<string | null>(null);
+  const [updatingListingId, setUpdatingListingId] = useState<string | null>(null);
   const [error, setError] = useState<string>();
 
   const { data: orders, isLoading: ordersLoading } = useQuery({
@@ -52,14 +61,29 @@ export default function StoreScreen() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('orders')
-        .select('*, listing:listings(title), buyer:profiles!orders_buyer_id_fkey(full_name, unit_no)')
+        .select('*, listing:listings(title)')
         .eq('seller_id', profile!.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as OrderWithContext[];
+      return data as OrderWithListing[];
     },
     enabled: !!profile,
   });
+
+  // profiles_select doesn't let a seller read a buyer's row directly (see
+  // marketplace-listing.tsx's seller lookup for why), so buyer display names
+  // come from this narrow RPC, batched across every buyer on this page.
+  const buyerIds = [...new Set((orders ?? []).map((o) => o.buyer_id))];
+  const { data: buyers } = useQuery({
+    queryKey: ['public_profiles', buyerIds],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_public_profiles', { profile_ids: buyerIds });
+      if (error) throw error;
+      return data as PublicProfile[];
+    },
+    enabled: buyerIds.length > 0,
+  });
+  const buyerById = new Map((buyers ?? []).map((b) => [b.id, b]));
 
   const { data: myListings, isLoading: listingsLoading } = useQuery({
     queryKey: ['store_listings', profile?.id],
@@ -85,6 +109,19 @@ export default function StoreScreen() {
       return;
     }
     queryClient.invalidateQueries({ queryKey: ['store_orders', profile?.id] });
+  }
+
+  async function updateListingStatus(listingId: string, status: ListingStatus) {
+    setError(undefined);
+    setUpdatingListingId(listingId);
+    const { error } = await supabase.from('listings').update({ status }).eq('id', listingId);
+    setUpdatingListingId(null);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['store_listings', profile?.id] });
+    queryClient.invalidateQueries({ queryKey: ['listings'] });
   }
 
   if (ordersLoading || listingsLoading) {
@@ -113,12 +150,14 @@ export default function StoreScreen() {
       </View>
 
       <ScrollView contentContainerClassName="p-lg">
-        <View className="mb-xl flex-row gap-md">
+        <View className="mb-md flex-row">
           <StatCard
             icon={<Ionicons name="cash-outline" color={colors.primary} size={18} />}
             value={formatNaira(earnings).replace('.00', '')}
             label="Earnings"
           />
+        </View>
+        <View className="mb-xl flex-row gap-md">
           <StatCard
             icon={<Ionicons name="receipt-outline" color={colors.primary} size={18} />}
             value={(orders ?? []).length}
@@ -142,7 +181,9 @@ export default function StoreScreen() {
           </Card>
         ) : (
           <View className="mb-xl gap-sm">
-            {(orders ?? []).map((order) => (
+            {(orders ?? []).map((order) => {
+              const buyer = buyerById.get(order.buyer_id);
+              return (
               <Card key={order.id}>
                 <View className="mb-xs flex-row items-center justify-between">
                   <StatusBadge label={ORDER_STATUS_LABEL[order.status]} tone={ORDER_STATUS_TONE[order.status]} />
@@ -154,8 +195,8 @@ export default function StoreScreen() {
                   {order.listing?.title ?? 'Listing'}
                 </Text>
                 <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
-                  {order.buyer?.full_name ?? 'Resident'}
-                  {order.buyer?.unit_no ? ` · Unit ${order.buyer.unit_no}` : ''} · {relativeTime(order.created_at)}
+                  {buyer?.full_name ?? 'Resident'}
+                  {buyer?.unit_no ? ` · Unit ${buyer.unit_no}` : ''} · {relativeTime(order.created_at)}
                 </Text>
                 {order.status === 'paid' && (
                   <Button
@@ -167,7 +208,8 @@ export default function StoreScreen() {
                   />
                 )}
               </Card>
-            ))}
+              );
+            })}
           </View>
         )}
 
@@ -187,25 +229,92 @@ export default function StoreScreen() {
           </Card>
         ) : (
           <View className="gap-sm">
-            {(myListings ?? []).map((listing) => (
-              <Pressable
-                key={listing.id}
-                onPress={() => router.push(`/resident/marketplace-listing?id=${listing.id}`)}
-              >
-                <Card className="flex-row items-center gap-sm">
-                  <View className="flex-1">
-                    <Text className="text-base font-semibold text-paper-900 dark:text-ink-text" numberOfLines={1}>
-                      {listing.title}
-                    </Text>
-                    <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
-                      {formatListingPrice(listing)}
-                    </Text>
+            {(myListings ?? []).map((listing) => {
+              const busy = updatingListingId === listing.id;
+              return (
+                <Card key={listing.id}>
+                  <Pressable
+                    onPress={() => router.push(`/resident/marketplace-listing?id=${listing.id}`)}
+                    accessibilityRole="button"
+                    className="flex-row items-center gap-sm"
+                  >
+                    <View className="flex-1">
+                      <Text className="text-base font-semibold text-paper-900 dark:text-ink-text" numberOfLines={1}>
+                        {listing.title}
+                      </Text>
+                      <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
+                        {formatListingPrice(listing)}
+                      </Text>
+                    </View>
+                    <StatusBadge label={LISTING_STATUS_LABEL[listing.status]} tone={LISTING_STATUS_TONE[listing.status]} />
+                    <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                  </Pressable>
+
+                  <View className="mt-sm flex-row gap-lg border-t border-paper-200 pt-sm dark:border-ink-border">
+                    {listing.status === 'active' && (
+                      <>
+                        <Pressable
+                          onPress={() => router.push(`/resident/marketplace-new?id=${listing.id}`)}
+                          disabled={busy}
+                          accessibilityRole="button"
+                        >
+                          <Text className="text-[13px] font-semibold text-brand-800 dark:text-brand-300">Edit</Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => updateListingStatus(listing.id, 'sold')}
+                          disabled={busy}
+                          accessibilityRole="button"
+                        >
+                          <Text className="text-[13px] font-semibold text-success">
+                            {busy ? 'Updating…' : 'Mark as sold'}
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => updateListingStatus(listing.id, 'removed')}
+                          disabled={busy}
+                          accessibilityRole="button"
+                        >
+                          <Text className="text-[13px] font-semibold text-paper-500 dark:text-ink-textMuted">
+                            {busy ? 'Updating…' : 'Unlist'}
+                          </Text>
+                        </Pressable>
+                      </>
+                    )}
+                    {listing.status === 'removed' && (
+                      <>
+                        <Pressable
+                          onPress={() => router.push(`/resident/marketplace-new?id=${listing.id}`)}
+                          disabled={busy}
+                          accessibilityRole="button"
+                        >
+                          <Text className="text-[13px] font-semibold text-brand-800 dark:text-brand-300">Edit</Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => updateListingStatus(listing.id, 'active')}
+                          disabled={busy}
+                          accessibilityRole="button"
+                        >
+                          <Text className="text-[13px] font-semibold text-success">
+                            {busy ? 'Updating…' : 'Relist'}
+                          </Text>
+                        </Pressable>
+                      </>
+                    )}
+                    {listing.status === 'sold' && (
+                      <Pressable
+                        onPress={() => updateListingStatus(listing.id, 'active')}
+                        disabled={busy}
+                        accessibilityRole="button"
+                      >
+                        <Text className="text-[13px] font-semibold text-success">
+                          {busy ? 'Updating…' : 'Relist'}
+                        </Text>
+                      </Pressable>
+                    )}
                   </View>
-                  <StatusBadge label={listing.status} tone={LISTING_STATUS_TONE[listing.status]} />
-                  <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
                 </Card>
-              </Pressable>
-            ))}
+              );
+            })}
           </View>
         )}
       </ScrollView>

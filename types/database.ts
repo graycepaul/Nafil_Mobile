@@ -280,3 +280,15 @@ export interface TransferWithSubmitter extends Transfer {
   submitter: Pick<Profile, 'full_name' | 'unit_no'> | null;
   estate: { name: string } | null;
 }
+
+/**
+ * Shape returned by the get_public_profiles RPC — the only way a plain
+ * resident can look up another resident's display info (profiles_select
+ * doesn't allow it directly, since that row also holds resident_code).
+ */
+export interface PublicProfile {
+  id: string;
+  full_name: string | null;
+  unit_no: string | null;
+  avatar_url: string | null;
+}
