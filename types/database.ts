@@ -171,3 +171,34 @@ export interface Notification {
   read_at: string | null;
   created_at: string;
 }
+
+export type ListingType = 'good' | 'service';
+export type ListingStatus = 'active' | 'sold' | 'removed';
+
+export interface Listing {
+  id: string;
+  estate_id: string;
+  seller_id: string;
+  type: ListingType;
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  /** Services only, for a "starting from" range. Null for goods and flat-rate services. */
+  price_max: number | null;
+  photo_urls: string[];
+  /** Goods only. */
+  pickup: boolean;
+  pickup_address: string | null;
+  home_delivery: boolean;
+  delivery_fee: number;
+  /** Services only. */
+  whatsapp: string | null;
+  status: ListingStatus;
+  created_at: string;
+}
+
+/** Shape returned by the marketplace's own queries, with the seller's display info joined in. */
+export interface ListingWithSeller extends Listing {
+  seller: Pick<Profile, 'full_name' | 'unit_no'> | null;
+}

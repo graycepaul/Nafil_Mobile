@@ -6,7 +6,7 @@ import { formatNaira } from '../../lib/format';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { PaymentMethodSheet, type PaymentMethod } from './PaymentMethodSheet';
-import type { MarketplaceListing } from './marketplace-mock';
+import type { Listing } from '../../types/database';
 
 type DeliveryChoice = 'pickup' | 'delivery';
 
@@ -23,24 +23,22 @@ export function MarketplaceCheckoutFlow({
   onConfirm,
   onCancel,
 }: {
-  listing: MarketplaceListing;
+  listing: Listing;
   walletBalance: number;
   onConfirm: (details: { deliveryChoice?: DeliveryChoice; total: number }, method: PaymentMethod) => Promise<void> | void;
   onCancel: () => void;
 }) {
   const { colors } = useTheme();
-  const delivery = listing.delivery;
-  const hasChoice = !!delivery && delivery.pickup && delivery.homeDelivery;
+  const hasDelivery = listing.type === 'good' && (listing.pickup || listing.home_delivery);
+  const hasChoice = listing.type === 'good' && listing.pickup && listing.home_delivery;
 
-  const [deliveryChoice, setDeliveryChoice] = useState<DeliveryChoice>(
-    delivery?.pickup ? 'pickup' : 'delivery'
-  );
+  const [deliveryChoice, setDeliveryChoice] = useState<DeliveryChoice>(listing.pickup ? 'pickup' : 'delivery');
   const [step, setStep] = useState<'delivery' | 'pay'>(hasChoice ? 'delivery' : 'pay');
 
-  const deliveryFee = deliveryChoice === 'delivery' ? (delivery?.deliveryFee ?? 0) : 0;
+  const deliveryFee = deliveryChoice === 'delivery' ? listing.delivery_fee : 0;
   const total = listing.price + deliveryFee;
 
-  if (step === 'delivery' && delivery) {
+  if (step === 'delivery' && hasDelivery) {
     return (
       <Card className="bg-white p-lg dark:bg-ink-surface">
         <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">
@@ -48,7 +46,7 @@ export function MarketplaceCheckoutFlow({
         </Text>
 
         <View className="mb-lg gap-sm">
-          {delivery.pickup && (
+          {listing.pickup && (
             <Pressable
               onPress={() => setDeliveryChoice('pickup')}
               accessibilityRole="radio"
@@ -67,7 +65,7 @@ export function MarketplaceCheckoutFlow({
                   Pickup from seller
                 </Text>
                 <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
-                  Free{delivery.pickupAddress ? ` · ${delivery.pickupAddress}` : ''}
+                  Free{listing.pickup_address ? ` · ${listing.pickup_address}` : ''}
                 </Text>
               </View>
               <View
@@ -84,7 +82,7 @@ export function MarketplaceCheckoutFlow({
             </Pressable>
           )}
 
-          {delivery.homeDelivery && (
+          {listing.home_delivery && (
             <Pressable
               onPress={() => setDeliveryChoice('delivery')}
               accessibilityRole="radio"
@@ -103,7 +101,7 @@ export function MarketplaceCheckoutFlow({
                   Home delivery (within the estate)
                 </Text>
                 <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
-                  {delivery.deliveryFee === 0 ? 'Free' : formatNaira(delivery.deliveryFee)}
+                  {listing.delivery_fee === 0 ? 'Free' : formatNaira(listing.delivery_fee)}
                 </Text>
               </View>
               <View
@@ -152,7 +150,7 @@ export function MarketplaceCheckoutFlow({
       amount={total}
       methods={['wallet', 'card', 'transfer']}
       walletBalance={walletBalance}
-      onConfirm={(method) => onConfirm({ deliveryChoice: delivery ? deliveryChoice : undefined, total }, method)}
+      onConfirm={(method) => onConfirm({ deliveryChoice: hasDelivery ? deliveryChoice : undefined, total }, method)}
       onCancel={onCancel}
     />
   );

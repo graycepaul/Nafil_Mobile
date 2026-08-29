@@ -2,9 +2,13 @@ import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
+import { supabase } from '../../lib/supabase';
+import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { pickPhoto } from '../../lib/pick-photo';
+import { uploadListingPhotos } from '../../lib/listing-photos';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
@@ -13,8 +17,8 @@ import {
   GOOD_CATEGORIES,
   SERVICE_CATEGORIES,
   type ListingCategory,
-  type ListingType,
 } from '../../components/resident/marketplace-mock';
+import type { ListingType } from '../../types/database';
 
 const MAX_PHOTOS = 6;
 
@@ -28,18 +32,12 @@ const DESCRIPTION_PLACEHOLDER: Record<ListingType, string> = {
   service: "Scope of work, what's included, anything a customer should know",
 };
 
-/**
- * Frontend-only mockup. See `wallet.tsx` for the "no backend yet" disclaimer.
- * Submitting doesn't persist anywhere; it just confirms the form works and
- * sends the resident back to the (still mock) listings feed. Photos are
- * picked for real via `pickPhoto` (local URIs only, no upload) so the
- * multi-photo UI itself can be reviewed before there's a `listing_photos`
- * bucket to send them to.
- */
 export default function NewMarketplaceListingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const profile = useAuthStore((s) => s.profile);
+  const queryClient = useQueryClient();
 
   const [type, setType] = useState<ListingType>('good');
   const [title, setTitle] = useState('');
@@ -84,12 +82,38 @@ export default function NewMarketplaceListingScreen() {
   const canSubmit = title.trim() && priceValid && description.trim() && deliveryValid && whatsappValid;
 
   async function handleSubmit() {
-    if (!canSubmit) return;
+    if (!canSubmit || !profile?.estate_id) return;
     setError(undefined);
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 700));
-    setSubmitting(false);
-    router.back();
+
+    try {
+      const photoUrls = photos.length > 0 ? await uploadListingPhotos(profile.id, photos) : [];
+
+      const { error: insertError } = await supabase.from('listings').insert({
+        estate_id: profile.estate_id,
+        seller_id: profile.id,
+        type,
+        title: title.trim(),
+        description: description.trim(),
+        category,
+        price: Number(price),
+        price_max: type === 'service' && priceTo.trim() ? Number(priceTo) : null,
+        photo_urls: photoUrls,
+        pickup: type === 'good' && pickupAvailable,
+        pickup_address: type === 'good' && pickupAvailable ? pickupAddress.trim() : null,
+        home_delivery: type === 'good' && homeDeliveryAvailable,
+        delivery_fee: type === 'good' && homeDeliveryAvailable && !freeDelivery ? Number(deliveryFee) || 0 : 0,
+        whatsapp: type === 'service' ? whatsapp.trim() : null,
+      });
+      if (insertError) throw insertError;
+
+      await queryClient.invalidateQueries({ queryKey: ['listings'] });
+      router.back();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not publish this listing. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (

@@ -1,15 +1,15 @@
 /**
- * Placeholder data for the marketplace/wallet/dues screens.
+ * Marketplace category/display helpers, plus placeholder data still backing
+ * the wallet and dues screens (see `Listing` in `types/database.ts` for the
+ * real, backend-wired shape marketplace screens now query).
  *
- * These features are being designed UI-first before the backend exists.
- * There's no `listings`, `wallet_transactions`, or `dues` table yet. Every
- * screen that reads this owns its own local state seeded from these
- * constants, so approving the UI doesn't require any schema to already
- * exist. Swap this file out for real Supabase queries once the backend
- * lands; the shapes below are written to look like what those rows will be.
+ * There's no `wallet_transactions` or `dues` table yet, so `WalletTransaction`
+ * and `DueItem` below stay mock for now: every screen that reads them owns
+ * its own local state seeded from these constants.
  */
 
 import { formatNaira } from '../../lib/format';
+import type { Listing } from '../../types/database';
 
 export type ListingCategory =
   | 'Furniture'
@@ -20,9 +20,6 @@ export type ListingCategory =
   | 'Beauty & Grooming'
   | 'Tutoring'
   | 'Other';
-
-/** Goods are bought and delivered/picked up; services are booked and coordinated directly with the provider. */
-export type ListingType = 'good' | 'service';
 
 export const GOOD_CATEGORIES: ListingCategory[] = ['Furniture', 'Electronics', 'Food', 'Fashion', 'Other'];
 
@@ -44,111 +41,13 @@ export const CATEGORY_ICON: Record<ListingCategory, string> = {
   Other: 'pricetag-outline',
 };
 
-export interface DeliveryOptions {
-  pickup: boolean;
-  /** Required once `pickup` is true, so a buyer knows where to go. */
-  pickupAddress?: string;
-  homeDelivery: boolean;
-  /** Only meaningful when `homeDelivery` is true. 0 means free delivery. Applies to delivery within the estate only. */
-  deliveryFee: number;
-}
-
-export interface MarketplaceListing {
-  id: string;
-  title: string;
-  /** A service's "starting from" price when `priceMax` is set; the exact price for goods. */
-  price: number;
-  /** Services only, for a price range ("₦X - ₦Y"). Absent for a flat-rate service or any good. */
-  priceMax?: number;
-  category: ListingCategory;
-  type: ListingType;
-  description: string;
-  sellerName: string;
-  sellerType: 'resident' | 'vendor';
-  sellerUnit?: string;
-  postedAt: string;
-  /** Goods only. */
-  delivery?: DeliveryOptions;
-  /** Services only, e.g. "2348012345678". Required so "Message on WhatsApp" has somewhere to go. */
-  whatsapp?: string;
-}
-
 /** "₦5,000.00" for a flat price, "₦5,000.00 - ₦15,000.00" for a service price range. */
-export function formatListingPrice(listing: Pick<MarketplaceListing, 'price' | 'priceMax'>): string {
-  if (listing.priceMax && listing.priceMax > listing.price) {
-    return `${formatNaira(listing.price)} - ${formatNaira(listing.priceMax)}`;
+export function formatListingPrice(listing: Pick<Listing, 'price' | 'price_max'>): string {
+  if (listing.price_max && listing.price_max > listing.price) {
+    return `${formatNaira(listing.price)} - ${formatNaira(listing.price_max)}`;
   }
   return formatNaira(listing.price);
 }
-
-export const MOCK_LISTINGS: MarketplaceListing[] = [
-  {
-    id: '1',
-    title: '3-seater fabric sofa',
-    price: 85000,
-    category: 'Furniture',
-    type: 'good',
-    description:
-      "Barely used, moving out of the estate and it won't fit the new place. Grey fabric, no stains or tears.",
-    sellerName: 'Damilola',
-    sellerType: 'resident',
-    sellerUnit: 'B12',
-    postedAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-    delivery: { pickup: true, pickupAddress: 'Block B, Flat 12', homeDelivery: true, deliveryFee: 3000 },
-  },
-  {
-    id: '2',
-    title: 'Generator servicing & repairs',
-    price: 5000,
-    priceMax: 15000,
-    category: 'Home Services',
-    type: 'service',
-    description:
-      'Certified technician offering same-day generator servicing, oil changes, and fault diagnosis within the estate.',
-    sellerName: 'PowerFix Services',
-    sellerType: 'vendor',
-    postedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    whatsapp: '2348012345678',
-  },
-  {
-    id: '3',
-    title: 'iPhone 13, 128GB',
-    price: 420000,
-    category: 'Electronics',
-    type: 'good',
-    description: 'Good condition, battery health 87%. Comes with original box and charger.',
-    sellerName: 'Ani Precious',
-    sellerType: 'resident',
-    sellerUnit: 'A4',
-    postedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-    delivery: { pickup: true, pickupAddress: 'Block A, Flat 4', homeDelivery: false, deliveryFee: 0 },
-  },
-  {
-    id: '4',
-    title: 'Homemade small chops (per tray)',
-    price: 12000,
-    category: 'Food',
-    type: 'good',
-    description: 'Puff-puff, spring rolls, samosa. Order a day ahead for events and gatherings.',
-    sellerName: "Temitope's Kitchen",
-    sellerType: 'vendor',
-    postedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
-    delivery: { pickup: true, pickupAddress: 'Estate Shop 3, near the gate', homeDelivery: true, deliveryFee: 0 },
-  },
-  {
-    id: '5',
-    title: 'Home cleaning, 2-bedroom flat',
-    price: 15000,
-    priceMax: 25000,
-    category: 'Home Services',
-    type: 'service',
-    description: 'Deep cleaning for living areas, kitchen, and bathrooms. Bring your own supplies or add ₦2,000.',
-    sellerName: 'SparkleCare Cleaning',
-    sellerType: 'vendor',
-    postedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4).toISOString(),
-    whatsapp: '2348023456789',
-  },
-];
 
 export interface WalletTransaction {
   id: string;

@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Linking } from 'react-native';
+import { View, Text, ScrollView, Pressable, Linking, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
+import { supabase } from '../../lib/supabase';
 import { useTheme } from '../../context/theme-context';
 import { formatNaira, relativeTime } from '../../lib/format';
 import { Card } from '../../components/ui/Card';
@@ -13,10 +15,10 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Avatar } from '../../components/ui/Avatar';
 import { MarketplaceCheckoutFlow } from '../../components/resident/MarketplaceCheckoutFlow';
 import type { PaymentMethod } from '../../components/resident/PaymentMethodSheet';
-import { CATEGORY_ICON, MOCK_LISTINGS, formatListingPrice } from '../../components/resident/marketplace-mock';
+import { CATEGORY_ICON, formatListingPrice, type ListingCategory } from '../../components/resident/marketplace-mock';
+import type { ListingWithSeller } from '../../types/database';
 import { useWalletMockStore } from '../../store/wallet-mock-store';
 
-/** Frontend-only mockup. See `wallet.tsx` for the "no backend yet" disclaimer. */
 export default function MarketplaceListingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -29,7 +31,27 @@ export default function MarketplaceListingScreen() {
   const adjustBalance = useWalletMockStore((s) => s.adjustBalance);
   const addTransaction = useWalletMockStore((s) => s.addTransaction);
 
-  const listing = MOCK_LISTINGS.find((l) => l.id === id);
+  const { data: listing, isLoading } = useQuery({
+    queryKey: ['listing', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('listings')
+        .select('*, seller:profiles(full_name, unit_no)')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return data as ListingWithSeller;
+    },
+    enabled: !!id,
+  });
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   if (!listing) {
     return (
@@ -76,12 +98,15 @@ export default function MarketplaceListingScreen() {
 
       <ScrollView contentContainerClassName="p-lg">
         <View className="mb-lg h-48 items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-900">
-          <Ionicons name={CATEGORY_ICON[listing.category] as never} size={56} color={colors.primary} />
+          <Ionicons
+            name={(CATEGORY_ICON[listing.category as ListingCategory] ?? 'pricetag-outline') as never}
+            size={56}
+            color={colors.primary}
+          />
         </View>
 
         <View className="mb-xs flex-row items-center gap-sm">
           <StatusBadge label={listing.category} tone="neutral" />
-          {listing.sellerType === 'vendor' && <StatusBadge label="Vendor" tone="info" />}
         </View>
         <Text className="text-[22px] font-bold text-paper-900 dark:text-ink-text">{listing.title}</Text>
         <Text className="mt-xs text-[28px] font-bold text-brand-800 dark:text-brand-300">
@@ -89,33 +114,35 @@ export default function MarketplaceListingScreen() {
         </Text>
 
         <Card className="my-lg flex-row items-center gap-sm">
-          <Avatar name={listing.sellerName} size={40} />
+          <Avatar name={listing.seller?.full_name} size={40} />
           <View className="flex-1">
-            <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">{listing.sellerName}</Text>
+            <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
+              {listing.seller?.full_name ?? 'Resident'}
+            </Text>
             <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
-              {listing.sellerType === 'vendor' ? 'Estate-approved vendor' : `Resident · Unit ${listing.sellerUnit}`}
+              {listing.seller?.unit_no ? `Resident · Unit ${listing.seller.unit_no}` : 'Resident'}
             </Text>
           </View>
         </Card>
 
-        {listing.delivery && (
+        {listing.type === 'good' && (listing.pickup || listing.home_delivery) && (
           <Card className="mb-lg">
             <Text className="mb-sm text-base font-semibold text-paper-900 dark:text-ink-text">Delivery</Text>
-            {listing.delivery.pickup && (
+            {listing.pickup && (
               <View className="mb-xs flex-row items-start gap-sm">
                 <Ionicons name="storefront-outline" size={16} color={colors.textMuted} style={{ marginTop: 2 }} />
                 <Text className="flex-1 text-[13px] text-paper-900 dark:text-ink-text">
                   Pickup from seller · Free
-                  {listing.delivery.pickupAddress ? `\n${listing.delivery.pickupAddress}` : ''}
+                  {listing.pickup_address ? `\n${listing.pickup_address}` : ''}
                 </Text>
               </View>
             )}
-            {listing.delivery.homeDelivery && (
+            {listing.home_delivery && (
               <View className="flex-row items-center gap-sm">
                 <Ionicons name="bicycle-outline" size={16} color={colors.textMuted} />
                 <Text className="text-[13px] text-paper-900 dark:text-ink-text">
                   Home delivery (within the estate) ·{' '}
-                  {listing.delivery.deliveryFee === 0 ? 'Free' : formatNaira(listing.delivery.deliveryFee)}
+                  {listing.delivery_fee === 0 ? 'Free' : formatNaira(listing.delivery_fee)}
                 </Text>
               </View>
             )}
@@ -125,7 +152,7 @@ export default function MarketplaceListingScreen() {
         <Text className="mb-xs text-base font-semibold text-paper-900 dark:text-ink-text">Description</Text>
         <Text className="text-[15px] leading-[22px] text-paper-900 dark:text-ink-text">{listing.description}</Text>
         <Text className="mt-md text-[13px] text-paper-500 dark:text-ink-textMuted">
-          Posted {relativeTime(listing.postedAt)}
+          Posted {relativeTime(listing.created_at)}
         </Text>
       </ScrollView>
 

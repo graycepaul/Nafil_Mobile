@@ -1,7 +1,10 @@
 import { useLayoutEffect, useMemo, useState } from 'react';
-import { View, Text, FlatList, ScrollView, Pressable } from 'react-native';
+import { View, Text, FlatList, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
+import { supabase } from '../../lib/supabase';
+import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { relativeTime } from '../../lib/format';
 import { Input } from '../../components/ui/Input';
@@ -12,11 +15,10 @@ import { Overlay } from '../../components/ui/Overlay';
 import {
   CATEGORY_ICON,
   LISTING_CATEGORIES,
-  MOCK_LISTINGS,
   formatListingPrice,
   type ListingCategory,
-  type ListingType,
 } from '../../components/resident/marketplace-mock';
+import type { ListingType, ListingWithSeller } from '../../types/database';
 
 const TYPE_FILTERS: { value: ListingType | 'all'; label: string; icon: string }[] = [
   { value: 'all', label: 'All', icon: 'apps-outline' },
@@ -24,11 +26,11 @@ const TYPE_FILTERS: { value: ListingType | 'all'; label: string; icon: string }[
   { value: 'service', label: 'Services', icon: 'construct-outline' },
 ];
 
-/** Frontend-only mockup. See `wallet.tsx` for the "no backend yet" disclaimer. */
 export default function MarketplaceScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const { colors } = useTheme();
+  const profile = useAuthStore((s) => s.profile);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<ListingCategory | 'All'>('All');
   const [typeFilter, setTypeFilter] = useState<ListingType | 'all'>('all');
@@ -50,14 +52,36 @@ export default function MarketplaceScreen() {
     });
   }, [navigation, router, colors.onHeaderBg]);
 
+  const { data: allListings, isLoading } = useQuery({
+    queryKey: ['listings', profile?.estate_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('listings')
+        .select('*, seller:profiles(full_name, unit_no)')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as ListingWithSeller[];
+    },
+    enabled: !!profile,
+  });
+
   const listings = useMemo(() => {
-    return MOCK_LISTINGS.filter((listing) => {
+    return (allListings ?? []).filter((listing) => {
       const matchesType = typeFilter === 'all' || listing.type === typeFilter;
       const matchesCategory = category === 'All' || listing.category === category;
       const matchesQuery = listing.title.toLowerCase().includes(query.trim().toLowerCase());
       return matchesType && matchesCategory && matchesQuery;
     });
-  }, [query, category, typeFilter]);
+  }, [allListings, query, category, typeFilter]);
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-paper-50 dark:bg-ink-bg">
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <>
@@ -141,7 +165,11 @@ export default function MarketplaceScreen() {
           className="mb-md flex-1 overflow-hidden rounded-md border border-paper-200 bg-white dark:border-ink-border dark:bg-ink-surface"
         >
           <View className="h-28 items-center justify-center bg-brand-50 dark:bg-brand-900">
-            <Ionicons name={CATEGORY_ICON[item.category] as never} size={32} color={colors.primary} />
+            <Ionicons
+              name={(CATEGORY_ICON[item.category as ListingCategory] ?? 'pricetag-outline') as never}
+              size={32}
+              color={colors.primary}
+            />
           </View>
           <View className="p-md">
             <Text className="text-[13px] font-semibold text-paper-900 dark:text-ink-text" numberOfLines={1}>
@@ -160,7 +188,7 @@ export default function MarketplaceScreen() {
               {formatListingPrice(item)}
             </Text>
             <Text className="mt-xs text-[11px] text-paper-500 dark:text-ink-textMuted">
-              {relativeTime(item.postedAt)}
+              {relativeTime(item.created_at)}
             </Text>
             <Pressable
               onPress={() => router.push(`/resident/marketplace-listing?id=${item.id}`)}
