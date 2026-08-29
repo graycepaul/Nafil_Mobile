@@ -10,7 +10,8 @@ import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
 import { Notice } from '../../components/ui/Notice';
 import {
-  LISTING_CATEGORIES,
+  GOOD_CATEGORIES,
+  SERVICE_CATEGORIES,
   type ListingCategory,
   type ListingType,
 } from '../../components/resident/marketplace-mock';
@@ -21,6 +22,11 @@ const TYPE_OPTIONS: { value: ListingType; label: string; hint: string }[] = [
   { value: 'good', label: 'Good', hint: 'An item you’re selling or swapping' },
   { value: 'service', label: 'Service', hint: 'Work you or your business offers' },
 ];
+
+const DESCRIPTION_PLACEHOLDER: Record<ListingType, string> = {
+  good: 'Condition, pickup details, anything a buyer should know',
+  service: "Scope of work, what's included, anything a customer should know",
+};
 
 /**
  * Frontend-only mockup. See `wallet.tsx` for the "no backend yet" disclaimer.
@@ -38,16 +44,26 @@ export default function NewMarketplaceListingScreen() {
   const [type, setType] = useState<ListingType>('good');
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
-  const [category, setCategory] = useState<ListingCategory>('Other');
+  const [priceTo, setPriceTo] = useState('');
+  const [category, setCategory] = useState<ListingCategory>(GOOD_CATEGORIES[0]);
   const [description, setDescription] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [pickupAvailable, setPickupAvailable] = useState(true);
+  const [pickupAddress, setPickupAddress] = useState('');
   const [homeDeliveryAvailable, setHomeDeliveryAvailable] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState('');
   const [freeDelivery, setFreeDelivery] = useState(false);
   const [whatsapp, setWhatsapp] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>();
+
+  const categoryOptions = type === 'good' ? GOOD_CATEGORIES : SERVICE_CATEGORIES;
+
+  function handleTypeChange(next: ListingType) {
+    setType(next);
+    const options = next === 'good' ? GOOD_CATEGORIES : SERVICE_CATEGORIES;
+    if (!options.includes(category)) setCategory(options[0]);
+  }
 
   async function addPhoto() {
     if (photos.length >= MAX_PHOTOS) return;
@@ -60,9 +76,12 @@ export default function NewMarketplaceListingScreen() {
     setPhotos((prev) => prev.filter((p) => p !== uri));
   }
 
-  const deliveryValid = type !== 'good' || pickupAvailable || homeDeliveryAvailable;
+  const deliveryMethodChosen = type !== 'good' || pickupAvailable || homeDeliveryAvailable;
+  const pickupAddressValid = type !== 'good' || !pickupAvailable || pickupAddress.trim().length > 0;
+  const deliveryValid = deliveryMethodChosen && pickupAddressValid;
   const whatsappValid = type !== 'service' || whatsapp.trim().length > 0;
-  const canSubmit = title.trim() && Number(price) > 0 && description.trim() && deliveryValid && whatsappValid;
+  const priceValid = type === 'good' ? Number(price) > 0 : Number(price) > 0 && Number(priceTo) >= Number(price);
+  const canSubmit = title.trim() && priceValid && description.trim() && deliveryValid && whatsappValid;
 
   async function handleSubmit() {
     if (!canSubmit) return;
@@ -95,7 +114,7 @@ export default function NewMarketplaceListingScreen() {
             return (
               <Pressable
                 key={option.value}
-                onPress={() => setType(option.value)}
+                onPress={() => handleTypeChange(option.value)}
                 accessibilityRole="button"
                 accessibilityState={{ selected: active }}
                 className={`flex-1 rounded-md border p-md ${
@@ -113,27 +132,63 @@ export default function NewMarketplaceListingScreen() {
 
         <Input label="Title" showLabel placeholder="e.g. 3-seater fabric sofa" value={title} onChangeText={setTitle} />
 
-        <Select
-          label="Category"
-          showLabel
-          value={category}
-          onChange={setCategory}
-          options={LISTING_CATEGORIES.map((c) => ({ value: c, label: c }))}
-        />
-
-        <Input
-          label="Price (₦)"
-          showLabel
-          placeholder="e.g. 25000"
-          keyboardType="number-pad"
-          value={price}
-          onChangeText={(v) => setPrice(v.replace(/[^0-9]/g, ''))}
-        />
+        <View className="flex-row gap-sm">
+          <View className="flex-1">
+            <Select
+              label="Category"
+              showLabel
+              value={category}
+              onChange={setCategory}
+              options={categoryOptions.map((c) => ({ value: c, label: c }))}
+            />
+          </View>
+          <View className="flex-1">
+            {type === 'good' ? (
+              <Input
+                label="Price (₦)"
+                showLabel
+                placeholder="e.g. 25000"
+                keyboardType="number-pad"
+                value={price}
+                onChangeText={(v) => setPrice(v.replace(/[^0-9]/g, ''))}
+              />
+            ) : (
+              <>
+                <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">Price range (₦)</Text>
+                <View className="flex-row gap-xs">
+                  <View className="flex-1">
+                    <Input
+                      placeholder="From"
+                      keyboardType="number-pad"
+                      accessibilityLabel="Price from"
+                      value={price}
+                      onChangeText={(v) => setPrice(v.replace(/[^0-9]/g, ''))}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Input
+                      placeholder="To"
+                      keyboardType="number-pad"
+                      accessibilityLabel="Price to"
+                      value={priceTo}
+                      onChangeText={(v) => setPriceTo(v.replace(/[^0-9]/g, ''))}
+                    />
+                  </View>
+                </View>
+                {price.trim() && priceTo.trim() && Number(priceTo) < Number(price) && (
+                  <Text className="mb-lg -mt-sm text-[13px] text-danger">
+                    &quot;To&quot; must be at least &quot;From&quot;.
+                  </Text>
+                )}
+              </>
+            )}
+          </View>
+        </View>
 
         <Input
           label="Description"
           showLabel
-          placeholder="Condition, pickup details, anything a buyer should know"
+          placeholder={DESCRIPTION_PLACEHOLDER[type]}
           value={description}
           onChangeText={setDescription}
           multiline
@@ -158,6 +213,19 @@ export default function NewMarketplaceListingScreen() {
               <Text className="flex-1 text-base text-paper-900 dark:text-ink-text">Available for pickup</Text>
             </Pressable>
 
+            {pickupAvailable && (
+              <View className="pl-lg">
+                <Input
+                  label="Pickup address"
+                  showLabel
+                  placeholder="e.g. Block B, Flat 12"
+                  hint="Shown to buyers who choose to pick up rather than have it delivered."
+                  value={pickupAddress}
+                  onChangeText={setPickupAddress}
+                />
+              </View>
+            )}
+
             <Pressable
               onPress={() => setHomeDeliveryAvailable((v) => !v)}
               accessibilityRole="checkbox"
@@ -180,6 +248,7 @@ export default function NewMarketplaceListingScreen() {
                   label="Delivery fee (₦)"
                   showLabel
                   placeholder="e.g. 2000"
+                  hint="Applies to delivery within the estate only."
                   keyboardType="number-pad"
                   editable={!freeDelivery}
                   value={freeDelivery ? '' : deliveryFee}
@@ -203,9 +272,6 @@ export default function NewMarketplaceListingScreen() {
               </View>
             )}
 
-            {!deliveryValid && (
-              <Text className="mt-sm text-[13px] text-danger">Choose at least one delivery method.</Text>
-            )}
           </View>
         )}
 

@@ -13,7 +13,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Avatar } from '../../components/ui/Avatar';
 import { MarketplaceCheckoutFlow } from '../../components/resident/MarketplaceCheckoutFlow';
 import type { PaymentMethod } from '../../components/resident/PaymentMethodSheet';
-import { CATEGORY_ICON, MOCK_LISTINGS } from '../../components/resident/marketplace-mock';
+import { CATEGORY_ICON, MOCK_LISTINGS, formatListingPrice } from '../../components/resident/marketplace-mock';
 import { useWalletMockStore } from '../../store/wallet-mock-store';
 
 /** Frontend-only mockup. See `wallet.tsx` for the "no backend yet" disclaimer. */
@@ -85,7 +85,7 @@ export default function MarketplaceListingScreen() {
         </View>
         <Text className="text-[22px] font-bold text-paper-900 dark:text-ink-text">{listing.title}</Text>
         <Text className="mt-xs text-[28px] font-bold text-brand-800 dark:text-brand-300">
-          {formatNaira(listing.price)}
+          {formatListingPrice(listing)}
         </Text>
 
         <Card className="my-lg flex-row items-center gap-sm">
@@ -102,16 +102,19 @@ export default function MarketplaceListingScreen() {
           <Card className="mb-lg">
             <Text className="mb-sm text-base font-semibold text-paper-900 dark:text-ink-text">Delivery</Text>
             {listing.delivery.pickup && (
-              <View className="mb-xs flex-row items-center gap-sm">
-                <Ionicons name="storefront-outline" size={16} color={colors.textMuted} />
-                <Text className="text-[13px] text-paper-900 dark:text-ink-text">Pickup from seller · Free</Text>
+              <View className="mb-xs flex-row items-start gap-sm">
+                <Ionicons name="storefront-outline" size={16} color={colors.textMuted} style={{ marginTop: 2 }} />
+                <Text className="flex-1 text-[13px] text-paper-900 dark:text-ink-text">
+                  Pickup from seller · Free
+                  {listing.delivery.pickupAddress ? `\n${listing.delivery.pickupAddress}` : ''}
+                </Text>
               </View>
             )}
             {listing.delivery.homeDelivery && (
               <View className="flex-row items-center gap-sm">
                 <Ionicons name="bicycle-outline" size={16} color={colors.textMuted} />
                 <Text className="text-[13px] text-paper-900 dark:text-ink-text">
-                  Home delivery ·{' '}
+                  Home delivery (within the estate) ·{' '}
                   {listing.delivery.deliveryFee === 0 ? 'Free' : formatNaira(listing.delivery.deliveryFee)}
                 </Text>
               </View>

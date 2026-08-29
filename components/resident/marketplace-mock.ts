@@ -9,40 +9,57 @@
  * lands; the shapes below are written to look like what those rows will be.
  */
 
-export type ListingCategory = 'Furniture' | 'Electronics' | 'Home Services' | 'Food' | 'Fashion' | 'Other';
+import { formatNaira } from '../../lib/format';
 
-export const LISTING_CATEGORIES: ListingCategory[] = [
-  'Furniture',
-  'Electronics',
-  'Home Services',
-  'Food',
-  'Fashion',
-  'Other',
-];
-
-export const CATEGORY_ICON: Record<ListingCategory, string> = {
-  Furniture: 'bed-outline',
-  Electronics: 'phone-portrait-outline',
-  'Home Services': 'construct-outline',
-  Food: 'restaurant-outline',
-  Fashion: 'shirt-outline',
-  Other: 'pricetag-outline',
-};
+export type ListingCategory =
+  | 'Furniture'
+  | 'Electronics'
+  | 'Food'
+  | 'Fashion'
+  | 'Home Services'
+  | 'Beauty & Grooming'
+  | 'Tutoring'
+  | 'Other';
 
 /** Goods are bought and delivered/picked up; services are booked and coordinated directly with the provider. */
 export type ListingType = 'good' | 'service';
 
+export const GOOD_CATEGORIES: ListingCategory[] = ['Furniture', 'Electronics', 'Food', 'Fashion', 'Other'];
+
+export const SERVICE_CATEGORIES: ListingCategory[] = ['Home Services', 'Beauty & Grooming', 'Tutoring', 'Other'];
+
+/** Every category across both types, for the browse screen's chip filter. */
+export const LISTING_CATEGORIES: ListingCategory[] = [...GOOD_CATEGORIES, ...SERVICE_CATEGORIES].filter(
+  (category, index, all) => all.indexOf(category) === index
+);
+
+export const CATEGORY_ICON: Record<ListingCategory, string> = {
+  Furniture: 'bed-outline',
+  Electronics: 'phone-portrait-outline',
+  Food: 'restaurant-outline',
+  Fashion: 'shirt-outline',
+  'Home Services': 'construct-outline',
+  'Beauty & Grooming': 'cut-outline',
+  Tutoring: 'book-outline',
+  Other: 'pricetag-outline',
+};
+
 export interface DeliveryOptions {
   pickup: boolean;
+  /** Required once `pickup` is true, so a buyer knows where to go. */
+  pickupAddress?: string;
   homeDelivery: boolean;
-  /** Only meaningful when `homeDelivery` is true. 0 means free delivery. */
+  /** Only meaningful when `homeDelivery` is true. 0 means free delivery. Applies to delivery within the estate only. */
   deliveryFee: number;
 }
 
 export interface MarketplaceListing {
   id: string;
   title: string;
+  /** A service's "starting from" price when `priceMax` is set; the exact price for goods. */
   price: number;
+  /** Services only, for a price range ("₦X - ₦Y"). Absent for a flat-rate service or any good. */
+  priceMax?: number;
   category: ListingCategory;
   type: ListingType;
   description: string;
@@ -54,6 +71,14 @@ export interface MarketplaceListing {
   delivery?: DeliveryOptions;
   /** Services only, e.g. "2348012345678". Required so "Message on WhatsApp" has somewhere to go. */
   whatsapp?: string;
+}
+
+/** "₦5,000.00" for a flat price, "₦5,000.00 - ₦15,000.00" for a service price range. */
+export function formatListingPrice(listing: Pick<MarketplaceListing, 'price' | 'priceMax'>): string {
+  if (listing.priceMax && listing.priceMax > listing.price) {
+    return `${formatNaira(listing.price)} - ${formatNaira(listing.priceMax)}`;
+  }
+  return formatNaira(listing.price);
 }
 
 export const MOCK_LISTINGS: MarketplaceListing[] = [
@@ -69,12 +94,13 @@ export const MOCK_LISTINGS: MarketplaceListing[] = [
     sellerType: 'resident',
     sellerUnit: 'B12',
     postedAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-    delivery: { pickup: true, homeDelivery: true, deliveryFee: 3000 },
+    delivery: { pickup: true, pickupAddress: 'Block B, Flat 12', homeDelivery: true, deliveryFee: 3000 },
   },
   {
     id: '2',
     title: 'Generator servicing & repairs',
     price: 5000,
+    priceMax: 15000,
     category: 'Home Services',
     type: 'service',
     description:
@@ -95,7 +121,7 @@ export const MOCK_LISTINGS: MarketplaceListing[] = [
     sellerType: 'resident',
     sellerUnit: 'A4',
     postedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-    delivery: { pickup: true, homeDelivery: false, deliveryFee: 0 },
+    delivery: { pickup: true, pickupAddress: 'Block A, Flat 4', homeDelivery: false, deliveryFee: 0 },
   },
   {
     id: '4',
@@ -107,12 +133,13 @@ export const MOCK_LISTINGS: MarketplaceListing[] = [
     sellerName: "Temitope's Kitchen",
     sellerType: 'vendor',
     postedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
-    delivery: { pickup: true, homeDelivery: true, deliveryFee: 0 },
+    delivery: { pickup: true, pickupAddress: 'Estate Shop 3, near the gate', homeDelivery: true, deliveryFee: 0 },
   },
   {
     id: '5',
     title: 'Home cleaning, 2-bedroom flat',
     price: 15000,
+    priceMax: 25000,
     category: 'Home Services',
     type: 'service',
     description: 'Deep cleaning for living areas, kitchen, and bathrooms. Bring your own supplies or add ₦2,000.',

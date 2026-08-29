@@ -66,7 +66,9 @@ export function MarketplaceCheckoutFlow({
                 <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
                   Pickup from seller
                 </Text>
-                <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">Free</Text>
+                <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
+                  Free{delivery.pickupAddress ? ` · ${delivery.pickupAddress}` : ''}
+                </Text>
               </View>
               <View
                 className={`h-5 w-5 items-center justify-center rounded-full border-[1.5px] ${
@@ -98,7 +100,7 @@ export function MarketplaceCheckoutFlow({
               </View>
               <View className="flex-1">
                 <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
-                  Home delivery
+                  Home delivery (within the estate)
                 </Text>
                 <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
                   {delivery.deliveryFee === 0 ? 'Free' : formatNaira(delivery.deliveryFee)}

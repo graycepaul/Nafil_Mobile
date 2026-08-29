@@ -3,7 +3,7 @@ import { View, Text, FlatList, ScrollView, Pressable } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme } from '../../context/theme-context';
-import { formatNaira, relativeTime } from '../../lib/format';
+import { relativeTime } from '../../lib/format';
 import { Input } from '../../components/ui/Input';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Card } from '../../components/ui/Card';
@@ -13,6 +13,7 @@ import {
   CATEGORY_ICON,
   LISTING_CATEGORIES,
   MOCK_LISTINGS,
+  formatListingPrice,
   type ListingCategory,
   type ListingType,
 } from '../../components/resident/marketplace-mock';
@@ -152,8 +153,11 @@ export default function MarketplaceScreen() {
             >
               {item.description}
             </Text>
-            <Text className="mt-xs text-base font-bold text-paper-900 dark:text-ink-text">
-              {formatNaira(item.price)}
+            <Text
+              className="mt-xs text-base font-bold text-paper-900 dark:text-ink-text"
+              numberOfLines={1}
+            >
+              {formatListingPrice(item)}
             </Text>
             <Text className="mt-xs text-[11px] text-paper-500 dark:text-ink-textMuted">
               {relativeTime(item.postedAt)}
