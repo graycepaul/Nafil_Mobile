@@ -103,16 +103,17 @@ export default function WalletScreen() {
       </View>
 
       <ScrollView contentContainerClassName="p-lg">
-        <Card className="mb-xl items-center bg-brand-800 py-xl dark:bg-brand-900">
+        <View className="mb-xl items-center rounded-md bg-brand-800 py-xl dark:bg-brand-900">
           <Text className="text-[13px] text-white/70">Available balance</Text>
           <Text className="mt-xs text-[34px] font-bold text-white">{formatNaira(balance)}</Text>
-          <Button
-            label="Fund wallet"
-            variant="secondary"
+          <Pressable
             onPress={() => setFunding(true)}
-            className="mt-lg w-full border-white/40"
-          />
-        </Card>
+            accessibilityRole="button"
+            className="mt-lg min-h-[52px] w-full items-center justify-center rounded-md border-[1.5px] border-white/40 px-lg active:opacity-80"
+          >
+            <Text className="text-base font-semibold text-white">Fund wallet</Text>
+          </Pressable>
+        </View>
 
         <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">Services</Text>
         <Card className="mb-xl flex-row justify-around py-lg">

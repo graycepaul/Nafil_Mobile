@@ -40,7 +40,7 @@ export function SearchAndEstateFilter({
           <Ionicons name="search-outline" size={16} color={colors.textMuted} />
           <TextInput
             placeholder={placeholder}
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.placeholder}
             value={search}
             onChangeText={onSearchChange}
             accessibilityLabel={placeholder}

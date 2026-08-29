@@ -70,7 +70,7 @@ export default function MarketplaceScreen() {
       keyExtractor={(item) => item.id}
       ListHeaderComponent={
         <View className="mb-md">
-          <View className="flex-row items-center gap-sm">
+          <View className="flex-row items-start gap-sm">
             <View className="flex-1">
               <Input
                 placeholder="Search the marketplace"

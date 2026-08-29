@@ -82,6 +82,8 @@ export const lightColors = {
   borderStrong: neutral[300],
   text: neutral[900],
   textMuted: neutral[500],
+  /** Input placeholders specifically — lighter than `textMuted`, which is legible body copy (hints, timestamps) and reads too strong for a field that's still empty. */
+  placeholder: neutral[400],
   focusRing: airForceBlue[400],
   dangerMuted: "#FDECEA",
   successMuted: "#E6F4EE",
@@ -118,6 +120,8 @@ export const darkColors = {
   borderStrong: darkNeutral.borderStrong,
   text: darkNeutral.text,
   textMuted: darkNeutral.textMuted,
+  /** Dimmer than `textMuted` for the same reason as the light palette, just inverted: recessive against a dark field means darker, not lighter. */
+  placeholder: "#6E6E73",
   focusRing: airForceBlue[300],
   dangerMuted: "#2A1512",
   successMuted: "#0F2119",

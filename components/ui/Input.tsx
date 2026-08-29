@@ -54,7 +54,7 @@ export function Input({
         }`}
       >
         <TextInput
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholder}
           secureTextEntry={passwordToggle ? !revealed : props.secureTextEntry}
           accessibilityLabel={label}
           className={`bg-transparent text-[15px] text-paper-900 dark:text-ink-text py-[16px] pl-lg ${
