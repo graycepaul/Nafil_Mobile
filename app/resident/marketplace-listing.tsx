@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, Linking, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
+import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { formatNaira, relativeTime } from '../../lib/format';
 import { Card } from '../../components/ui/Card';
@@ -15,21 +16,28 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Avatar } from '../../components/ui/Avatar';
 import { MarketplaceCheckoutFlow } from '../../components/resident/MarketplaceCheckoutFlow';
 import type { PaymentMethod } from '../../components/resident/PaymentMethodSheet';
-import { CATEGORY_ICON, formatListingPrice, type ListingCategory } from '../../components/resident/marketplace-mock';
-import type { ListingWithSeller } from '../../types/database';
-import { useWalletMockStore } from '../../store/wallet-mock-store';
+import { CATEGORY_ICON, formatListingPrice, type ListingCategory } from '../../components/resident/marketplace-categories';
+import type { ListingWithSeller, Wallet } from '../../types/database';
 
 export default function MarketplaceListingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const profile = useAuthStore((s) => s.profile);
+  const queryClient = useQueryClient();
   const [buying, setBuying] = useState(false);
   const [notice, setNotice] = useState<string>();
 
-  const balance = useWalletMockStore((s) => s.balance);
-  const adjustBalance = useWalletMockStore((s) => s.adjustBalance);
-  const addTransaction = useWalletMockStore((s) => s.addTransaction);
+  const { data: wallet } = useQuery({
+    queryKey: ['wallet', profile?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('wallets').select('*').eq('profile_id', profile!.id).single();
+      if (error) throw error;
+      return data as Wallet;
+    },
+    enabled: !!profile,
+  });
 
   const { data: listing, isLoading } = useQuery({
     queryKey: ['listing', id],
@@ -62,7 +70,6 @@ export default function MarketplaceListingScreen() {
   }
 
   async function handleBuy(details: { total: number }, method: PaymentMethod) {
-    await new Promise((r) => setTimeout(r, 900));
     setBuying(false);
 
     if (method === 'transfer') {
@@ -70,12 +77,15 @@ export default function MarketplaceListingScreen() {
       return;
     }
 
-    if (method === 'wallet') adjustBalance(-details.total);
-    addTransaction({
+    if (method === 'wallet') await supabase.rpc('adjust_wallet_balance', { delta: -details.total });
+    await supabase.from('wallet_transactions').insert({
+      profile_id: profile!.id,
       label: `Marketplace · ${listing!.title}`,
       amount: -details.total,
       status: 'completed',
     });
+    queryClient.invalidateQueries({ queryKey: ['wallet', profile?.id] });
+    queryClient.invalidateQueries({ queryKey: ['wallet_transactions', profile?.id] });
     setNotice('Purchase request sent. The seller will confirm and arrange handover.');
   }
 
@@ -166,7 +176,7 @@ export default function MarketplaceListingScreen() {
       <Overlay visible={buying} onDismiss={() => setBuying(false)}>
         <MarketplaceCheckoutFlow
           listing={listing}
-          walletBalance={balance}
+          walletBalance={wallet?.balance ?? 0}
           onConfirm={handleBuy}
           onCancel={() => setBuying(false)}
         />

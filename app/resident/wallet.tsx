@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
+import { supabase } from '../../lib/supabase';
+import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { formatNaira, relativeTime } from '../../lib/format';
 import { Card } from '../../components/ui/Card';
@@ -13,7 +16,7 @@ import { Toast } from '../../components/ui/Toast';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { PaymentMethodSheet, type PaymentMethod } from '../../components/resident/PaymentMethodSheet';
 import { DuesPaymentFlow } from '../../components/resident/DuesPaymentFlow';
-import { useWalletMockStore } from '../../store/wallet-mock-store';
+import type { Due, Wallet, WalletTransaction } from '../../types/database';
 
 const INLINE_ACTIVITY_LIMIT = 3;
 
@@ -23,57 +26,108 @@ const MORE_SERVICES: { icon: string; label: string }[] = [
 ];
 
 /**
- * Frontend-only wallet mockup. Balance, transactions, and dues live in
- * `store/wallet-mock-store.ts` rather than Supabase. There's no `wallets`,
- * `wallet_transactions`, or `dues` table yet; this exists to get the UI
- * approved before that backend gets built (see the marketplace/wallet
- * feature work).
+ * Payments here are still simulated, not a real gateway charge (see the
+ * backend migration's own note). "Card" and "wallet" settle immediately by
+ * calling `adjust_wallet_balance` / updating `dues` directly; "transfer"
+ * just logs a pending transaction for someone to reconcile by hand later.
  */
 export default function WalletScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const profile = useAuthStore((s) => s.profile);
+  const queryClient = useQueryClient();
 
-  const balance = useWalletMockStore((s) => s.balance);
-  const transactions = useWalletMockStore((s) => s.transactions);
-  const dueItems = useWalletMockStore((s) => s.dueItems);
-  const adjustBalance = useWalletMockStore((s) => s.adjustBalance);
-  const addTransaction = useWalletMockStore((s) => s.addTransaction);
-  const markDueItemsPaid = useWalletMockStore((s) => s.markDueItemsPaid);
+  const { data: wallet, isLoading: walletLoading } = useQuery({
+    queryKey: ['wallet', profile?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('wallets').select('*').eq('profile_id', profile!.id).single();
+      if (error) throw error;
+      return data as Wallet;
+    },
+    enabled: !!profile,
+  });
+
+  const { data: transactions } = useQuery({
+    queryKey: ['wallet_transactions', profile?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('wallet_transactions')
+        .select('*')
+        .eq('profile_id', profile!.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as WalletTransaction[];
+    },
+    enabled: !!profile,
+  });
+
+  const { data: unpaidDues } = useQuery({
+    queryKey: ['dues', profile?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('dues')
+        .select('*')
+        .eq('profile_id', profile!.id)
+        .neq('status', 'paid')
+        .order('due_date', { ascending: true });
+      if (error) throw error;
+      return data as Due[];
+    },
+    enabled: !!profile,
+  });
 
   const [funding, setFunding] = useState(false);
   const [fundAmount, setFundAmount] = useState('10000');
   const [payingDues, setPayingDues] = useState(false);
   const [moreServicesOpen, setMoreServicesOpen] = useState(false);
   const [notice, setNotice] = useState<string>();
+  const [error, setError] = useState<string>();
+
+  function invalidateWallet() {
+    queryClient.invalidateQueries({ queryKey: ['wallet', profile?.id] });
+    queryClient.invalidateQueries({ queryKey: ['wallet_transactions', profile?.id] });
+  }
 
   async function handleConfirmFund(method: PaymentMethod) {
     const amount = Number(fundAmount) || 0;
-    await new Promise((r) => setTimeout(r, 900));
+    setError(undefined);
 
     if (method === 'transfer') {
-      addTransaction({ label: 'Wallet top-up · Bank transfer', amount, status: 'pending' });
+      const { error: err } = await supabase
+        .from('wallet_transactions')
+        .insert({ profile_id: profile!.id, label: 'Wallet top-up · Bank transfer', amount, status: 'pending' });
+      if (err) return setError(err.message);
       setNotice("Thanks. We'll credit your wallet once the transfer is confirmed.");
     } else {
-      adjustBalance(amount);
-      addTransaction({ label: 'Wallet top-up · Card', amount, status: 'completed' });
+      const { error: rpcErr } = await supabase.rpc('adjust_wallet_balance', { delta: amount });
+      if (rpcErr) return setError(rpcErr.message);
+      const { error: txErr } = await supabase
+        .from('wallet_transactions')
+        .insert({ profile_id: profile!.id, label: 'Wallet top-up · Card', amount, status: 'completed' });
+      if (txErr) return setError(txErr.message);
       setNotice('Wallet funded successfully.');
     }
+    invalidateWallet();
     setFunding(false);
   }
 
-  const unpaidDues = dueItems.filter((item) => item.status !== 'paid');
-
   async function handlePayDues(selectedIds: string[], method: PaymentMethod) {
-    const selectedItems = unpaidDues.filter((item) => selectedIds.includes(item.id));
+    const selectedItems = (unpaidDues ?? []).filter((item) => selectedIds.includes(item.id));
     const total = selectedItems.reduce((sum, item) => sum + item.amount, 0);
-    await new Promise((r) => setTimeout(r, 900));
+    setError(undefined);
 
     if (method === 'transfer') {
       setNotice("Thanks. We'll mark your dues as paid once the transfer is confirmed.");
     } else {
-      if (method === 'wallet') adjustBalance(-total);
-      addTransaction({
+      if (method === 'wallet') {
+        const { error: rpcErr } = await supabase.rpc('adjust_wallet_balance', { delta: -total });
+        if (rpcErr) return setError(rpcErr.message);
+      }
+      const { error: duesErr } = await supabase.from('dues').update({ status: 'paid' }).in('id', selectedIds);
+      if (duesErr) return setError(duesErr.message);
+      const { error: txErr } = await supabase.from('wallet_transactions').insert({
+        profile_id: profile!.id,
         label:
           selectedItems.length === 1
             ? `Estate dues · ${selectedItems[0].label}`
@@ -81,14 +135,25 @@ export default function WalletScreen() {
         amount: -total,
         status: 'completed',
       });
-      markDueItemsPaid(selectedIds);
+      if (txErr) return setError(txErr.message);
       setNotice('Estate dues paid successfully.');
+      invalidateWallet();
     }
+    queryClient.invalidateQueries({ queryKey: ['dues', profile?.id] });
     setPayingDues(false);
   }
 
-  const visibleTransactions = transactions.slice(0, INLINE_ACTIVITY_LIMIT);
-  const duesPending = unpaidDues.length > 0;
+  const balance = wallet?.balance ?? 0;
+  const visibleTransactions = (transactions ?? []).slice(0, INLINE_ACTIVITY_LIMIT);
+  const duesPending = (unpaidDues ?? []).length > 0;
+
+  if (walletLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-paper-50 dark:bg-ink-bg">
@@ -159,7 +224,7 @@ export default function WalletScreen() {
 
         <View className="mb-md flex-row items-center justify-between">
           <Text className="text-lg font-semibold text-paper-900 dark:text-ink-text">Recent activity</Text>
-          {transactions.length > 0 && (
+          {(transactions ?? []).length > 0 && (
             <Pressable onPress={() => router.push('/resident/wallet-transactions')} accessibilityRole="button">
               <Text className="text-[13px] font-semibold text-brand-800 dark:text-brand-300">See all</Text>
             </Pressable>
@@ -190,7 +255,7 @@ export default function WalletScreen() {
               <View className="flex-1">
                 <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">{tx.label}</Text>
                 <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
-                  {relativeTime(tx.date)}
+                  {relativeTime(tx.created_at)}
                   {tx.status === 'pending' ? ' · Pending' : ''}
                 </Text>
               </View>
@@ -246,7 +311,7 @@ export default function WalletScreen() {
 
       <Overlay visible={payingDues} onDismiss={() => setPayingDues(false)}>
         <DuesPaymentFlow
-          items={unpaidDues}
+          items={unpaidDues ?? []}
           walletBalance={balance}
           onConfirm={handlePayDues}
           onCancel={() => setPayingDues(false)}
@@ -279,7 +344,14 @@ export default function WalletScreen() {
         </Card>
       </Overlay>
 
-      <Toast message={notice} tone="success" onDismiss={() => setNotice(undefined)} />
+      <Toast
+        message={error ?? notice}
+        tone={error ? 'error' : 'success'}
+        onDismiss={() => {
+          setError(undefined);
+          setNotice(undefined);
+        }}
+      />
     </View>
   );
 }

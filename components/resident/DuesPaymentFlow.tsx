@@ -8,7 +8,7 @@ import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
 import { StatusBadge } from "../ui/StatusBadge";
 import { PaymentMethodSheet, type PaymentMethod } from "./PaymentMethodSheet";
-import type { DueItem } from "./marketplace-mock";
+import type { Due } from "../../types/database";
 
 /**
  * Two-step dues payment: pick which line items to settle, then pick how to
@@ -23,7 +23,7 @@ export function DuesPaymentFlow({
   onCancel,
 }: {
   /** Unpaid items only. Paid ones aren't shown here. */
-  items: DueItem[];
+  items: Due[];
   walletBalance: number;
   onConfirm: (
     selectedIds: string[],
@@ -128,7 +128,7 @@ export function DuesPaymentFlow({
                 <View className="mt-0.5 flex-row items-center gap-sm">
                   <Text className="text-[11px] text-paper-500 dark:text-ink-textMuted">
                     Due{" "}
-                    {new Date(item.dueDate).toLocaleDateString(undefined, {
+                    {new Date(item.due_date).toLocaleDateString(undefined, {
                       day: "numeric",
                       month: "short",
                     })}

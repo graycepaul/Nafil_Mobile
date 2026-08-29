@@ -202,3 +202,33 @@ export interface Listing {
 export interface ListingWithSeller extends Listing {
   seller: Pick<Profile, 'full_name' | 'unit_no'> | null;
 }
+
+export type WalletTransactionStatus = 'completed' | 'pending';
+
+export interface Wallet {
+  profile_id: string;
+  balance: number;
+  updated_at: string;
+}
+
+export interface WalletTransaction {
+  id: string;
+  profile_id: string;
+  label: string;
+  amount: number;
+  status: WalletTransactionStatus;
+  created_at: string;
+}
+
+export type DueStatus = 'due' | 'overdue' | 'paid';
+
+export interface Due {
+  id: string;
+  estate_id: string;
+  profile_id: string;
+  label: string;
+  amount: number;
+  due_date: string;
+  status: DueStatus;
+  created_at: string;
+}

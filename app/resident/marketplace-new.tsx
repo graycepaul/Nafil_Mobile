@@ -17,7 +17,7 @@ import {
   GOOD_CATEGORIES,
   SERVICE_CATEGORIES,
   type ListingCategory,
-} from '../../components/resident/marketplace-mock';
+} from '../../components/resident/marketplace-categories';
 import type { ListingType } from '../../types/database';
 
 const MAX_PHOTOS = 6;

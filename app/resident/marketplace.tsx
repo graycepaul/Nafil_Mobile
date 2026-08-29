@@ -17,7 +17,7 @@ import {
   LISTING_CATEGORIES,
   formatListingPrice,
   type ListingCategory,
-} from '../../components/resident/marketplace-mock';
+} from '../../components/resident/marketplace-categories';
 import type { ListingType, ListingWithSeller } from '../../types/database';
 
 const TYPE_FILTERS: { value: ListingType | 'all'; label: string; icon: string }[] = [
