@@ -50,7 +50,7 @@ export function Input({
         className={`relative justify-center rounded-md border bg-white dark:bg-ink-surface ${
           error
             ? 'border-danger'
-            : 'border-paper-200 dark:border-ink-border focus-within:border-brand-800 dark:focus-within:border-brand-300 shadow-sm'
+            : 'border-paper-200 dark:border-ink-border focus-within:border-paper-400 dark:focus-within:border-brand-300 shadow-sm'
         }`}
       >
         <TextInput
