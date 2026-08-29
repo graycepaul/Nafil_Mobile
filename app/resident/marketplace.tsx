@@ -60,7 +60,7 @@ export default function MarketplaceScreen() {
               accessibilityLabel="My store"
               hitSlop={8}
             >
-              <Ionicons name="briefcase-outline" color={colors.onHeaderBg} size={22} />
+              <Ionicons name="bag-handle-outline" color={colors.onHeaderBg} size={22} />
             </Pressable>
           )}
           <Pressable

@@ -1,6 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 
-type PickPhotoResult = { uri: string } | { cancelled: true } | { error: string };
+type PickPhotoResult = { uri: string; mimeType: string | null } | { cancelled: true } | { error: string };
 
 /**
  * Opens the photo library and returns the picked image's local URI, nothing
@@ -22,5 +22,5 @@ export async function pickPhoto(): Promise<PickPhotoResult> {
   });
   if (result.canceled || !result.assets[0]) return { cancelled: true };
 
-  return { uri: result.assets[0].uri };
+  return { uri: result.assets[0].uri, mimeType: result.assets[0].mimeType ?? null };
 }

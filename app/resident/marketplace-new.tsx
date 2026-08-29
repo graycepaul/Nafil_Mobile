@@ -77,6 +77,7 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
   );
   const [description, setDescription] = useState(initial?.description ?? '');
   const [photos, setPhotos] = useState<string[]>(initial?.photo_urls ?? []);
+  const [photoMimeTypes, setPhotoMimeTypes] = useState<Record<string, string | null>>({});
   const [pickupAvailable, setPickupAvailable] = useState(initial?.pickup ?? true);
   const [pickupAddress, setPickupAddress] = useState(initial?.pickup_address ?? '');
   const [homeDeliveryAvailable, setHomeDeliveryAvailable] = useState(initial?.home_delivery ?? false);
@@ -99,8 +100,10 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
   async function addPhoto() {
     if (photos.length >= MAX_PHOTOS) return;
     const result = await pickPhoto();
-    if ('uri' in result) setPhotos((prev) => [...prev, result.uri]);
-    else if ('error' in result) setError(result.error);
+    if ('uri' in result) {
+      setPhotos((prev) => [...prev, result.uri]);
+      setPhotoMimeTypes((prev) => ({ ...prev, [result.uri]: result.mimeType }));
+    } else if ('error' in result) setError(result.error);
   }
 
   function removePhoto(uri: string) {
@@ -121,8 +124,11 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
 
     try {
       const existingUrls = photos.filter((p) => p.startsWith('http'));
-      const newLocalUris = photos.filter((p) => !p.startsWith('http'));
-      const uploadedUrls = newLocalUris.length > 0 ? await uploadListingPhotos(profile.id, newLocalUris) : [];
+      const newLocalPhotos = photos
+        .filter((p) => !p.startsWith('http'))
+        .map((uri) => ({ uri, mimeType: photoMimeTypes[uri] ?? null }));
+      const uploadedUrls =
+        newLocalPhotos.length > 0 ? await uploadListingPhotos(profile.id, newLocalPhotos) : [];
       const photoUrls = [...existingUrls, ...uploadedUrls];
 
       const fields = {
