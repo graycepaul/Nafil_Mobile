@@ -6,6 +6,9 @@ import { useTheme } from '../../context/theme-context';
 import { formatNaira, relativeTime } from '../../lib/format';
 import { Input } from '../../components/ui/Input';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Overlay } from '../../components/ui/Overlay';
 import {
   CATEGORY_ICON,
   LISTING_CATEGORIES,
@@ -28,6 +31,7 @@ export default function MarketplaceScreen() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<ListingCategory | 'All'>('All');
   const [typeFilter, setTypeFilter] = useState<ListingType | 'all'>('all');
+  const [filterOpen, setFilterOpen] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -55,6 +59,7 @@ export default function MarketplaceScreen() {
   }, [query, category, typeFilter]);
 
   return (
+    <>
     <FlatList
       className="bg-paper-50 dark:bg-ink-bg"
       contentContainerClassName="p-lg"
@@ -64,44 +69,32 @@ export default function MarketplaceScreen() {
       keyExtractor={(item) => item.id}
       ListHeaderComponent={
         <View className="mb-md">
-          <View className="mb-md flex-row gap-sm">
-            {TYPE_FILTERS.map((filter) => {
-              const active = typeFilter === filter.value;
-              return (
-                <Pressable
-                  key={filter.value}
-                  onPress={() => setTypeFilter(filter.value)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: active }}
-                  className={`flex-1 flex-row items-center justify-center gap-xs rounded-full border py-sm ${
-                    active
-                      ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-500'
-                      : 'border-paper-200 bg-white dark:border-ink-border dark:bg-ink-surface'
-                  }`}
-                >
-                  <Ionicons
-                    name={filter.icon as never}
-                    size={15}
-                    color={active ? '#fff' : colors.textMuted}
-                  />
-                  <Text
-                    className={`text-[13px] font-semibold ${
-                      active ? 'text-white' : 'text-paper-900 dark:text-ink-text'
-                    }`}
-                  >
-                    {filter.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+          <View className="flex-row items-center gap-sm">
+            <View className="flex-1">
+              <Input
+                placeholder="Search the marketplace"
+                value={query}
+                onChangeText={setQuery}
+                accessibilityLabel="Search listings"
+              />
+            </View>
+            <Pressable
+              onPress={() => setFilterOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Filter by type"
+              className={`h-[54px] w-[54px] items-center justify-center rounded-md border ${
+                typeFilter !== 'all'
+                  ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-500'
+                  : 'border-paper-200 bg-white dark:border-ink-border dark:bg-ink-surface'
+              }`}
+            >
+              <Ionicons
+                name="options-outline"
+                size={20}
+                color={typeFilter !== 'all' ? '#fff' : colors.textMuted}
+              />
+            </Pressable>
           </View>
-
-          <Input
-            placeholder="Search the marketplace"
-            value={query}
-            onChangeText={setQuery}
-            accessibilityLabel="Search listings"
-          />
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -177,5 +170,48 @@ export default function MarketplaceScreen() {
         </Pressable>
       )}
     />
+
+    <Overlay visible={filterOpen} onDismiss={() => setFilterOpen(false)}>
+      <Card className="bg-white p-lg dark:bg-ink-surface">
+        <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">Filter by type</Text>
+        <View className="gap-sm">
+          {TYPE_FILTERS.map((filter) => {
+            const active = typeFilter === filter.value;
+            return (
+              <Pressable
+                key={filter.value}
+                onPress={() => {
+                  setTypeFilter(filter.value);
+                  setFilterOpen(false);
+                }}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: active }}
+                className={`flex-row items-center gap-md rounded-md border p-md active:opacity-80 ${
+                  active
+                    ? 'border-brand-800 bg-paper-50 dark:border-brand-300 dark:bg-ink-bg'
+                    : 'border-paper-200 bg-paper-50 dark:border-ink-border dark:bg-ink-surface'
+                }`}
+              >
+                <View className="h-9 w-9 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
+                  <Ionicons name={filter.icon as never} size={18} color={colors.primary} />
+                </View>
+                <Text className="flex-1 text-base font-semibold text-paper-900 dark:text-ink-text">
+                  {filter.label}
+                </Text>
+                <View
+                  className={`h-5 w-5 items-center justify-center rounded-full border-[1.5px] ${
+                    active ? 'border-brand-800 dark:border-brand-300' : 'border-paper-200 dark:border-ink-border'
+                  }`}
+                >
+                  {active && <View className="h-[11px] w-[11px] rounded-full bg-brand-800 dark:bg-brand-300" />}
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Button label="Close" variant="ghost" onPress={() => setFilterOpen(false)} className="mt-md" />
+      </Card>
+    </Overlay>
+    </>
   );
 }
