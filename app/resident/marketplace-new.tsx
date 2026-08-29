@@ -310,7 +310,7 @@ export default function NewMarketplaceListingScreen() {
               onPress={addPhoto}
               accessibilityRole="button"
               accessibilityLabel="Add photo"
-              className="h-20 w-20 items-center justify-center rounded-md border border-dashed border-paper-300 dark:border-ink-borderStrong"
+              className="h-20 w-20 items-center justify-center rounded-md border border-dashed border-paper-200 dark:border-ink-border"
             >
               <Ionicons name="camera-outline" size={22} color={colors.textMuted} />
             </Pressable>
