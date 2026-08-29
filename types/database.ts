@@ -159,7 +159,11 @@ export type NotificationType =
   | 'join_request_approved'
   | 'staff_invite_accepted'
   | 'household_member_scanned'
-  | 'issue_reported';
+  | 'issue_reported'
+  | 'order_placed'
+  | 'order_completed'
+  | 'transfer_confirmed'
+  | 'transfer_rejected';
 
 export interface Notification {
   id: string;
@@ -231,4 +235,48 @@ export interface Due {
   due_date: string;
   status: DueStatus;
   created_at: string;
+}
+
+export type OrderStatus = 'pending_transfer' | 'paid' | 'completed' | 'cancelled';
+
+export interface Order {
+  id: string;
+  estate_id: string;
+  listing_id: string;
+  seller_id: string;
+  buyer_id: string;
+  amount: number;
+  payment_method: string;
+  status: OrderStatus;
+  created_at: string;
+  completed_at: string | null;
+}
+
+/** Shape returned by the Store screen's orders query, with listing/buyer info joined in. */
+export interface OrderWithContext extends Order {
+  listing: Pick<Listing, 'title'> | null;
+  buyer: Pick<Profile, 'full_name' | 'unit_no'> | null;
+}
+
+export type TransferPurpose = 'wallet_topup' | 'dues' | 'marketplace_order';
+export type TransferStatus = 'pending' | 'confirmed' | 'rejected';
+
+export interface Transfer {
+  id: string;
+  estate_id: string;
+  profile_id: string;
+  purpose: TransferPurpose;
+  reference_id: string | null;
+  amount: number;
+  label: string;
+  status: TransferStatus;
+  created_at: string;
+  confirmed_at: string | null;
+  confirmed_by: string | null;
+}
+
+/** Shape returned by the admin transfer queue, with the submitter's info joined in. */
+export interface TransferWithSubmitter extends Transfer {
+  submitter: Pick<Profile, 'full_name' | 'unit_no'> | null;
+  estate: { name: string } | null;
 }

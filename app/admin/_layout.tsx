@@ -52,6 +52,16 @@ export default function AdminLayout() {
         // Reached via the Dashboard header's bell, not a tab of its own.
         options={{ title: 'Notifications', href: null, headerShown: false }}
       />
+      <Tabs.Screen
+        name="marketplace"
+        // Reached via the Dashboard's "Marketplace listings" stat card.
+        options={{ title: 'Marketplace', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
+        name="transfers"
+        // Reached via the Dashboard's "Pending transfers" stat card.
+        options={{ title: 'Pending transfers', href: null, headerShown: false }}
+      />
     </Tabs>
   );
 }

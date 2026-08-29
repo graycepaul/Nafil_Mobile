@@ -92,6 +92,30 @@ export default function AdminDashboardScreen() {
     enabled: !!profile,
   });
 
+  const { data: listingCount } = useQuery({
+    queryKey: ['dashboard_listing_count', profile?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('listings')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active');
+      return count ?? 0;
+    },
+    enabled: !!profile,
+  });
+
+  const { data: pendingTransferCount } = useQuery({
+    queryKey: ['dashboard_pending_transfers', profile?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('transfers')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      return count ?? 0;
+    },
+    enabled: !!profile,
+  });
+
   const { data: recentAnnouncements } = useQuery({
     queryKey: ['dashboard_recent_announcements', profile?.id],
     queryFn: async () => {
@@ -112,6 +136,8 @@ export default function AdminDashboardScreen() {
       queryClient.invalidateQueries({ queryKey: ['dashboard_staff_count'] }),
       queryClient.invalidateQueries({ queryKey: ['dashboard_open_issues'] }),
       queryClient.invalidateQueries({ queryKey: ['dashboard_pending_requests'] }),
+      queryClient.invalidateQueries({ queryKey: ['dashboard_listing_count'] }),
+      queryClient.invalidateQueries({ queryKey: ['dashboard_pending_transfers'] }),
       queryClient.invalidateQueries({ queryKey: ['dashboard_recent_announcements'] }),
     ]);
     setRefreshing(false);
@@ -176,7 +202,7 @@ export default function AdminDashboardScreen() {
           onPress={() => router.push('/admin/staff')}
         />
       </View>
-      <View className="mb-lg flex-row gap-md">
+      <View className="mb-md flex-row gap-md">
         <StatCard
           icon={<Ionicons name="build-outline" color={colors.primary} size={18} />}
           value={openIssueCount ?? 0}
@@ -188,6 +214,20 @@ export default function AdminDashboardScreen() {
           value={pendingRequestCount ?? 0}
           label="Pending requests"
           onPress={() => router.push('/admin/residents?tab=pending')}
+        />
+      </View>
+      <View className="mb-lg flex-row gap-md">
+        <StatCard
+          icon={<Ionicons name="storefront-outline" color={colors.primary} size={18} />}
+          value={listingCount ?? 0}
+          label="Marketplace listings"
+          onPress={() => router.push('/admin/marketplace')}
+        />
+        <StatCard
+          icon={<Ionicons name="swap-horizontal-outline" color={colors.primary} size={18} />}
+          value={pendingTransferCount ?? 0}
+          label="Pending transfers"
+          onPress={() => router.push('/admin/transfers')}
         />
       </View>
 

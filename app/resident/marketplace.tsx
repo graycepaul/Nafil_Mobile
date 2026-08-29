@@ -36,21 +36,45 @@ export default function MarketplaceScreen() {
   const [typeFilter, setTypeFilter] = useState<ListingType | 'all'>('all');
   const [filterOpen, setFilterOpen] = useState(false);
 
+  const { data: hasStore } = useQuery({
+    queryKey: ['has_listings', profile?.id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('listings')
+        .select('id', { count: 'exact', head: true })
+        .eq('seller_id', profile!.id);
+      if (error) throw error;
+      return (count ?? 0) > 0;
+    },
+    enabled: !!profile,
+  });
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <Pressable
-          onPress={() => router.push('/resident/marketplace-new')}
-          accessibilityRole="button"
-          accessibilityLabel="New listing"
-          hitSlop={8}
-          className="px-lg"
-        >
-          <Ionicons name="add" color={colors.onHeaderBg} size={24} />
-        </Pressable>
+        <View className="flex-row items-center gap-md pr-lg">
+          {hasStore && (
+            <Pressable
+              onPress={() => router.push('/resident/store')}
+              accessibilityRole="button"
+              accessibilityLabel="My store"
+              hitSlop={8}
+            >
+              <Ionicons name="briefcase-outline" color={colors.onHeaderBg} size={22} />
+            </Pressable>
+          )}
+          <Pressable
+            onPress={() => router.push('/resident/marketplace-new')}
+            accessibilityRole="button"
+            accessibilityLabel="New listing"
+            hitSlop={8}
+          >
+            <Ionicons name="add" color={colors.onHeaderBg} size={24} />
+          </Pressable>
+        </View>
       ),
     });
-  }, [navigation, router, colors.onHeaderBg]);
+  }, [navigation, router, colors.onHeaderBg, hasStore]);
 
   const { data: allListings, isLoading } = useQuery({
     queryKey: ['listings', profile?.estate_id],

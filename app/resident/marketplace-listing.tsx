@@ -28,6 +28,7 @@ export default function MarketplaceListingScreen() {
   const queryClient = useQueryClient();
   const [buying, setBuying] = useState(false);
   const [notice, setNotice] = useState<string>();
+  const [error, setError] = useState<string>();
 
   const { data: wallet } = useQuery({
     queryKey: ['wallet', profile?.id],
@@ -71,22 +72,61 @@ export default function MarketplaceListingScreen() {
 
   async function handleBuy(details: { total: number }, method: PaymentMethod) {
     setBuying(false);
+    setError(undefined);
+    const label = `Marketplace · ${listing!.title}`;
 
     if (method === 'transfer') {
+      const { data: order, error: orderErr } = await supabase
+        .from('orders')
+        .insert({
+          estate_id: profile!.estate_id,
+          listing_id: listing!.id,
+          seller_id: listing!.seller_id,
+          buyer_id: profile!.id,
+          amount: details.total,
+          payment_method: 'transfer',
+          status: 'pending_transfer',
+        })
+        .select()
+        .single();
+      if (orderErr) return setError(orderErr.message);
+      const { error: transferErr } = await supabase.from('transfers').insert({
+        estate_id: profile!.estate_id,
+        profile_id: profile!.id,
+        purpose: 'marketplace_order',
+        reference_id: order.id,
+        amount: details.total,
+        label,
+      });
+      if (transferErr) return setError(transferErr.message);
       setNotice("Thanks. We'll notify the seller once your transfer is confirmed.");
       return;
     }
 
-    if (method === 'wallet') await supabase.rpc('adjust_wallet_balance', { delta: -details.total });
-    await supabase.from('wallet_transactions').insert({
+    if (method === 'wallet') {
+      const { error: rpcErr } = await supabase.rpc('adjust_wallet_balance', { delta: -details.total });
+      if (rpcErr) return setError(rpcErr.message);
+    }
+    const { error: txErr } = await supabase.from('wallet_transactions').insert({
       profile_id: profile!.id,
-      label: `Marketplace · ${listing!.title}`,
+      label,
       amount: -details.total,
       status: 'completed',
     });
+    if (txErr) return setError(txErr.message);
+    const { error: orderErr } = await supabase.from('orders').insert({
+      estate_id: profile!.estate_id,
+      listing_id: listing!.id,
+      seller_id: listing!.seller_id,
+      buyer_id: profile!.id,
+      amount: details.total,
+      payment_method: method,
+      status: 'paid',
+    });
+    if (orderErr) return setError(orderErr.message);
     queryClient.invalidateQueries({ queryKey: ['wallet', profile?.id] });
     queryClient.invalidateQueries({ queryKey: ['wallet_transactions', profile?.id] });
-    setNotice('Purchase request sent. The seller will confirm and arrange handover.');
+    setNotice('Purchase complete. The seller will arrange handover.');
   }
 
   function messageOnWhatsApp() {
@@ -182,7 +222,14 @@ export default function MarketplaceListingScreen() {
         />
       </Overlay>
 
-      <Toast message={notice} tone="success" onDismiss={() => setNotice(undefined)} />
+      <Toast
+        message={error ?? notice}
+        tone={error ? 'error' : 'success'}
+        onDismiss={() => {
+          setError(undefined);
+          setNotice(undefined);
+        }}
+      />
     </View>
   );
 }

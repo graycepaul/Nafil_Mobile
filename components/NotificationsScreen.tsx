@@ -22,6 +22,10 @@ const TYPE_ICON: Record<NotificationType, IoniconsIconName> = {
   join_request_approved: 'checkmark-circle-outline',
   staff_invite_accepted: 'person-add-outline',
   household_member_scanned: 'people-outline',
+  order_placed: 'cart-outline',
+  order_completed: 'checkmark-done-outline',
+  transfer_confirmed: 'checkmark-circle-outline',
+  transfer_rejected: 'close-circle-outline',
 };
 
 /** Same notifications inbox for every role — the table and its RLS (own rows only) don't distinguish who's looking, so neither does this screen. */

@@ -16,7 +16,7 @@ import { Toast } from '../../components/ui/Toast';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { PaymentMethodSheet, type PaymentMethod } from '../../components/resident/PaymentMethodSheet';
 import { DuesPaymentFlow } from '../../components/resident/DuesPaymentFlow';
-import type { Due, Wallet, WalletTransaction } from '../../types/database';
+import type { Due, Transfer, Wallet, WalletTransaction } from '../../types/database';
 
 const INLINE_ACTIVITY_LIMIT = 3;
 
@@ -62,7 +62,7 @@ export default function WalletScreen() {
     enabled: !!profile,
   });
 
-  const { data: unpaidDues } = useQuery({
+  const { data: allUnpaidDues } = useQuery({
     queryKey: ['dues', profile?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -77,6 +77,26 @@ export default function WalletScreen() {
     enabled: !!profile,
   });
 
+  const { data: pendingTransfers } = useQuery({
+    queryKey: ['transfers', profile?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('transfers')
+        .select('*')
+        .eq('profile_id', profile!.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as Transfer[];
+    },
+    enabled: !!profile,
+  });
+
+  const pendingDueIds = new Set(
+    (pendingTransfers ?? []).filter((t) => t.purpose === 'dues').map((t) => t.reference_id)
+  );
+  const unpaidDues = (allUnpaidDues ?? []).filter((item) => !pendingDueIds.has(item.id));
+
   const [funding, setFunding] = useState(false);
   const [fundAmount, setFundAmount] = useState('10000');
   const [payingDues, setPayingDues] = useState(false);
@@ -89,16 +109,25 @@ export default function WalletScreen() {
     queryClient.invalidateQueries({ queryKey: ['wallet_transactions', profile?.id] });
   }
 
+  function invalidateTransfers() {
+    queryClient.invalidateQueries({ queryKey: ['transfers', profile?.id] });
+  }
+
   async function handleConfirmFund(method: PaymentMethod) {
     const amount = Number(fundAmount) || 0;
     setError(undefined);
 
     if (method === 'transfer') {
-      const { error: err } = await supabase
-        .from('wallet_transactions')
-        .insert({ profile_id: profile!.id, label: 'Wallet top-up · Bank transfer', amount, status: 'pending' });
+      const { error: err } = await supabase.from('transfers').insert({
+        estate_id: profile!.estate_id,
+        profile_id: profile!.id,
+        purpose: 'wallet_topup',
+        amount,
+        label: 'Wallet top-up · Bank transfer',
+      });
       if (err) return setError(err.message);
       setNotice("Thanks. We'll credit your wallet once the transfer is confirmed.");
+      invalidateTransfers();
     } else {
       const { error: rpcErr } = await supabase.rpc('adjust_wallet_balance', { delta: amount });
       if (rpcErr) return setError(rpcErr.message);
@@ -107,18 +136,30 @@ export default function WalletScreen() {
         .insert({ profile_id: profile!.id, label: 'Wallet top-up · Card', amount, status: 'completed' });
       if (txErr) return setError(txErr.message);
       setNotice('Wallet funded successfully.');
+      invalidateWallet();
     }
-    invalidateWallet();
     setFunding(false);
   }
 
   async function handlePayDues(selectedIds: string[], method: PaymentMethod) {
-    const selectedItems = (unpaidDues ?? []).filter((item) => selectedIds.includes(item.id));
+    const selectedItems = unpaidDues.filter((item) => selectedIds.includes(item.id));
     const total = selectedItems.reduce((sum, item) => sum + item.amount, 0);
     setError(undefined);
 
     if (method === 'transfer') {
+      const { error: err } = await supabase.from('transfers').insert(
+        selectedItems.map((item) => ({
+          estate_id: profile!.estate_id,
+          profile_id: profile!.id,
+          purpose: 'dues' as const,
+          reference_id: item.id,
+          amount: item.amount,
+          label: `Estate dues · ${item.label}`,
+        }))
+      );
+      if (err) return setError(err.message);
       setNotice("Thanks. We'll mark your dues as paid once the transfer is confirmed.");
+      invalidateTransfers();
     } else {
       if (method === 'wallet') {
         const { error: rpcErr } = await supabase.rpc('adjust_wallet_balance', { delta: -total });
@@ -145,7 +186,7 @@ export default function WalletScreen() {
 
   const balance = wallet?.balance ?? 0;
   const visibleTransactions = (transactions ?? []).slice(0, INLINE_ACTIVITY_LIMIT);
-  const duesPending = (unpaidDues ?? []).length > 0;
+  const duesPending = unpaidDues.length > 0;
 
   if (walletLoading) {
     return (
@@ -221,6 +262,32 @@ export default function WalletScreen() {
             <Text className="text-[13px] text-paper-900 dark:text-ink-text">More</Text>
           </View>
         </Card>
+
+        {(pendingTransfers ?? []).length > 0 && (
+          <>
+            <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">
+              Pending transfers
+            </Text>
+            <View className="mb-xl gap-sm">
+              {(pendingTransfers ?? []).map((t) => (
+                <Card key={t.id} className="flex-row items-center gap-sm">
+                  <View className="h-9 w-9 items-center justify-center rounded-md bg-warning-muted dark:bg-warning-mutedDark">
+                    <Ionicons name="time-outline" size={16} color={colors.warning} />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">{t.label}</Text>
+                    <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
+                      Submitted {relativeTime(t.created_at)} · Awaiting confirmation
+                    </Text>
+                  </View>
+                  <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
+                    {formatNaira(t.amount)}
+                  </Text>
+                </Card>
+              ))}
+            </View>
+          </>
+        )}
 
         <View className="mb-md flex-row items-center justify-between">
           <Text className="text-lg font-semibold text-paper-900 dark:text-ink-text">Recent activity</Text>
@@ -311,7 +378,7 @@ export default function WalletScreen() {
 
       <Overlay visible={payingDues} onDismiss={() => setPayingDues(false)}>
         <DuesPaymentFlow
-          items={unpaidDues ?? []}
+          items={unpaidDues}
           walletBalance={balance}
           onConfirm={handlePayDues}
           onCancel={() => setPayingDues(false)}
