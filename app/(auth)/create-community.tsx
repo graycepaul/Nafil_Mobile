@@ -10,7 +10,7 @@ import { Select } from '../../components/ui/Select';
 import { Notice } from '../../components/ui/Notice';
 import { PasswordMeter } from '../../components/auth/PasswordMeter';
 import { authErrorMessage } from '../../lib/auth-errors';
-import { AFRICAN_COUNTRIES, type AfricanCountry } from '../../constants/countries';
+import { AFRICAN_COUNTRIES, NIGERIA_STATES, type AfricanCountry } from '../../constants/countries';
 import {
   validateConfirmation,
   validateEmail,
@@ -20,6 +20,7 @@ import {
 } from '../../lib/validation';
 
 const COUNTRY_OPTIONS = AFRICAN_COUNTRIES.map((c) => ({ value: c, label: c }));
+const NIGERIA_STATE_OPTIONS = NIGERIA_STATES.map((s) => ({ value: s, label: s }));
 
 /**
  * Onboards a brand-new estate, not a person joining one — the third fork off
@@ -48,6 +49,15 @@ export default function CreateCommunityScreen() {
   const [loading, setLoading] = useState(false);
 
   const clear = (key: string) => setErrors((e) => (e[key] ? { ...e, [key]: undefined } : e));
+
+  function handleCountryChange(next: AfricanCountry) {
+    setCountry(next);
+    // A state picked from one country's list (or typed free-text for a
+    // country without one) isn't meaningful for the other — clear it rather
+    // than silently carrying over a mismatched value.
+    setStateName('');
+    clear('stateName');
+  }
 
   async function handleSubmit() {
     const nextErrors = {
@@ -116,22 +126,35 @@ export default function CreateCommunityScreen() {
         error={errors.communityName}
       />
 
-      <View className="flex-row gap-sm">
+      <View className="z-10 flex-row gap-sm">
         <View className="flex-1">
-          <Select label="Country" value={country} options={COUNTRY_OPTIONS} onChange={setCountry} />
+          <Select label="Country" value={country} options={COUNTRY_OPTIONS} onChange={handleCountryChange} />
         </View>
         <View className="flex-1">
-          <Input
-            label="State"
-            placeholder="State"
-            autoCapitalize="words"
-            value={stateName}
-            onChangeText={(v) => {
-              setStateName(v);
-              clear('stateName');
-            }}
-            error={errors.stateName}
-          />
+          {country === 'Nigeria' ? (
+            <Select
+              label="State"
+              value={stateName}
+              options={NIGERIA_STATE_OPTIONS}
+              onChange={(v) => {
+                setStateName(v);
+                clear('stateName');
+              }}
+              error={errors.stateName}
+            />
+          ) : (
+            <Input
+              label="State"
+              placeholder="State"
+              autoCapitalize="words"
+              value={stateName}
+              onChangeText={(v) => {
+                setStateName(v);
+                clear('stateName');
+              }}
+              error={errors.stateName}
+            />
+          )}
         </View>
       </View>
 

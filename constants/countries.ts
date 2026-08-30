@@ -57,3 +57,43 @@ export const AFRICAN_COUNTRIES = [
 ] as const;
 
 export type AfricanCountry = (typeof AFRICAN_COUNTRIES)[number];
+
+/** The 36 states, per the brief — Nigeria's own address forms usually also list the Federal Capital Territory (Abuja) as a 37th region, deliberately left out here. */
+export const NIGERIA_STATES = [
+  'Abia',
+  'Adamawa',
+  'Akwa Ibom',
+  'Anambra',
+  'Bauchi',
+  'Bayelsa',
+  'Benue',
+  'Borno',
+  'Cross River',
+  'Delta',
+  'Ebonyi',
+  'Edo',
+  'Ekiti',
+  'Enugu',
+  'Gombe',
+  'Imo',
+  'Jigawa',
+  'Kaduna',
+  'Kano',
+  'Katsina',
+  'Kebbi',
+  'Kogi',
+  'Kwara',
+  'Lagos',
+  'Nasarawa',
+  'Niger',
+  'Ogun',
+  'Ondo',
+  'Osun',
+  'Oyo',
+  'Plateau',
+  'Rivers',
+  'Sokoto',
+  'Taraba',
+  'Yobe',
+  'Zamfara',
+] as const;
