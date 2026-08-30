@@ -6,31 +6,40 @@ import { AuthShell, AuthLink } from '../../components/auth/AuthShell';
 import { TermsNotice } from '../../components/auth/TermsNotice';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
 import { Notice } from '../../components/ui/Notice';
 import { PasswordMeter } from '../../components/auth/PasswordMeter';
 import { authErrorMessage } from '../../lib/auth-errors';
+import { AFRICAN_COUNTRIES, type AfricanCountry } from '../../constants/countries';
 import {
   validateConfirmation,
   validateEmail,
   validatePassword,
+  validatePhone,
   validateRequired,
 } from '../../lib/validation';
+
+const COUNTRY_OPTIONS = AFRICAN_COUNTRIES.map((c) => ({ value: c, label: c }));
 
 /**
  * Onboards a brand-new estate, not a person joining one — the third fork off
  * role-select, next to resident and staff. There's no admin to approve this
  * signup against because this account IS that estate's first admin; the
- * community name travels in the same `raw_user_meta_data` signup payload
- * full_name already uses, and `private.handle_new_user()` reads it to create
- * the estate and grant admin access in one trigger. See that migration for
- * why this doesn't need its own endpoint.
+ * community details travel in the same `raw_user_meta_data` signup payload
+ * full_name already uses, and `private.handle_new_user()` reads them to
+ * create the estate and grant admin access in one trigger. See that
+ * migration for why this doesn't need its own endpoint.
  */
 export default function CreateCommunityScreen() {
   const router = useRouter();
 
   const [communityName, setCommunityName] = useState('');
+  const [country, setCountry] = useState<AfricanCountry>('Nigeria');
+  const [stateName, setStateName] = useState('');
   const [communityAddress, setCommunityAddress] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -43,7 +52,10 @@ export default function CreateCommunityScreen() {
   async function handleSubmit() {
     const nextErrors = {
       communityName: validateRequired(communityName, 'community name'),
-      fullName: validateRequired(fullName, 'full name'),
+      stateName: validateRequired(stateName, 'state'),
+      firstName: validateRequired(firstName, 'first name'),
+      lastName: validateRequired(lastName, 'last name'),
+      phone: validatePhone(phone),
       email: validateEmail(email),
       password: validatePassword(password),
       confirm: validateConfirmation(password, confirm),
@@ -58,9 +70,12 @@ export default function CreateCommunityScreen() {
       password,
       options: {
         data: {
-          full_name: fullName.trim(),
+          full_name: `${firstName.trim()} ${lastName.trim()}`.trim(),
           community_name: communityName.trim(),
+          community_country: country,
+          community_state: stateName.trim(),
           community_address: communityAddress.trim() || null,
+          community_admin_phone: phone.trim(),
         },
       },
     });
@@ -101,6 +116,25 @@ export default function CreateCommunityScreen() {
         error={errors.communityName}
       />
 
+      <View className="flex-row gap-sm">
+        <View className="flex-1">
+          <Select label="Country" value={country} options={COUNTRY_OPTIONS} onChange={setCountry} />
+        </View>
+        <View className="flex-1">
+          <Input
+            label="State"
+            placeholder="State"
+            autoCapitalize="words"
+            value={stateName}
+            onChangeText={(v) => {
+              setStateName(v);
+              clear('stateName');
+            }}
+            error={errors.stateName}
+          />
+        </View>
+      </View>
+
       <Input
         label="Address (optional)"
         placeholder="Street address"
@@ -108,17 +142,49 @@ export default function CreateCommunityScreen() {
         onChangeText={setCommunityAddress}
       />
 
+      <View className="flex-row gap-sm">
+        <View className="flex-1">
+          <Input
+            label="First name"
+            placeholder="First name"
+            autoComplete="given-name"
+            textContentType="givenName"
+            value={firstName}
+            onChangeText={(v) => {
+              setFirstName(v);
+              clear('firstName');
+            }}
+            error={errors.firstName}
+          />
+        </View>
+        <View className="flex-1">
+          <Input
+            label="Last name"
+            placeholder="Last name"
+            autoComplete="family-name"
+            textContentType="familyName"
+            value={lastName}
+            onChangeText={(v) => {
+              setLastName(v);
+              clear('lastName');
+            }}
+            error={errors.lastName}
+          />
+        </View>
+      </View>
+
       <Input
-        label="Your full name"
-        placeholder="Full name"
-        autoComplete="name"
-        textContentType="name"
-        value={fullName}
+        label="Phone number"
+        placeholder="Phone number"
+        keyboardType="phone-pad"
+        autoComplete="tel"
+        textContentType="telephoneNumber"
+        value={phone}
         onChangeText={(v) => {
-          setFullName(v);
-          clear('fullName');
+          setPhone(v);
+          clear('phone');
         }}
-        error={errors.fullName}
+        error={errors.phone}
       />
 
       <Input

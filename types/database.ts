@@ -13,6 +13,8 @@ export interface Estate {
   id: string;
   name: string;
   address: string | null;
+  country: string | null;
+  state: string | null;
   created_at: string;
 }
 
