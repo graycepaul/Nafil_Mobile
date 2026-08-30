@@ -25,7 +25,7 @@ export default function MarketplaceListingScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { width: windowWidth } = useWindowDimensions();
-  const photoWidth = windowWidth - 32; // matches the scroll view's p-lg (16px) on each side
+  const heroHeight = windowWidth; // full-bleed, square-ish hero — more surface area for the photo
   const profile = useAuthStore((s) => s.profile);
   const queryClient = useQueryClient();
   const [buying, setBuying] = useState(false);
@@ -151,39 +151,45 @@ export default function MarketplaceListingScreen() {
 
   return (
     <View className="flex-1 bg-white dark:bg-ink-bg">
-      <View
-        style={{ paddingTop: insets.top + 16 }}
-        className="flex-row items-center gap-md px-lg pb-lg"
-      >
-        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" hitSlop={8}>
-          <Ionicons name="arrow-back" color={colors.onHeaderBg} size={22} />
-        </Pressable>
-        <Text className="text-[22px] font-bold text-paper-900 dark:text-ink-text">Listing</Text>
-      </View>
-
-      <ScrollView contentContainerClassName="p-lg">
-        {listing.photo_urls.length > 0 ? (
-          <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} className="mb-lg">
-            {listing.photo_urls.map((url) => (
-              <Image
-                key={url}
-                source={{ uri: url }}
-                style={{ width: photoWidth, height: 192 }}
-                className="rounded-lg bg-paper-100 dark:bg-ink-surface"
-                resizeMode="cover"
+      <ScrollView contentContainerClassName="pb-lg" bounces={false}>
+        <View>
+          {listing.photo_urls.length > 0 ? (
+            <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
+              {listing.photo_urls.map((url) => (
+                <Image
+                  key={url}
+                  source={{ uri: url }}
+                  style={{ width: windowWidth, height: heroHeight }}
+                  className="bg-paper-100 dark:bg-ink-surface"
+                  resizeMode="cover"
+                />
+              ))}
+            </ScrollView>
+          ) : (
+            <View
+              style={{ height: heroHeight }}
+              className="items-center justify-center bg-brand-50 dark:bg-brand-900"
+            >
+              <Ionicons
+                name={(CATEGORY_ICON[listing.category as ListingCategory] ?? 'pricetag-outline') as never}
+                size={72}
+                color={colors.primary}
               />
-            ))}
-          </ScrollView>
-        ) : (
-          <View className="mb-lg h-48 items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-900">
-            <Ionicons
-              name={(CATEGORY_ICON[listing.category as ListingCategory] ?? 'pricetag-outline') as never}
-              size={56}
-              color={colors.primary}
-            />
-          </View>
-        )}
+            </View>
+          )}
+          <Pressable
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            hitSlop={8}
+            style={{ top: insets.top + 12 }}
+            className="absolute left-lg h-10 w-10 items-center justify-center rounded-full bg-black/40"
+          >
+            <Ionicons name="arrow-back" color="#fff" size={22} />
+          </Pressable>
+        </View>
 
+        <View className="p-lg">
         <View className="mb-xs flex-row items-center gap-sm">
           <StatusBadge label={listing.category} tone="neutral" />
         </View>
@@ -233,6 +239,7 @@ export default function MarketplaceListingScreen() {
         <Text className="mt-md text-[13px] text-paper-500 dark:text-ink-textMuted">
           Posted {relativeTime(listing.created_at)}
         </Text>
+        </View>
       </ScrollView>
 
       <View className="flex-row gap-sm p-lg pt-0">

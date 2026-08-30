@@ -189,12 +189,12 @@ export default function MarketplaceScreen() {
           className="mb-md flex-1 overflow-hidden rounded-md border border-paper-200 bg-white dark:border-ink-border dark:bg-ink-surface"
         >
           {item.photo_urls.length > 0 ? (
-            <Image source={{ uri: item.photo_urls[0] }} className="h-28 w-full" resizeMode="cover" />
+            <Image source={{ uri: item.photo_urls[0] }} className="aspect-square w-full" resizeMode="cover" />
           ) : (
-            <View className="h-28 items-center justify-center bg-brand-50 dark:bg-brand-900">
+            <View className="aspect-square w-full items-center justify-center bg-brand-50 dark:bg-brand-900">
               <Ionicons
                 name={(CATEGORY_ICON[item.category as ListingCategory] ?? 'pricetag-outline') as never}
-                size={32}
+                size={40}
                 color={colors.primary}
               />
             </View>
