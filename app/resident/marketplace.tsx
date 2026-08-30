@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useState } from 'react';
-import { View, Text, FlatList, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, ScrollView, Pressable, ActivityIndicator, Image } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
@@ -188,13 +188,17 @@ export default function MarketplaceScreen() {
           onPress={() => router.push(`/resident/marketplace-listing?id=${item.id}`)}
           className="mb-md flex-1 overflow-hidden rounded-md border border-paper-200 bg-white dark:border-ink-border dark:bg-ink-surface"
         >
-          <View className="h-28 items-center justify-center bg-brand-50 dark:bg-brand-900">
-            <Ionicons
-              name={(CATEGORY_ICON[item.category as ListingCategory] ?? 'pricetag-outline') as never}
-              size={32}
-              color={colors.primary}
-            />
-          </View>
+          {item.photo_urls.length > 0 ? (
+            <Image source={{ uri: item.photo_urls[0] }} className="h-28 w-full" resizeMode="cover" />
+          ) : (
+            <View className="h-28 items-center justify-center bg-brand-50 dark:bg-brand-900">
+              <Ionicons
+                name={(CATEGORY_ICON[item.category as ListingCategory] ?? 'pricetag-outline') as never}
+                size={32}
+                color={colors.primary}
+              />
+            </View>
+          )}
           <View className="p-md">
             <Text className="text-[13px] font-semibold text-paper-900 dark:text-ink-text" numberOfLines={1}>
               {item.title}

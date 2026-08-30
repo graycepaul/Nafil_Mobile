@@ -161,7 +161,11 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
 
       await queryClient.invalidateQueries({ queryKey: ['listings'] });
       await queryClient.invalidateQueries({ queryKey: ['store_listings', profile.id] });
-      router.back();
+      // Not router.back(): this screen is a pushed href:null route reached
+      // from either Market (new) or Store (edit), and on web that back-stack
+      // hop unreliably lands on the Tabs navigator's initial route (Home)
+      // instead of the actual previous screen. Navigate explicitly instead.
+      router.replace(isEditing ? '/resident/store' : '/resident/marketplace');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not publish this listing. Please try again.');
     } finally {
@@ -175,7 +179,12 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
         style={{ paddingTop: insets.top + 16 }}
         className="flex-row items-center gap-md px-lg pb-lg"
       >
-        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" hitSlop={8}>
+        <Pressable
+          onPress={() => router.replace(isEditing ? '/resident/store' : '/resident/marketplace')}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          hitSlop={8}
+        >
           <Ionicons name="arrow-back" color={colors.onHeaderBg} size={22} />
         </Pressable>
         <Text className="text-[22px] font-bold text-paper-900 dark:text-ink-text">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, Linking, ActivityIndicator, Image, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -24,6 +24,8 @@ export default function MarketplaceListingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { width: windowWidth } = useWindowDimensions();
+  const photoWidth = windowWidth - 32; // matches the scroll view's p-lg (16px) on each side
   const profile = useAuthStore((s) => s.profile);
   const queryClient = useQueryClient();
   const [buying, setBuying] = useState(false);
@@ -160,13 +162,27 @@ export default function MarketplaceListingScreen() {
       </View>
 
       <ScrollView contentContainerClassName="p-lg">
-        <View className="mb-lg h-48 items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-900">
-          <Ionicons
-            name={(CATEGORY_ICON[listing.category as ListingCategory] ?? 'pricetag-outline') as never}
-            size={56}
-            color={colors.primary}
-          />
-        </View>
+        {listing.photo_urls.length > 0 ? (
+          <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} className="mb-lg">
+            {listing.photo_urls.map((url) => (
+              <Image
+                key={url}
+                source={{ uri: url }}
+                style={{ width: photoWidth, height: 192 }}
+                className="rounded-lg bg-paper-100 dark:bg-ink-surface"
+                resizeMode="cover"
+              />
+            ))}
+          </ScrollView>
+        ) : (
+          <View className="mb-lg h-48 items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-900">
+            <Ionicons
+              name={(CATEGORY_ICON[listing.category as ListingCategory] ?? 'pricetag-outline') as never}
+              size={56}
+              color={colors.primary}
+            />
+          </View>
+        )}
 
         <View className="mb-xs flex-row items-center gap-sm">
           <StatusBadge label={listing.category} tone="neutral" />
