@@ -7,18 +7,24 @@ import { RoleCard } from '../../components/auth/RoleCard';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Button } from '../../components/ui/Button';
 
-type SignupRole = 'resident' | 'staff';
+type SignupRole = 'resident' | 'staff' | 'community';
 
 /**
- * "Sign up as" — the fork between the two ways a person gets into Nafil Estates.
+ * "Sign up as" — the fork between the ways a person gets into Nafil Estates.
  *
- * Only resident is a real open signup. Security/staff accounts are provisioned by
+ * Resident is a real open signup. Security/staff accounts are provisioned by
  * an estate admin (the employer), not self-registered — a stranger self-declaring
  * "I'm security" and getting waved through by a busy admin would hand them live
- * gate-verification access before any real vetting happened. Admin accounts are
- * never self-serve at all; the first admin is bootstrapped directly against the
- * database (see Nafil Backend/README.md), and every admin after that is created by
- * an existing admin — there's no path to "admin" from this screen, deliberately.
+ * gate-verification access before any real vetting happened. There's still no
+ * path here to becoming an admin *of an existing estate* — every admin after
+ * the first is created by that estate's own admin, never self-serve.
+ *
+ * "Register a new community" is a different thing entirely: it doesn't grant
+ * admin over an estate that already exists, it creates the estate itself and
+ * makes the signing-up person its first admin — there's no one else to
+ * approve them against, since they ARE the estate's founding account. This is
+ * the self-serve onboarding path for a brand-new estate that isn't on the
+ * platform yet.
  */
 export default function RoleSelectScreen() {
   const { colors } = useTheme();
@@ -28,6 +34,7 @@ export default function RoleSelectScreen() {
   function handleContinue() {
     if (role === 'resident') router.push('/signup');
     if (role === 'staff') router.push('/staff-access');
+    if (role === 'community') router.push('/create-community');
   }
 
   return (
@@ -50,6 +57,13 @@ export default function RoleSelectScreen() {
           description="Verify visitors and manage gate access for your estate."
           selected={role === 'staff'}
           onPress={() => setRole('staff')}
+        />
+        <RoleCard
+          icon={<Ionicons name="business-outline" size={22} color={role === 'community' ? colors.onButtonFill : colors.textMuted} />}
+          title="Register a new community"
+          description="Onboard your estate onto Nafil Estates and become its first admin."
+          selected={role === 'community'}
+          onPress={() => setRole('community')}
         />
       </View>
 
