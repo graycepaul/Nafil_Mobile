@@ -45,11 +45,11 @@ export default function RoleSelectScreen() {
     >
       <View className="gap-md" accessibilityRole="radiogroup">
         <RoleCard
-          icon={<Ionicons name="home-outline" size={22} color={role === 'resident' ? colors.onButtonFill : colors.textMuted} />}
-          title="Resident"
-          description="Manage visitors, track household access, and report issues in your home."
-          selected={role === 'resident'}
-          onPress={() => setRole('resident')}
+          icon={<Ionicons name="business-outline" size={22} color={role === 'community' ? colors.onButtonFill : colors.textMuted} />}
+          title="Register a new community"
+          description="Onboard your estate onto Nafil Estates and become its first admin."
+          selected={role === 'community'}
+          onPress={() => setRole('community')}
         />
         <RoleCard
           icon={<Ionicons name="shield-checkmark-outline" size={22} color={role === 'staff' ? colors.onButtonFill : colors.textMuted} />}
@@ -59,11 +59,11 @@ export default function RoleSelectScreen() {
           onPress={() => setRole('staff')}
         />
         <RoleCard
-          icon={<Ionicons name="business-outline" size={22} color={role === 'community' ? colors.onButtonFill : colors.textMuted} />}
-          title="Register a new community"
-          description="Onboard your estate onto Nafil Estates and become its first admin."
-          selected={role === 'community'}
-          onPress={() => setRole('community')}
+          icon={<Ionicons name="home-outline" size={22} color={role === 'resident' ? colors.onButtonFill : colors.textMuted} />}
+          title="Resident"
+          description="Manage visitors, track household access, and report issues in your home."
+          selected={role === 'resident'}
+          onPress={() => setRole('resident')}
         />
       </View>
 
