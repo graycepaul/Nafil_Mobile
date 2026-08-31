@@ -51,7 +51,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Nafil Estates to access your photos so you can set a profile picture.",
+          "photosPermission": "Allow Nafil Estates to access your photos to set a profile picture or add photos to a marketplace listing.",
           "microphonePermission": false
         }
       ],

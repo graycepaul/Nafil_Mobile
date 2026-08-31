@@ -62,6 +62,16 @@ export default function AdminLayout() {
         // Reached via the Dashboard's "Pending transfers" stat card.
         options={{ title: 'Pending transfers', href: null, headerShown: false }}
       />
+      <Tabs.Screen
+        name="dues"
+        // Reached via the Dashboard's "Estate dues" stat card.
+        options={{ title: 'Estate dues', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
+        name="dues-new"
+        // Reached via the Estate dues screen's + icon.
+        options={{ title: 'Assign a due', href: null, headerShown: false }}
+      />
     </Tabs>
   );
 }

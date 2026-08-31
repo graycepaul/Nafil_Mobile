@@ -116,6 +116,18 @@ export default function AdminDashboardScreen() {
     enabled: !!profile,
   });
 
+  const { data: outstandingDuesCount } = useQuery({
+    queryKey: ['dashboard_outstanding_dues', profile?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('dues')
+        .select('*', { count: 'exact', head: true })
+        .neq('status', 'paid');
+      return count ?? 0;
+    },
+    enabled: !!profile,
+  });
+
   const { data: recentAnnouncements } = useQuery({
     queryKey: ['dashboard_recent_announcements', profile?.id],
     queryFn: async () => {
@@ -138,6 +150,7 @@ export default function AdminDashboardScreen() {
       queryClient.invalidateQueries({ queryKey: ['dashboard_pending_requests'] }),
       queryClient.invalidateQueries({ queryKey: ['dashboard_listing_count'] }),
       queryClient.invalidateQueries({ queryKey: ['dashboard_pending_transfers'] }),
+      queryClient.invalidateQueries({ queryKey: ['dashboard_outstanding_dues'] }),
       queryClient.invalidateQueries({ queryKey: ['dashboard_recent_announcements'] }),
     ]);
     setRefreshing(false);
@@ -229,6 +242,15 @@ export default function AdminDashboardScreen() {
           label="Pending transfers"
           onPress={() => router.push('/admin/transfers')}
         />
+      </View>
+      <View className="mb-lg flex-row gap-md">
+        <StatCard
+          icon={<Ionicons name="receipt-outline" color={colors.primary} size={18} />}
+          value={outstandingDuesCount ?? 0}
+          label="Outstanding dues"
+          onPress={() => router.push('/admin/dues')}
+        />
+        <View className="flex-1" />
       </View>
 
       <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">
