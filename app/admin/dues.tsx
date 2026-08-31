@@ -20,7 +20,7 @@ const STATUS_TONE: Record<DueStatus, BadgeTone> = {
 
 type DueWithResident = Due & { resident: Pick<Profile, 'full_name' | 'unit_no'> | null };
 
-/** Admin's own estate only — dues_insert's RLS check does the same scoping server-side. */
+/** finance/super_admin only — dues_insert's RLS check does the same role and estate scoping server-side. */
 export default function AdminDuesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();

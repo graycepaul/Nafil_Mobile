@@ -27,7 +27,7 @@ const PURPOSE_LABEL: Record<TransferPurpose, string> = {
   marketplace_order: 'Marketplace order',
 };
 
-/** Queue of bank transfers awaiting manual confirmation, across all three flows that accept one. */
+/** finance/super_admin only. Queue of bank transfers awaiting manual confirmation, across all three flows that accept one. */
 export default function AdminTransfersScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();

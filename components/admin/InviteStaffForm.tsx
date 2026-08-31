@@ -11,10 +11,16 @@ import { Select } from '../ui/Select';
 import { validateEmail } from '../../lib/validation';
 import type { StaffInvite } from '../../types/database';
 
-const ROLES: { value: StaffInvite['role']; label: string }[] = [
+const BASE_ROLES: { value: StaffInvite['role']; label: string }[] = [
   { value: 'security', label: 'Security' },
   { value: 'admin', label: 'Admin' },
 ];
+
+// Finance sees only market listings and money matters (transfers, dues) —
+// a narrower role than admin, so only super_admin can hand it out (the
+// server enforces this too: staff_invites_insert rejects a finance-role
+// invite from anyone but super_admin).
+const FINANCE_ROLE = { value: 'finance' as const, label: 'Finance' };
 
 /**
  * Creates a staff invite and hands the admin a code to share — through
@@ -39,6 +45,8 @@ export function InviteStaffForm({
   onClose: () => void;
 }) {
   const profile = useAuthStore((s) => s.profile);
+  const isSuperAdmin = profile?.role === 'super_admin';
+  const ROLES = isSuperAdmin ? [...BASE_ROLES, FINANCE_ROLE] : BASE_ROLES;
 
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<StaffInvite['role']>('security');

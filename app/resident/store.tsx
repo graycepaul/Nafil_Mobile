@@ -37,11 +37,13 @@ const LISTING_STATUS_TONE: Record<ListingStatus, BadgeTone> = {
   active: 'success',
   sold: 'info',
   removed: 'neutral',
+  suspended: 'danger',
 };
 
 const LISTING_STATUS_LABEL: Record<ListingStatus, string> = {
   active: 'active',
   sold: 'sold',
+  suspended: 'suspended by admin',
   removed: 'unlisted',
 };
 
@@ -310,6 +312,11 @@ export default function StoreScreen() {
                           {busy ? 'Updating…' : 'Relist'}
                         </Text>
                       </Pressable>
+                    )}
+                    {listing.status === 'suspended' && (
+                      <Text className="flex-1 text-[13px] text-paper-500 dark:text-ink-textMuted">
+                        Suspended by an admin. Contact estate management if you&apos;d like to contest this.
+                      </Text>
                     )}
                   </View>
                 </Card>

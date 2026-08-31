@@ -1,4 +1,4 @@
-export type UserRole = 'resident' | 'security' | 'admin' | 'super_admin';
+export type UserRole = 'resident' | 'security' | 'admin' | 'super_admin' | 'finance';
 export type VisitorPassStatus = 'pending' | 'used' | 'expired' | 'revoked';
 export type VisitorLogMethod = 'qr' | 'code' | 'manual';
 export type IssueStatus = 'open' | 'in_progress' | 'resolved';
@@ -50,7 +50,7 @@ export interface JoinRequestWithApplicant extends EstateJoinRequest {
 export interface StaffInvite {
   id: string;
   estate_id: string;
-  role: 'security' | 'admin';
+  role: 'security' | 'admin' | 'finance';
   email: string;
   code: string;
   status: StaffInviteStatus;
@@ -165,7 +165,9 @@ export type NotificationType =
   | 'order_placed'
   | 'order_completed'
   | 'transfer_confirmed'
-  | 'transfer_rejected';
+  | 'transfer_rejected'
+  | 'listing_suspended'
+  | 'listing_reinstated';
 
 export interface Notification {
   id: string;
@@ -179,7 +181,7 @@ export interface Notification {
 }
 
 export type ListingType = 'good' | 'service';
-export type ListingStatus = 'active' | 'sold' | 'removed';
+export type ListingStatus = 'active' | 'sold' | 'removed' | 'suspended';
 
 export interface Listing {
   id: string;

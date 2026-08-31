@@ -22,6 +22,7 @@ const ROLE_HOME: Record<UserRole, string> = {
   security: "/security",
   admin: "/admin",
   super_admin: "/admin",
+  finance: "/admin",
 };
 
 const AUTH_GROUP = "(auth)";

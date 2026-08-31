@@ -122,7 +122,7 @@ export default function AdminStaffScreen() {
       const { data, error } = await supabase
         .from('profiles')
         .select('*, estate:estates(name)')
-        .in('role', ['security', 'admin'])
+        .in('role', ['security', 'admin', 'finance'])
         .eq('approved', true)
         .order('full_name');
       if (error) throw error;
@@ -229,7 +229,7 @@ export default function AdminStaffScreen() {
         <EmptyState
           icon={<Ionicons name="shield-outline" color={colors.textMuted} size={26} />}
           title="No staff yet"
-          message="Security and admin accounts you invite will show up here."
+          message="Security, admin, and finance accounts you invite will show up here."
         />
       }
       renderItem={({ item }) => (
