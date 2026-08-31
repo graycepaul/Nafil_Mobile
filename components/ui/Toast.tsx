@@ -1,11 +1,12 @@
-import { useEffect } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { useEffect } from "react";
+import { View, Text, Pressable } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type Tone = 'error' | 'success';
+type Tone = "error" | "success";
 
 const TONE_CLASSES: Record<Tone, string> = {
-  error: 'bg-danger',
-  success: 'bg-success',
+  error: "bg-danger",
+  success: "bg-success",
 };
 
 /**
@@ -25,7 +26,7 @@ const TONE_CLASSES: Record<Tone, string> = {
  */
 export function Toast({
   message,
-  tone = 'error',
+  tone = "error",
   onDismiss,
   duration = 4000,
 }: {
@@ -34,6 +35,7 @@ export function Toast({
   onDismiss: () => void;
   duration?: number;
 }) {
+  const insets = useSafeAreaInsets();
   useEffect(() => {
     if (!message) return;
     const timer = setTimeout(onDismiss, duration);
@@ -43,14 +45,20 @@ export function Toast({
   if (!message) return null;
 
   return (
-    <View className="absolute left-lg right-lg top-lg z-[60]" pointerEvents="box-none">
+    <View
+      style={{ top: insets.top + 16 }}
+      className="absolute left-lg right-lg top-lg z-[60]"
+      pointerEvents="box-none"
+    >
       <Pressable
         onPress={onDismiss}
         accessibilityLiveRegion="polite"
         accessibilityRole="alert"
         className={`rounded-md px-md py-md shadow-lg ${TONE_CLASSES[tone]}`}
       >
-        <Text className="text-center text-[13px] font-semibold text-white">{message}</Text>
+        <Text className="text-center text-[13px] font-semibold text-white">
+          {message}
+        </Text>
       </Pressable>
     </View>
   );
