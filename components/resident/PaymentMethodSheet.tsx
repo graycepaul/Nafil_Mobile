@@ -23,11 +23,13 @@ const METHOD_ICON: Record<PaymentMethod, string> = {
 
 /**
  * Shared "how do you want to pay" sheet, used for funding the wallet, paying
- * estate dues/subscription, and marketplace checkout. Nothing here talks to a
- * real payment gateway yet: `onConfirm` just resolves after a short delay to
- * simulate one, so the surrounding screen can react (update local mock state,
- * show a toast) the same way it eventually will for a real Paystack/Flutterwave
- * charge or a wallet debit.
+ * estate dues, and marketplace checkout. `onConfirm` does the real work
+ * (adjusting the wallet balance, logging a transaction, or recording a
+ * pending transfer) — this component just presents the choice.
+ *
+ * 'card' has no real payment gateway behind it yet, so no call site
+ * currently offers it in `methods`; it's kept here, unused, for whenever
+ * Paystack/Flutterwave gets wired up.
  */
 export function PaymentMethodSheet({
   title,

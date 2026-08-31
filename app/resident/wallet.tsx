@@ -26,10 +26,12 @@ const MORE_SERVICES: { icon: string; label: string }[] = [
 ];
 
 /**
- * Payments here are still simulated, not a real gateway charge (see the
- * backend migration's own note). "Card" and "wallet" settle immediately by
- * calling `adjust_wallet_balance` / updating `dues` directly; "transfer"
- * just logs a pending transaction for someone to reconcile by hand later.
+ * Wallet funding is transfer-only for now — "Debit/credit card" used to be
+ * offered here too, but it just adjusted the balance directly with no real
+ * gateway behind it, so it's hidden until one is actually wired up. Paying
+ * dues from the wallet still settles immediately via `adjust_wallet_balance`
+ * (that's a real internal transfer, not a simulated charge); a transfer
+ * submission just logs a pending record for someone to reconcile by hand.
  */
 export default function WalletScreen() {
   const router = useRouter();
