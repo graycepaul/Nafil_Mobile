@@ -370,7 +370,7 @@ export default function WalletScreen() {
         <PaymentMethodSheet
           title="Fund wallet"
           amount={Number(fundAmount) || 0}
-          methods={['card', 'transfer']}
+          methods={['transfer']}
           onConfirm={handleConfirmFund}
           onCancel={() => setFunding(false)}
         />

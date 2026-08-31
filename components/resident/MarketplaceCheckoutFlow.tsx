@@ -148,7 +148,7 @@ export function MarketplaceCheckoutFlow({
     <PaymentMethodSheet
       title={`Buy "${listing.title}"`}
       amount={total}
-      methods={['wallet', 'card', 'transfer']}
+      methods={['wallet', 'transfer']}
       walletBalance={walletBalance}
       onConfirm={(method) => onConfirm({ deliveryChoice: hasDelivery ? deliveryChoice : undefined, total }, method)}
       onCancel={onCancel}

@@ -77,7 +77,7 @@ export function DuesPaymentFlow({
       <PaymentMethodSheet
         title="Pay estate dues"
         amount={total}
-        methods={["wallet", "card", "transfer"]}
+        methods={["wallet", "transfer"]}
         walletBalance={walletBalance}
         onConfirm={(method) => onConfirm([...selected], method)}
         onCancel={() => setStep("select")}

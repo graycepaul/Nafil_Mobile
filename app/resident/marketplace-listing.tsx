@@ -81,6 +81,8 @@ export default function MarketplaceListingScreen() {
     );
   }
 
+  const isOwnListing = listing.seller_id === profile?.id;
+
   async function handleBuy(details: { total: number }, method: PaymentMethod) {
     setBuying(false);
     setError(undefined);
@@ -244,9 +246,20 @@ export default function MarketplaceListingScreen() {
 
       <View className="flex-row gap-sm p-lg pt-0">
         {listing.type === 'service' && (
-          <Button label="Message on WhatsApp" variant="secondary" onPress={messageOnWhatsApp} className="flex-1" />
+          <Button
+            label="Message on WhatsApp"
+            variant="secondary"
+            onPress={messageOnWhatsApp}
+            disabled={isOwnListing}
+            className="flex-1"
+          />
         )}
-        <Button label="Buy now" onPress={() => setBuying(true)} className="flex-1" />
+        <Button
+          label={isOwnListing ? 'This is your listing' : 'Buy now'}
+          onPress={() => setBuying(true)}
+          disabled={isOwnListing}
+          className="flex-1"
+        />
       </View>
 
       <Overlay visible={buying} onDismiss={() => setBuying(false)}>
