@@ -5,7 +5,9 @@ export type IssueStatus = 'open' | 'in_progress' | 'resolved';
 export type AnnouncementSeverity = 'info' | 'emergency';
 export type JoinRequestStatus = 'pending' | 'approved' | 'rejected';
 export type StaffInviteStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
-export type HouseholdMemberStatus = 'active' | 'revoked';
+export type HouseholdMemberStatus = 'active' | 'revoked' | 'pending_review';
+export type HouseholdReviewFrequency = 'monthly' | 'quarterly' | 'semiannual' | 'yearly';
+export type ScheduledVisitStatus = 'pending' | 'arrived' | 'expired' | 'cancelled';
 
 export interface Estate {
   id: string;
@@ -85,6 +87,21 @@ export interface HouseholdMember {
   avatar_url: string | null;
   code: string;
   status: HouseholdMemberStatus;
+  review_frequency: HouseholdReviewFrequency | null;
+  next_review_at: string | null;
+  last_scanned_at: string | null;
+  created_at: string;
+}
+
+export interface ScheduledVisit {
+  id: string;
+  estate_id: string;
+  resident_id: string;
+  visitor_name: string;
+  visitor_phone: string | null;
+  description: string | null;
+  scheduled_for: string;
+  status: ScheduledVisitStatus;
   created_at: string;
 }
 
@@ -140,7 +157,9 @@ export type NotificationType =
   | 'issue_status'
   | 'visitor_pass_used'
   | 'join_request_approved'
-  | 'staff_invite_accepted';
+  | 'staff_invite_accepted'
+  | 'household_member_scanned'
+  | 'issue_reported';
 
 export interface Notification {
   id: string;

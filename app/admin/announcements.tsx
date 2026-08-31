@@ -1,34 +1,64 @@
 import { useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { useQueryClient } from '@tanstack/react-query';
+import { View, Text, Pressable, Keyboard } from 'react-native';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
 import { apiPost } from '../../lib/api';
 import { useAuthStore } from '../../store/auth-store';
+import { useTheme } from '../../context/theme-context';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Notice } from '../../components/ui/Notice';
-import { AnnouncementsFeed } from '../../components/AnnouncementsFeed';
+import { Overlay } from '../../components/ui/Overlay';
+import { AnnouncementsFeed, type AnnouncementSort } from '../../components/AnnouncementsFeed';
 import { AlertCategoryPicker } from '../../components/AlertCategoryPicker';
+import { SearchAndEstateFilter } from '../../components/admin/SearchAndEstateFilter';
 import type { AlertCategory } from '../../types/database';
+
+const SORT_LABELS: Record<AnnouncementSort, string> = {
+  date: 'Date',
+  estate: 'Estate',
+  type: 'Alert type',
+};
 
 export default function AdminAnnouncementsScreen() {
   const profile = useAuthStore((s) => s.profile);
+  const { colors } = useTheme();
   const queryClient = useQueryClient();
+  const isSuperAdmin = profile?.role === 'super_admin';
   const [emergency, setEmergency] = useState(false);
   const [category, setCategory] = useState<AlertCategory>('other');
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [estateId, setEstateId] = useState<string | undefined>(profile?.estate_id ?? undefined);
   const [posting, setPosting] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'error' | 'success'; message: string }>();
+  const [sortBy, setSortBy] = useState<AnnouncementSort>('date');
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const sortOptions: AnnouncementSort[] = isSuperAdmin ? ['date', 'estate', 'type'] : ['date', 'type'];
+  const [listSearch, setListSearch] = useState('');
+  const [listEstateFilter, setListEstateFilter] = useState<string | undefined>();
+
+  const { data: estates } = useQuery({
+    queryKey: ['all_estates'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('estates').select('id, name').order('name');
+      if (error) throw error;
+      return data as { id: string; name: string }[];
+    },
+    enabled: isSuperAdmin,
+  });
+
+  const targetEstateId = isSuperAdmin ? estateId : profile?.estate_id;
 
   async function post() {
-    if (!title.trim() || !body.trim() || !profile?.estate_id) return;
+    if (!title.trim() || !body.trim() || !targetEstateId) return;
     setPosting(true);
     setNotice(undefined);
 
     const { error } = await supabase.from('announcements').insert({
-      estate_id: profile.estate_id,
-      author_id: profile.id,
+      estate_id: targetEstateId,
+      author_id: profile!.id,
       title: title.trim(),
       body: body.trim(),
       severity: emergency ? 'emergency' : 'info',
@@ -53,6 +83,7 @@ export default function AdminAnnouncementsScreen() {
           title: title.trim(),
           body: body.trim(),
           category,
+          estate_id: targetEstateId,
         });
         setNotice({
           tone: 'success',
@@ -75,10 +106,47 @@ export default function AdminAnnouncementsScreen() {
   }
 
   return (
+    <>
     <AnnouncementsFeed
+      showEstate={isSuperAdmin}
+      sortBy={sortBy}
+      search={listSearch}
+      estateFilter={listEstateFilter}
       ListHeaderComponent={
         <View>
           {notice && <Notice tone={notice.tone} message={notice.message} />}
+
+          {isSuperAdmin && estates && estates.length > 1 && (
+            <View className="mb-lg">
+              <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">Estate</Text>
+              <View className="flex-row flex-wrap gap-sm">
+                {estates.map((e) => {
+                  const active = estateId === e.id;
+                  return (
+                    <Pressable
+                      key={e.id}
+                      onPress={() => setEstateId(e.id)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active }}
+                      className={`rounded-full border px-md py-xs ${
+                        active
+                          ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
+                          : 'border-paper-200 dark:border-ink-border'
+                      }`}
+                    >
+                      <Text
+                        className={`text-[13px] font-medium ${
+                          active ? 'text-white dark:text-ink-bg' : 'text-paper-500 dark:text-ink-textMuted'
+                        }`}
+                      >
+                        {e.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          )}
 
           <Pressable
             onPress={() => setEmergency((v) => !v)}
@@ -105,8 +173,23 @@ export default function AdminAnnouncementsScreen() {
 
           {emergency && <AlertCategoryPicker value={category} onChange={setCategory} />}
 
-          <Input label="Title" value={title} onChangeText={setTitle} />
-          <Input label="Message" value={body} onChangeText={setBody} multiline />
+          <Input
+            label="Title"
+            showLabel
+            placeholder="e.g. New visitor gate hours"
+            value={title}
+            onChangeText={setTitle}
+            returnKeyType="done"
+            onSubmitEditing={() => Keyboard.dismiss()}
+          />
+          <Input
+            label="Message"
+            showLabel
+            placeholder="What do residents need to know?"
+            value={body}
+            onChangeText={setBody}
+            multiline
+          />
           <Button
             label={emergency ? 'Send emergency alert' : 'Post announcement'}
             variant={emergency ? 'danger' : 'primary'}
@@ -114,11 +197,64 @@ export default function AdminAnnouncementsScreen() {
             loading={posting}
             disabled={!title.trim() || !body.trim()}
           />
-          <Text className="mb-sm mt-xl text-lg font-semibold text-paper-900 dark:text-ink-text">
-            All announcements
-          </Text>
+          <View className="mb-sm mt-xl flex-row items-center justify-between">
+            <Text className="text-lg font-semibold text-paper-900 dark:text-ink-text">
+              All announcements
+            </Text>
+            <Pressable
+              onPress={() => setSortMenuOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel={`Sort by ${SORT_LABELS[sortBy]}`}
+              className="flex-row items-center gap-xs"
+            >
+              <Ionicons name="swap-vertical-outline" size={16} color={colors.primary} />
+              <Text className="text-[13px] font-semibold text-brand-800 dark:text-brand-300">
+                Sort: {SORT_LABELS[sortBy]}
+              </Text>
+            </Pressable>
+          </View>
+          <SearchAndEstateFilter
+            search={listSearch}
+            onSearchChange={setListSearch}
+            placeholder="Search announcements"
+            estates={isSuperAdmin ? estates : undefined}
+            estateFilter={listEstateFilter}
+            onEstateFilterChange={setListEstateFilter}
+          />
         </View>
       }
     />
+
+      <Overlay visible={sortMenuOpen} onDismiss={() => setSortMenuOpen(false)}>
+        <View className="rounded-lg bg-white p-xs dark:bg-ink-bg">
+          {sortOptions.map((option, index) => {
+            const active = sortBy === option;
+            return (
+              <Pressable
+                key={option}
+                onPress={() => {
+                  setSortBy(option);
+                  setSortMenuOpen(false);
+                }}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                className={`flex-row items-center justify-between px-md py-md ${
+                  index === 0 ? '' : 'border-t border-paper-200 dark:border-ink-border'
+                }`}
+              >
+                <Text
+                  className={`text-base ${
+                    active ? 'font-semibold text-brand-800 dark:text-brand-300' : 'text-paper-900 dark:text-ink-text'
+                  }`}
+                >
+                  Sort by {SORT_LABELS[option]}
+                </Text>
+                {active && <Ionicons name="checkmark" size={18} color={colors.primary} />}
+              </Pressable>
+            );
+          })}
+        </View>
+      </Overlay>
+    </>
   );
 }

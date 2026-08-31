@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text } from 'react-native';
+import { Text, Keyboard, Pressable, ScrollView } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { apiPost } from '../../lib/api';
 import { useAuthStore } from '../../store/auth-store';
@@ -65,27 +65,49 @@ export default function SecurityAlertScreen() {
   }
 
   return (
-    <View className="flex-1 bg-white p-xl dark:bg-ink-bg">
-      <Text className="mb-lg text-[13px] text-paper-500 dark:text-ink-textMuted">
-        Sends an emergency push notification to every resident&apos;s phone in your estate, and
-        posts it as an in-app announcement.
-      </Text>
+    // Tapping anywhere outside the inputs dismisses the keyboard — without
+    // this, the keyboard had no dismiss route on this screen (multiline body
+    // text swallows the return key, and there's no "Done" bar), which could
+    // leave the tab bar hidden behind it with no way back except sending.
+    <Pressable onPress={() => Keyboard.dismiss()} className="flex-1 bg-white dark:bg-ink-bg" accessible={false}>
+      <ScrollView contentContainerClassName="p-xl" keyboardShouldPersistTaps="handled">
+        <Text className="mb-lg text-[13px] text-paper-500 dark:text-ink-textMuted">
+          Sends an emergency push notification to every resident&apos;s phone in your estate, and
+          posts it as an in-app announcement.
+        </Text>
 
-      {notice && <Notice tone={notice.tone} message={notice.message} />}
+        {notice && <Notice tone={notice.tone} message={notice.message} />}
 
-      <AlertCategoryPicker value={category} onChange={setCategory} />
+        <AlertCategoryPicker value={category} onChange={setCategory} />
 
-      <Input label="Alert title" value={title} onChangeText={setTitle} />
-      <Input label="Details" value={body} onChangeText={setBody} multiline multilineHeight={110} />
+        <Input
+          label="Alert title"
+          showLabel
+          placeholder="e.g. Security breach at Gate 2"
+          value={title}
+          onChangeText={setTitle}
+          returnKeyType="done"
+          onSubmitEditing={() => Keyboard.dismiss()}
+        />
+        <Input
+          label="Details"
+          showLabel
+          placeholder="What's happening, and what should residents do?"
+          value={body}
+          onChangeText={setBody}
+          multiline
+          multilineHeight={110}
+        />
 
-      <Button
-        label="Send emergency alert"
-        variant="danger"
-        onPress={sendAlert}
-        loading={sending}
-        disabled={!title.trim() || !body.trim()}
-        className="mt-sm"
-      />
-    </View>
+        <Button
+          label="Send emergency alert"
+          variant="danger"
+          onPress={sendAlert}
+          loading={sending}
+          disabled={!title.trim() || !body.trim()}
+          className="mt-sm"
+        />
+      </ScrollView>
+    </Pressable>
   );
 }

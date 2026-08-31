@@ -135,6 +135,22 @@ export default function ProfileScreen() {
     invalidateHousehold();
   }
 
+  // Distinct from revoke: the review cadence lapsed on its own, the
+  // resident didn't choose to cut this person off. Reactivating just flips
+  // status back to 'active'. The DB trigger recomputes next_review_at from
+  // the stored review_frequency, so there's nothing else to send here.
+  async function reactivateMember(member: HouseholdMember) {
+    setRevokingId(member.id);
+    const { error } = await supabase.from('household_members').update({ status: 'active' }).eq('id', member.id);
+    setRevokingId(null);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    setNotice(`${member.full_name}'s card is active again.`);
+    invalidateHousehold();
+  }
+
   if (isLoading || !profile) {
     return (
       <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
@@ -205,13 +221,31 @@ export default function ProfileScreen() {
                 </Text>
               </View>
               <StatusBadge
-                label={item.status === 'revoked' ? 'Revoked' : 'Active'}
-                tone={item.status === 'revoked' ? 'danger' : 'success'}
+                label={
+                  item.status === 'revoked'
+                    ? 'Revoked'
+                    : item.status === 'pending_review'
+                      ? 'Needs review'
+                      : 'Active'
+                }
+                tone={
+                  item.status === 'revoked'
+                    ? 'danger'
+                    : item.status === 'pending_review'
+                      ? 'warning'
+                      : 'success'
+                }
               />
             </Pressable>
             {item.status === 'active' && !item.avatar_url && (
               <Text className="mt-sm text-[13px] text-danger">
                 No photo yet. Add one so security can check it against their face at the gate.
+              </Text>
+            )}
+            {item.status === 'pending_review' && (
+              <Text className="mt-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
+                This card&apos;s review period lapsed and was deactivated automatically. Reactivate
+                it if {item.full_name} should still have access.
               </Text>
             )}
             {item.status === 'active' && (
@@ -239,6 +273,14 @@ export default function ProfileScreen() {
                   onPress={() => setPendingRevoke(item)}
                 />
               </View>
+            )}
+            {item.status === 'pending_review' && (
+              <Button
+                label="Reactivate"
+                className="mt-md"
+                loading={revokingId === item.id}
+                onPress={() => reactivateMember(item)}
+              />
             )}
           </Card>
         )}

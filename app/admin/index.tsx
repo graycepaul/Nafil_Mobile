@@ -1,37 +1,32 @@
 import { useState } from 'react';
-import { View, Text, FlatList } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
+import { relativeTime } from '../../lib/format';
 import { Avatar } from '../../components/ui/Avatar';
-import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
-import { Notice } from '../../components/ui/Notice';
+import { StatCard } from '../../components/ui/StatCard';
+import { StatusBadge } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { Ionicons } from '@react-native-vector-icons/ionicons';
-import { InviteStaffForm } from '../../components/admin/InviteStaffForm';
-import type { Estate, JoinRequestWithApplicant, Profile } from '../../types/database';
+import { emergencyLabel } from '../../components/AnnouncementsFeed';
+import type { Announcement, Estate } from '../../types/database';
 
-export default function AdminResidentsScreen() {
+/**
+ * super_admin sees the exact same dashboard, just with unscoped counts.
+ * These queries have no .eq('estate_id', ...) filter, so RLS alone decides
+ * whether a count is "my estate" (admin) or "every estate" (super_admin).
+ */
+export default function AdminDashboardScreen() {
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
+  const router = useRouter();
   const queryClient = useQueryClient();
-  const [formError, setFormError] = useState<string>();
-
-  const { data: requests } = useQuery({
-    queryKey: ['join_requests_pending', profile?.estate_id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('estate_join_requests')
-        .select('*, applicant:profiles!estate_join_requests_profile_id_fkey(full_name, phone, avatar_url)')
-        .eq('status', 'pending')
-        .order('created_at', { ascending: true });
-      if (error) throw error;
-      return data as JoinRequestWithApplicant[];
-    },
-    enabled: !!profile,
-  });
+  const [refreshing, setRefreshing] = useState(false);
+  const isSuperAdmin = profile?.role === 'super_admin';
 
   const { data: estate } = useQuery({
     queryKey: ['my_estate', profile?.estate_id],
@@ -47,114 +42,199 @@ export default function AdminResidentsScreen() {
     enabled: !!profile?.estate_id,
   });
 
-  const { data: residents } = useQuery({
-    queryKey: ['residents_approved', profile?.estate_id],
+  const { data: residentCount } = useQuery({
+    queryKey: ['dashboard_resident_count', profile?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { count } = await supabase
         .from('profiles')
-        .select('*')
-        .eq('approved', true)
-        .order('full_name');
-      if (error) throw error;
-      return data as Profile[];
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'resident')
+        .eq('approved', true);
+      return count ?? 0;
     },
     enabled: !!profile,
   });
 
-  function invalidate() {
-    queryClient.invalidateQueries({ queryKey: ['join_requests_pending', profile?.estate_id] });
-    queryClient.invalidateQueries({ queryKey: ['residents_approved', profile?.estate_id] });
-  }
+  const { data: staffCount } = useQuery({
+    queryKey: ['dashboard_staff_count', profile?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .in('role', ['security', 'admin'])
+        .eq('approved', true);
+      return count ?? 0;
+    },
+    enabled: !!profile,
+  });
 
-  async function approve(requestId: string) {
-    setFormError(undefined);
-    const { error } = await supabase.rpc('approve_join_request', { request_id: requestId });
-    if (error) setFormError(error.message);
-    else invalidate();
-  }
+  const { data: openIssueCount } = useQuery({
+    queryKey: ['dashboard_open_issues', profile?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('issues')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['open', 'in_progress']);
+      return count ?? 0;
+    },
+    enabled: !!profile,
+  });
 
-  async function reject(requestId: string) {
-    setFormError(undefined);
-    const { error } = await supabase.rpc('reject_join_request', { request_id: requestId });
-    if (error) setFormError(error.message);
-    else invalidate();
+  const { data: pendingRequestCount } = useQuery({
+    queryKey: ['dashboard_pending_requests', profile?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('estate_join_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      return count ?? 0;
+    },
+    enabled: !!profile,
+  });
+
+  const { data: recentAnnouncements } = useQuery({
+    queryKey: ['dashboard_recent_announcements', profile?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('announcements')
+        .select('*, estate:estates(name)')
+        .order('created_at', { ascending: false })
+        .limit(3);
+      return (data ?? []) as (Announcement & { estate: { name: string } | null })[];
+    },
+    enabled: !!profile,
+  });
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['dashboard_resident_count'] }),
+      queryClient.invalidateQueries({ queryKey: ['dashboard_staff_count'] }),
+      queryClient.invalidateQueries({ queryKey: ['dashboard_open_issues'] }),
+      queryClient.invalidateQueries({ queryKey: ['dashboard_pending_requests'] }),
+      queryClient.invalidateQueries({ queryKey: ['dashboard_recent_announcements'] }),
+    ]);
+    setRefreshing(false);
   }
 
   return (
-    <FlatList
-      className="bg-white dark:bg-ink-bg"
-      contentContainerClassName="p-xl"
-      data={residents ?? []}
-      keyExtractor={(item) => item.id}
-      ListHeaderComponent={
-        <View>
-          {formError && <Notice message={formError} />}
-
-          <View>
-            <InviteStaffForm estateName={estate?.name} />
-          </View>
-
-          <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">
-            Pending requests {requests && requests.length > 0 ? `(${requests.length})` : ''}
-          </Text>
-
-          {(!requests || requests.length === 0) && (
-            <View className="mb-lg">
-              <EmptyState title="All caught up" message="No join requests waiting on you." />
-            </View>
-          )}
-
-          {requests?.map((req) => (
-            <Card key={req.id} className="mb-md">
-              <View className="flex-row items-center gap-md">
-                <Avatar uri={req.applicant?.avatar_url} name={req.applicant?.full_name} size={44} />
-                <View className="flex-1">
-                  <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
-                    {req.applicant?.full_name ?? 'Unnamed'}
-                  </Text>
-                  <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
-                    Unit {req.unit_no}
-                    {req.applicant?.phone ? ` · ${req.applicant.phone}` : ''}
-                  </Text>
-                </View>
-              </View>
-              <View className="mt-md flex-row gap-sm">
-                <Button label="Approve" onPress={() => approve(req.id)} className="flex-1" />
-                <Button
-                  label="Reject"
-                  variant="secondary"
-                  onPress={() => reject(req.id)}
-                  className="flex-1"
-                />
-              </View>
-            </Card>
-          ))}
-
-          <Text className="mb-md mt-xl text-lg font-semibold text-paper-900 dark:text-ink-text">
-            Residents
-          </Text>
-        </View>
-      }
-      ListEmptyComponent={
-        <EmptyState
-          icon={<Ionicons name="person-outline" color={colors.textMuted} size={26} />}
-          title="No approved residents yet"
-          message="Approved residents in your estate will show up here."
-        />
-      }
-      renderItem={({ item }) => (
-        <Card className="mb-sm flex-row items-center gap-md">
-          <Avatar uri={item.avatar_url} name={item.full_name} size={36} />
+    <ScrollView
+      className="flex-1 bg-paper-50 dark:bg-ink-bg"
+      contentContainerClassName="p-lg"
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+    >
+      <Card className="mb-lg">
+        <View className="flex-row items-center gap-md">
+          <Avatar uri={profile?.avatar_url} name={profile?.full_name} size={56} />
           <View className="flex-1">
-            <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
-              {item.full_name ?? item.phone ?? 'Unnamed'}
+            <Text className="text-[22px] font-bold tracking-[-0.2px] text-paper-900 dark:text-ink-text">
+              {profile?.full_name ?? 'Welcome back'}
             </Text>
-            <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
-              {item.role === 'resident' ? `Unit ${item.unit_no ?? 'N/A'}` : item.role.replace('_', ' ')}
-            </Text>
+            {isSuperAdmin ? (
+              <View className="mt-1 flex-row items-center gap-xs self-start rounded-full bg-brand-50 px-sm py-[2px] dark:bg-brand-900">
+                <Ionicons name="globe-outline" color={colors.primary} size={12} />
+                <Text className="text-[13px] font-semibold text-brand-800 dark:text-brand-300">
+                  Viewing all estates
+                </Text>
+              </View>
+            ) : (
+              <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
+                {estate?.name ?? '...fetching estate'}
+              </Text>
+            )}
           </View>
+        </View>
+        <View className="mt-lg flex-row gap-md">
+          <Pressable
+            onPress={() => router.push('/admin/staff?invite=1')}
+            className="flex-1 items-center rounded-md bg-brand-800 py-md active:opacity-90 dark:bg-brand-500"
+          >
+            <Text className="text-base font-semibold text-white">+ Invite staff</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push('/admin/announcements')}
+            className="flex-1 items-center rounded-md border border-paper-200 bg-paper-50 py-md active:opacity-80 dark:border-ink-border dark:bg-ink-surface"
+          >
+            <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
+              Post announcement
+            </Text>
+          </Pressable>
+        </View>
+      </Card>
+
+      <View className="mb-md flex-row gap-md">
+        <StatCard
+          icon={<Ionicons name="people-outline" color={colors.primary} size={18} />}
+          value={residentCount ?? 0}
+          label="Residents"
+          onPress={() => router.push('/admin/residents')}
+        />
+        <StatCard
+          icon={<Ionicons name="shield-outline" color={colors.primary} size={18} />}
+          value={staffCount ?? 0}
+          label="Staff"
+          onPress={() => router.push('/admin/staff')}
+        />
+      </View>
+      <View className="mb-lg flex-row gap-md">
+        <StatCard
+          icon={<Ionicons name="build-outline" color={colors.primary} size={18} />}
+          value={openIssueCount ?? 0}
+          label="Open issues"
+          onPress={() => router.push('/admin/issues')}
+        />
+        <StatCard
+          icon={<Ionicons name="person-add-outline" color={colors.primary} size={18} />}
+          value={pendingRequestCount ?? 0}
+          label="Pending requests"
+          onPress={() => router.push('/admin/residents?tab=pending')}
+        />
+      </View>
+
+      <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">
+        Latest announcements
+      </Text>
+      {recentAnnouncements && recentAnnouncements.length > 0 ? (
+        <View className="gap-md">
+          {recentAnnouncements.map((announcement) => (
+            <Pressable key={announcement.id} onPress={() => router.push('/admin/announcements')}>
+              <Card accent={announcement.severity === 'emergency' ? 'danger' : 'default'}>
+                <View className="flex-row items-start gap-sm">
+                  <View className="h-8 w-8 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
+                    <Ionicons name="megaphone-outline" color={colors.primary} size={16} />
+                  </View>
+                  <View className="flex-1">
+                    {announcement.severity === 'emergency' && (
+                      <View className="mb-xs">
+                        <StatusBadge label={emergencyLabel(announcement.category)} tone="danger" />
+                      </View>
+                    )}
+                    <Text className="text-base font-semibold text-paper-900 dark:text-ink-text" numberOfLines={1}>
+                      {announcement.title}
+                    </Text>
+                    <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted" numberOfLines={2}>
+                      {announcement.body}
+                    </Text>
+                    <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
+                      {relativeTime(announcement.created_at)}
+                      {isSuperAdmin && announcement.estate?.name ? ` · ${announcement.estate.name}` : ''}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" color={colors.textMuted} size={18} />
+                </View>
+              </Card>
+            </Pressable>
+          ))}
+        </View>
+      ) : (
+        <Card>
+          <EmptyState
+            icon={<Ionicons name="megaphone-outline" color={colors.textMuted} size={26} />}
+            title="No announcements yet"
+            message="Estate updates you post will show up here."
+          />
         </Card>
       )}
-    />
+    </ScrollView>
   );
 }

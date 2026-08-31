@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import { Platform, View, Text, Pressable, ActivityIndicator } from 'react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useTheme } from '../../context/theme-context';
 import { GoogleIcon } from './SocialIcons';
-import { signInWithGoogle } from '../../lib/oauth';
+import { signInWithGoogle, signInWithApple } from '../../lib/oauth';
 import { authErrorMessage } from '../../lib/auth-errors';
 import { GOOGLE_OAUTH_ENABLED } from '../../constants/auth-config';
 
@@ -16,7 +17,38 @@ export function OrDivider({ label }: { label: string }) {
   );
 }
 
-/** Full-width "Continue with Google" button — the only OAuth provider this app offers. */
+/**
+ * Full-width native Sign in with Apple button — iOS only, since Apple's SDK has
+ * no Android/web counterpart. Required alongside Google per App Store guideline
+ * 4.8 (an app offering third-party login must also offer Sign in with Apple).
+ */
+export function AppleAuthButton({ onError }: { onError: (message: string) => void }) {
+  const [loading, setLoading] = useState(false);
+
+  if (Platform.OS !== 'ios') return null;
+
+  async function handlePress() {
+    console.log('[AppleAuth] button tapped');
+    setLoading(true);
+    const { error, cancelled } = await signInWithApple();
+    console.log('[AppleAuth] signInWithApple returned:', { cancelled, error: error?.message });
+    setLoading(false);
+    if (cancelled) return;
+    if (error) onError(authErrorMessage(error) ?? 'Sign-in failed.');
+  }
+
+  return (
+    <AppleAuthentication.AppleAuthenticationButton
+      buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+      buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+      cornerRadius={8}
+      style={{ height: 54, width: '100%', opacity: loading ? 0.7 : 1 }}
+      onPress={handlePress}
+    />
+  );
+}
+
+/** Full-width "Continue with Google" button. */
 export function GoogleAuthButton({ onError }: { onError: (message: string) => void }) {
   const { colors } = useTheme();
   const [loading, setLoading] = useState(false);
@@ -49,8 +81,8 @@ export function GoogleAuthButton({ onError }: { onError: (message: string) => vo
         <ActivityIndicator size="small" color={colors.primary} />
       ) : (
         <>
-          <GoogleIcon />
-          <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
+          <GoogleIcon size={22} />
+          <Text className="text-lg font-semibold text-paper-900 dark:text-ink-text">
             Continue with Google
           </Text>
         </>

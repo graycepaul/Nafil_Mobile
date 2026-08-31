@@ -1,27 +1,49 @@
-import { useState } from 'react';
-import { View, Text, Platform } from 'react-native';
+import { useRef, useState } from 'react';
+import { View, Text, Platform, ScrollView } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Notice } from '../../components/ui/Notice';
-import type { VisitorPass, HouseholdMember, Profile } from '../../types/database';
+import { ScheduledVisitLookup } from '../../components/security/ScheduledVisitLookup';
+import { ScanResultModal, type ScanResult } from '../../components/security/ScanResultModal';
+import type { VisitorPass, HouseholdMember, Profile, VisitorLogMethod } from '../../types/database';
 
-type NoticeTone = 'error' | 'success' | 'info';
+function formatTime(iso?: string | null): string {
+  const date = iso ? new Date(iso) : new Date();
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
 
 export default function SecurityScanScreen() {
   const profile = useAuthStore((s) => s.profile);
+  const queryClient = useQueryClient();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(true);
   const [manualCode, setManualCode] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [notice, setNotice] = useState<{ tone: NoticeTone; message: string } | null>(null);
+  const [result, setResult] = useState<ScanResult | null>(null);
+  // CameraView can fire onBarcodeScanned several times for the same code
+  // before React re-renders with the prop that would disable it (`scanning`
+  // flipping to false only takes effect next render) — a ref is checked and
+  // set synchronously, so it blocks every scan after the first one even
+  // within the same frame, unlike the `processing` state check below.
+  const scanLockRef = useRef(false);
 
-  async function checkInByCode(rawCode: string) {
+  function closeResult() {
+    setResult(null);
+    setScanning(true);
+    scanLockRef.current = false;
+  }
+
+  function refreshLogs() {
+    queryClient.invalidateQueries({ queryKey: ['visitor_logs_active', profile?.estate_id] });
+    queryClient.invalidateQueries({ queryKey: ['visitor_logs_all', profile?.estate_id] });
+  }
+
+  async function checkInByCode(rawCode: string, via: VisitorLogMethod) {
     if (!profile?.estate_id || processing) return;
     setProcessing(true);
-    setNotice(null);
     const code = rawCode.trim().toUpperCase();
 
     // Resident e-ID and household/frequent-visitor codes are standing
@@ -39,13 +61,28 @@ export default function SecurityScanScreen() {
       .maybeSingle<Profile>();
 
     if (residentMatch) {
-      setNotice({
+      const { data: logRow } = await supabase
+        .from('visitor_logs')
+        .insert({
+          estate_id: profile.estate_id,
+          security_id: profile.id,
+          visitor_name: residentMatch.full_name ?? 'Resident',
+          method: via,
+        })
+        .select('checked_in_at')
+        .single();
+      refreshLogs();
+      setResult({
         tone: 'success',
-        message: `Resident verified: ${residentMatch.full_name ?? 'Resident'}, Unit ${residentMatch.unit_no ?? 'N/A'}.`,
+        title: 'Resident verified',
+        rows: [
+          { label: 'Name', value: residentMatch.full_name ?? 'Resident' },
+          { label: 'Unit', value: residentMatch.unit_no ?? 'N/A' },
+          { label: 'Checked in', value: formatTime(logRow?.checked_in_at) },
+        ],
       });
       setManualCode('');
       setProcessing(false);
-      setScanning(true);
       return;
     }
 
@@ -58,19 +95,49 @@ export default function SecurityScanScreen() {
 
     if (householdMatch) {
       if (householdMatch.status === 'revoked') {
-        setNotice({
+        setResult({
           tone: 'error',
-          message: `Revoked: ${householdMatch.full_name}'s access was revoked by the resident.`,
+          title: 'Access denied',
+          message: `${householdMatch.full_name}'s access was revoked by the resident.`,
+        });
+      } else if (householdMatch.status === 'pending_review') {
+        setResult({
+          tone: 'error',
+          title: 'Needs review',
+          message: `${householdMatch.full_name}'s card is due for the resident to review before it can be used again.`,
         });
       } else {
-        setNotice({
+        // Supabase's query/rpc builders are lazy thenables: the request
+        // only actually fires once something awaits or .then()s them, so
+        // this has to be awaited even though the result itself is ignored.
+        // Only records the scan timestamp (a DB trigger turns that into a
+        // notification to the resident) — not part of the access decision
+        // itself, so a failure here doesn't block or contradict the
+        // "Verified" message the guard already sees.
+        await supabase.rpc('record_household_member_scan', { member_id: householdMatch.id });
+        const { data: logRow } = await supabase
+          .from('visitor_logs')
+          .insert({
+            estate_id: profile.estate_id,
+            security_id: profile.id,
+            visitor_name: householdMatch.full_name,
+            method: via,
+          })
+          .select('checked_in_at')
+          .single();
+        refreshLogs();
+        setResult({
           tone: 'success',
-          message: `Verified: ${householdMatch.full_name} (${householdMatch.relationship}).`,
+          title: 'Access granted',
+          rows: [
+            { label: 'Name', value: householdMatch.full_name },
+            { label: 'Relationship', value: householdMatch.relationship },
+            { label: 'Checked in', value: formatTime(logRow?.checked_in_at) },
+          ],
         });
       }
       setManualCode('');
       setProcessing(false);
-      setScanning(true);
       return;
     }
 
@@ -82,19 +149,22 @@ export default function SecurityScanScreen() {
       .maybeSingle<VisitorPass>();
 
     if (fetchError || !pass) {
-      setNotice({
+      setResult({
         tone: 'error',
-        message: "Not found: this code doesn't match a resident ID, household card, or visitor pass for your estate.",
+        title: 'Not recognized',
+        message: "This code doesn't match a resident ID, household card, or visitor pass for your estate.",
       });
       setProcessing(false);
-      setScanning(true);
       return;
     }
 
     if (pass.status !== 'pending') {
-      setNotice({ tone: 'error', message: `Invalid pass: this pass is already "${pass.status}".` });
+      setResult({
+        tone: 'error',
+        title: 'Invalid pass',
+        message: `This pass is already "${pass.status}".`,
+      });
       setProcessing(false);
-      setScanning(true);
       return;
     }
 
@@ -105,15 +175,13 @@ export default function SecurityScanScreen() {
     // window lapsed hours ago still reads as valid at the gate.
     const now = Date.now();
     if (new Date(pass.valid_until).getTime() < now) {
-      setNotice({ tone: 'error', message: `Expired: ${pass.visitor_name}'s pass expired and can no longer be used.` });
+      setResult({ tone: 'error', title: 'Pass expired', message: `${pass.visitor_name}'s pass can no longer be used.` });
       setProcessing(false);
-      setScanning(true);
       return;
     }
     if (new Date(pass.valid_from).getTime() > now) {
-      setNotice({ tone: 'error', message: `Not yet valid: ${pass.visitor_name}'s pass isn't valid until later.` });
+      setResult({ tone: 'error', title: 'Not yet valid', message: `${pass.visitor_name}'s pass isn't valid until later.` });
       setProcessing(false);
-      setScanning(true);
       return;
     }
 
@@ -123,29 +191,39 @@ export default function SecurityScanScreen() {
       .eq('id', pass.id);
 
     if (!updateError) {
-      await supabase.from('visitor_logs').insert({
-        estate_id: profile.estate_id,
-        pass_id: pass.id,
-        security_id: profile.id,
-        visitor_name: pass.visitor_name,
-        vehicle_plate: pass.vehicle_plate,
-        method: 'qr',
+      const { data: logRow } = await supabase
+        .from('visitor_logs')
+        .insert({
+          estate_id: profile.estate_id,
+          pass_id: pass.id,
+          security_id: profile.id,
+          visitor_name: pass.visitor_name,
+          vehicle_plate: pass.vehicle_plate,
+          method: via,
+        })
+        .select('checked_in_at')
+        .single();
+      refreshLogs();
+      setResult({
+        tone: 'success',
+        title: 'Checked in',
+        rows: [
+          { label: 'Name', value: pass.visitor_name },
+          ...(pass.vehicle_plate ? [{ label: 'Vehicle', value: pass.vehicle_plate }] : []),
+          { label: 'Checked in', value: formatTime(logRow?.checked_in_at) },
+        ],
       });
-      setNotice({ tone: 'success', message: `Checked in: ${pass.visitor_name} has been checked in.` });
     } else {
-      setNotice({ tone: 'error', message: updateError.message });
+      setResult({ tone: 'error', title: 'Check-in failed', message: updateError.message });
     }
 
     setManualCode('');
     setProcessing(false);
-    setScanning(true);
   }
 
   // QR scanning needs a real camera + the native barcode detector. On web we go
   // straight to manual entry rather than showing a viewfinder that can't scan.
   const canScan = Platform.OS !== 'web';
-
-  const header = notice ? <Notice tone={notice.tone} message={notice.message} /> : null;
 
   const manualEntry = (
     <>
@@ -158,7 +236,7 @@ export default function SecurityScanScreen() {
       />
       <Button
         label="Check in"
-        onPress={() => checkInByCode(manualCode)}
+        onPress={() => checkInByCode(manualCode, 'manual')}
         loading={processing}
         disabled={!manualCode.trim()}
       />
@@ -167,13 +245,14 @@ export default function SecurityScanScreen() {
 
   if (!canScan) {
     return (
-      <View className="flex-1 bg-white p-lg dark:bg-ink-bg">
-        {header}
+      <ScrollView className="flex-1 bg-white dark:bg-ink-bg" contentContainerClassName="p-lg">
         <Text className="mb-lg text-[13px] text-paper-500 dark:text-ink-textMuted">
           QR scanning needs the camera on a phone. On web, enter the visitor&apos;s code manually.
         </Text>
         {manualEntry}
-      </View>
+        <ScheduledVisitLookup />
+        <ScanResultModal result={result} onClose={closeResult} />
+      </ScrollView>
     );
   }
 
@@ -191,8 +270,7 @@ export default function SecurityScanScreen() {
   }
 
   return (
-    <View className="flex-1 bg-white p-lg dark:bg-ink-bg">
-      {header}
+    <ScrollView className="flex-1 bg-white dark:bg-ink-bg" contentContainerClassName="p-lg">
       <View className="h-[320px] overflow-hidden rounded-lg bg-black">
         <CameraView
           style={{ flex: 1 }}
@@ -200,8 +278,10 @@ export default function SecurityScanScreen() {
           onBarcodeScanned={
             scanning
               ? ({ data }) => {
+                  if (scanLockRef.current) return;
+                  scanLockRef.current = true;
                   setScanning(false);
-                  checkInByCode(data);
+                  checkInByCode(data, 'qr');
                 }
               : undefined
           }
@@ -213,6 +293,8 @@ export default function SecurityScanScreen() {
       </Text>
 
       {manualEntry}
-    </View>
+      <ScheduledVisitLookup />
+      <ScanResultModal result={result} onClose={closeResult} />
+    </ScrollView>
   );
 }

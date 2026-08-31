@@ -16,10 +16,45 @@ export function emergencyLabel(category: Announcement['category']) {
   return ALERT_CATEGORIES.find((c) => c.value === category)?.label ?? 'Emergency';
 }
 
+export type AnnouncementSort = 'date' | 'type' | 'estate';
+
+function sortAnnouncements<T extends Announcement & { estate: { name: string } | null }>(
+  items: T[],
+  sortBy: AnnouncementSort
+): T[] {
+  if (sortBy === 'date') return items;
+  const byDateDesc = (a: T, b: T) => b.created_at.localeCompare(a.created_at);
+  if (sortBy === 'estate') {
+    return [...items].sort(
+      (a, b) => (a.estate?.name ?? '').localeCompare(b.estate?.name ?? '') || byDateDesc(a, b)
+    );
+  }
+  // 'type': emergencies first (grouped by category), then plain announcements.
+  return [...items].sort((a, b) => {
+    const aEmergency = a.severity === 'emergency';
+    const bEmergency = b.severity === 'emergency';
+    if (aEmergency !== bEmergency) return aEmergency ? -1 : 1;
+    if (aEmergency && bEmergency) {
+      const cat = emergencyLabel(a.category).localeCompare(emergencyLabel(b.category));
+      if (cat !== 0) return cat;
+    }
+    return byDateDesc(a, b);
+  });
+}
+
 export function AnnouncementsFeed({
   ListHeaderComponent,
+  showEstate,
+  sortBy = 'date',
+  search = '',
+  estateFilter,
 }: {
   ListHeaderComponent?: React.ReactElement;
+  /** super_admin only — the feed is cross-estate for them, so each card needs to say which estate it's from. */
+  showEstate?: boolean;
+  sortBy?: AnnouncementSort;
+  search?: string;
+  estateFilter?: string;
 }) {
   const { colors } = useTheme();
   const queryClient = useQueryClient();
@@ -30,12 +65,20 @@ export function AnnouncementsFeed({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('announcements')
-        .select('*')
+        .select('*, estate:estates(name)')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as Announcement[];
+      return data as (Announcement & { estate: { name: string } | null })[];
     },
   });
+
+  const q = search.trim().toLowerCase();
+  const filtered = (announcements ?? []).filter((a) => {
+    if (estateFilter && a.estate_id !== estateFilter) return false;
+    if (q && !a.title.toLowerCase().includes(q) && !a.body.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const sorted = sortAnnouncements(filtered, sortBy);
 
   async function onRefresh() {
     setRefreshing(true);
@@ -55,9 +98,11 @@ export function AnnouncementsFeed({
     <FlatList
       className="bg-white dark:bg-ink-bg"
       contentContainerClassName="p-xl"
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       ListHeaderComponent={ListHeaderComponent}
-      data={announcements ?? []}
+      data={sorted}
       keyExtractor={(item) => item.id}
       ListEmptyComponent={
         <EmptyState
@@ -79,6 +124,7 @@ export function AnnouncementsFeed({
             <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">{item.body}</Text>
             <Text className="mt-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
               {relativeTime(item.created_at)}
+              {showEstate && item.estate?.name ? ` · ${item.estate.name}` : ''}
             </Text>
           </Card>
         );

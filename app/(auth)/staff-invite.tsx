@@ -15,6 +15,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Notice } from '../../components/ui/Notice';
 import { PasswordMeter } from '../../components/auth/PasswordMeter';
+import { TermsNotice } from '../../components/auth/TermsNotice';
 import { authErrorMessage } from '../../lib/auth-errors';
 import {
   MIN_PASSWORD_LENGTH,
@@ -200,6 +201,7 @@ export default function StaffInviteScreen() {
         />
 
         <Button label="Create account" onPress={handleCreateAccount} loading={creating} />
+        <TermsNotice actionLabel="creating your account" />
       </AuthShell>
     );
   }

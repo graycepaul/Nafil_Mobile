@@ -8,7 +8,7 @@ interface CardProps extends ViewProps {
 
 const ACCENT_CLASSES: Record<'default' | 'danger', string> = {
   default: 'border-paper-200 dark:border-ink-border bg-paper-50 dark:bg-ink-surface',
-  danger: 'border-danger bg-brand-50 dark:bg-brand-900',
+  danger: 'border-danger bg-danger-muted dark:bg-danger-mutedDark',
 };
 
 export function Card({ accent = 'default', style, className, children, ...props }: CardProps) {

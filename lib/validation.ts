@@ -22,6 +22,14 @@ export function validateRequired(value: string, field: string): string | undefin
   return value.trim() ? undefined : `Enter your ${field}.`;
 }
 
+/** Deliberately permissive on format (international numbers, spaces, dashes) — just checks something phone-shaped was entered. */
+export function validatePhone(value: string): string | undefined {
+  const digits = value.replace(/\D/g, '');
+  if (!digits) return 'Enter a phone number.';
+  if (digits.length < 7) return 'That phone number looks too short.';
+  return undefined;
+}
+
 export function validateConfirmation(password: string, confirmation: string): string | undefined {
   if (!confirmation) return 'Re-enter your password.';
   if (password !== confirmation) return 'Passwords don’t match.';

@@ -3,12 +3,14 @@ import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { AuthShell, AuthLink } from '../../components/auth/AuthShell';
-import { OrDivider, GoogleAuthButton } from '../../components/auth/SocialAuthRow';
+import { OrDivider, GoogleAuthButton, AppleAuthButton } from '../../components/auth/SocialAuthRow';
+import { TermsNotice } from '../../components/auth/TermsNotice';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Notice } from '../../components/ui/Notice';
 import { PasswordMeter } from '../../components/auth/PasswordMeter';
 import { authErrorMessage } from '../../lib/auth-errors';
+import { SOCIAL_AUTH_ENABLED } from '../../constants/auth-config';
 import {
   validateConfirmation,
   validateEmail,
@@ -128,14 +130,22 @@ export default function SignupScreen() {
       />
 
       <Button label="Sign up" onPress={handleSignup} loading={loading} />
+      <TermsNotice actionLabel="signing up" />
 
       <Text className="mt-lg text-center text-[13px] leading-[18px] text-paper-500 dark:text-ink-textMuted">
         An estate admin approves new accounts against the unit register before access is
         granted.
       </Text>
 
-      <OrDivider label="- Or sign up with -" />
-      <GoogleAuthButton onError={setFormError} />
+      {SOCIAL_AUTH_ENABLED && (
+        <>
+          <OrDivider label="- Or sign up with -" />
+          <View className="gap-md">
+            <AppleAuthButton onError={setFormError} />
+            <GoogleAuthButton onError={setFormError} />
+          </View>
+        </>
+      )}
     </AuthShell>
   );
 }

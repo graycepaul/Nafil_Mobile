@@ -5,10 +5,11 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.graycepaul.nafilestate",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -23,7 +24,9 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": ["android.permission.CAMERA"]
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -34,10 +37,13 @@
       "expo-router",
       "expo-status-bar",
       "expo-secure-store",
+      "expo-apple-authentication",
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Nafil Estates to access your camera to scan visitor QR codes."
+          "cameraPermission": "Allow Nafil Estates to access your camera to scan visitor QR codes.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
         }
       ],
       "expo-splash-screen",
@@ -45,7 +51,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Nafil Estates to access your photos so you can set a profile picture."
+          "photosPermission": "Allow Nafil Estates to access your photos so you can set a profile picture.",
+          "microphonePermission": false
         }
       ],
       "expo-sharing",
@@ -53,9 +60,12 @@
         "expo-notifications",
         {
           "color": "#084DA5",
-          "sounds": ["./assets/sounds/emergency_alert.wav"]
+          "sounds": [
+            "./assets/sounds/emergency_alert.wav"
+          ]
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "scheme": "nafil-estates",
     "extra": {
@@ -64,6 +74,12 @@
         "projectId": "9628b28f-924b-49a3-b652-e0327360c7d9"
       }
     },
-    "owner": "graycepaul"
+    "owner": "graycepaul",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/9628b28f-924b-49a3-b652-e0327360c7d9"
+    }
   }
 }
