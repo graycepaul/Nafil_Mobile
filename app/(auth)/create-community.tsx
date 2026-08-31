@@ -10,6 +10,7 @@ import { Select } from '../../components/ui/Select';
 import { Notice } from '../../components/ui/Notice';
 import { PasswordMeter } from '../../components/auth/PasswordMeter';
 import { authErrorMessage } from '../../lib/auth-errors';
+import { getAuthRedirectUrl } from '../../lib/auth-session';
 import { AFRICAN_COUNTRIES, NIGERIA_STATES, type AfricanCountry } from '../../constants/countries';
 import {
   validateConfirmation,
@@ -47,6 +48,10 @@ export default function CreateCommunityScreen() {
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [formError, setFormError] = useState<string>();
   const [loading, setLoading] = useState(false);
+  // Country and State sit side by side — without sharing this, each Select
+  // only tracks its own open state, so opening one while the other is
+  // already open leaves both open at once.
+  const [openDropdown, setOpenDropdown] = useState<'country' | 'state' | null>(null);
 
   const clear = (key: string) => setErrors((e) => (e[key] ? { ...e, [key]: undefined } : e));
 
@@ -87,6 +92,7 @@ export default function CreateCommunityScreen() {
           community_address: communityAddress.trim() || null,
           community_admin_phone: phone.trim(),
         },
+        emailRedirectTo: getAuthRedirectUrl('/'),
       },
     });
     setLoading(false);
@@ -128,7 +134,14 @@ export default function CreateCommunityScreen() {
 
       <View className="z-10 flex-row gap-sm">
         <View className="flex-1">
-          <Select label="Country" value={country} options={COUNTRY_OPTIONS} onChange={handleCountryChange} />
+          <Select
+            label="Country"
+            value={country}
+            options={COUNTRY_OPTIONS}
+            onChange={handleCountryChange}
+            isOpen={openDropdown === 'country'}
+            onToggle={(open) => setOpenDropdown(open ? 'country' : null)}
+          />
         </View>
         <View className="flex-1">
           {country === 'Nigeria' ? (
@@ -141,6 +154,8 @@ export default function CreateCommunityScreen() {
                 clear('stateName');
               }}
               error={errors.stateName}
+              isOpen={openDropdown === 'state'}
+              onToggle={(open) => setOpenDropdown(open ? 'state' : null)}
             />
           ) : (
             <Input

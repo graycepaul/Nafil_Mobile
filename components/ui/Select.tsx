@@ -25,6 +25,8 @@ export function Select<T extends string>({
   onChange,
   error,
   className,
+  isOpen,
+  onToggle,
 }: {
   label: string;
   showLabel?: boolean;
@@ -33,9 +35,20 @@ export function Select<T extends string>({
   onChange: (value: T) => void;
   error?: string;
   className?: string;
+  /**
+   * Controlled open state, for a group of Selects that must stay mutually
+   * exclusive (e.g. country + state side by side) — without this, each
+   * Select only knows about its own open/closed state, so opening one next
+   * to an already-open one leaves both open at once. Omit both props for
+   * the normal uncontrolled behavior (its own internal open state).
+   */
+  isOpen?: boolean;
+  onToggle?: (open: boolean) => void;
 }) {
   const { colors } = useTheme();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = isOpen ?? internalOpen;
+  const setOpen = onToggle ?? setInternalOpen;
   const selected = options.find((o) => o.value === value);
 
   return (
@@ -44,7 +57,7 @@ export function Select<T extends string>({
         <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">{label}</Text>
       )}
       <Pressable
-        onPress={() => setOpen((v) => !v)}
+        onPress={() => setOpen(!open)}
         accessibilityRole="button"
         accessibilityLabel={label}
         accessibilityState={{ expanded: open }}
