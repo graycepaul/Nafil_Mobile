@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
+import { useAdminUiStore } from '../../store/admin-ui-store';
 import { useTheme } from '../../context/theme-context';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 
@@ -12,6 +13,7 @@ export function AdminHeaderActions() {
   const { colors } = useTheme();
   const profile = useAuthStore((s) => s.profile);
   const canManageMarket = profile?.role === 'super_admin' || profile?.role === 'finance';
+  const lastViewedMarketAt = useAdminUiStore((s) => s.lastViewedMarketAt);
 
   const { data: unreadCount } = useQuery({
     queryKey: ['notifications_unread', profile?.id],
@@ -27,19 +29,27 @@ export function AdminHeaderActions() {
     refetchInterval: 30_000,
   });
 
-  // Same queryKey the Dashboard's own stat card uses — React Query dedupes
-  // this into a single request/cache entry rather than fetching it twice.
-  const { data: listingCount } = useQuery({
-    queryKey: ['dashboard_listing_count', profile?.id],
+  // Only the most recent active listing's timestamp — cheap to fetch, and
+  // all that's needed to know whether anything's arrived since this device
+  // last opened the Marketplace screen.
+  const { data: latestListingAt } = useQuery({
+    queryKey: ['latest_active_listing_at', profile?.id],
     queryFn: async () => {
-      const { count } = await supabase
+      const { data, error } = await supabase
         .from('listings')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active');
-      return count ?? 0;
+        .select('created_at')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.created_at ?? null;
     },
     enabled: !!profile && canManageMarket,
+    refetchInterval: 30_000,
   });
+  const hasNewListing =
+    !!latestListingAt && (!lastViewedMarketAt || new Date(latestListingAt) > new Date(lastViewedMarketAt));
 
   return (
     <View className="flex-row items-center gap-md pr-lg">
@@ -47,12 +57,12 @@ export function AdminHeaderActions() {
         <Pressable
           onPress={() => router.push('/admin/marketplace')}
           accessibilityRole="button"
-          accessibilityLabel={listingCount ? `Marketplace, ${listingCount} active listings` : 'Marketplace'}
+          accessibilityLabel={hasNewListing ? 'Marketplace, new listing' : 'Marketplace'}
           hitSlop={8}
           className="relative"
         >
           <Ionicons name="storefront-outline" size={20} color={colors.onHeaderBg} />
-          {!!listingCount && (
+          {hasNewListing && (
             <View className="absolute -right-[6px] -top-[4px] h-[9px] w-[9px] rounded-full border border-white bg-danger dark:border-ink-bg" />
           )}
         </Pressable>

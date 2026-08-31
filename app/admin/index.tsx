@@ -168,9 +168,9 @@ export default function AdminDashboardScreen() {
             </Text>
             {isSuperAdmin ? (
               <View className="mt-1 flex-row items-center gap-xs self-start rounded-full bg-brand-50 px-sm py-[2px] dark:bg-brand-900">
-                <Ionicons name="globe-outline" color={colors.primary} size={12} />
+                <Ionicons name="star-outline" color={colors.primary} size={12} />
                 <Text className="text-[13px] font-semibold text-brand-800 dark:text-brand-300">
-                  Viewing all estates
+                  Estate owner · {estate?.name ?? '...'}
                 </Text>
               </View>
             ) : (

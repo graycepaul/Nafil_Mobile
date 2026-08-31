@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
+import { useAdminUiStore } from '../../store/admin-ui-store';
 import { useTheme } from '../../context/theme-context';
 import { formatListingPrice } from '../../components/resident/marketplace-categories';
 import { relativeTime } from '../../lib/format';
@@ -27,20 +28,26 @@ const STATUS_TONE: Record<ListingStatus, BadgeTone> = {
 
 type ListingWithEstate = ListingWithSeller & { estate: { name: string } | null };
 
-/** super_admin/finance view of every listing across the estate (or every estate, for super_admin) — browse and suspend, not delete. */
+/** super_admin/finance view of every listing in the estate — browse and suspend, not delete. */
 export default function AdminMarketplaceScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
   const queryClient = useQueryClient();
+  const markMarketViewed = useAdminUiStore((s) => s.markMarketViewed);
   const [search, setSearch] = useState('');
-  const [estateFilter, setEstateFilter] = useState<string | undefined>();
   const [confirming, setConfirming] = useState<{ id: string; title: string; action: 'suspend' | 'lift' } | null>(null);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string>();
   const [financeMenuOpen, setFinanceMenuOpen] = useState(false);
   const isSuperAdmin = profile?.role === 'super_admin';
+
+  // Clears the Dashboard's Market badge — it's tracking "anything posted
+  // since this device last opened this screen", not an unresolved queue.
+  useEffect(() => {
+    markMarketViewed();
+  }, [markMarketViewed]);
 
   const { data: listings, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['listings_admin', profile?.estate_id],
@@ -53,16 +60,6 @@ export default function AdminMarketplaceScreen() {
       return data as ListingWithEstate[];
     },
     enabled: !!profile,
-  });
-
-  const { data: estates } = useQuery({
-    queryKey: ['all_estates'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('estates').select('id, name').order('name');
-      if (error) throw error;
-      return data as { id: string; name: string }[];
-    },
-    enabled: isSuperAdmin,
   });
 
   // Same queryKeys the Dashboard's own stat cards use — shared cache, not a duplicate fetch.
@@ -87,7 +84,6 @@ export default function AdminMarketplaceScreen() {
   const filteredListings = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (listings ?? []).filter((listing) => {
-      if (estateFilter && listing.estate_id !== estateFilter) return false;
       if (
         q &&
         !listing.title.toLowerCase().includes(q) &&
@@ -97,7 +93,7 @@ export default function AdminMarketplaceScreen() {
         return false;
       return true;
     });
-  }, [listings, search, estateFilter]);
+  }, [listings, search]);
 
   async function handleConfirmSuspend() {
     if (!confirming) return;
@@ -159,9 +155,6 @@ export default function AdminMarketplaceScreen() {
               search={search}
               onSearchChange={setSearch}
               placeholder="Search by title, category, or seller"
-              estates={isSuperAdmin ? estates : undefined}
-              estateFilter={estateFilter}
-              onEstateFilterChange={setEstateFilter}
             />
           </View>
         }

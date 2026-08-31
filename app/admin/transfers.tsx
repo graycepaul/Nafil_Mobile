@@ -35,7 +35,6 @@ export default function AdminTransfersScreen() {
   const { colors } = useTheme();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [estateFilter, setEstateFilter] = useState<string | undefined>();
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [error, setError] = useState<string>();
   const isSuperAdmin = profile?.role === 'super_admin';
@@ -54,24 +53,13 @@ export default function AdminTransfersScreen() {
     enabled: !!profile,
   });
 
-  const { data: estates } = useQuery({
-    queryKey: ['all_estates'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('estates').select('id, name').order('name');
-      if (error) throw error;
-      return data as { id: string; name: string }[];
-    },
-    enabled: isSuperAdmin,
-  });
-
   const filteredTransfers = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (transfers ?? []).filter((t) => {
-      if (estateFilter && t.estate_id !== estateFilter) return false;
       if (q && !t.label.toLowerCase().includes(q) && !t.submitter?.full_name?.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [transfers, search, estateFilter]);
+  }, [transfers, search]);
 
   async function resolve(id: string, action: 'confirm' | 'reject') {
     setError(undefined);
@@ -118,9 +106,6 @@ export default function AdminTransfersScreen() {
               search={search}
               onSearchChange={setSearch}
               placeholder="Search by label or resident"
-              estates={isSuperAdmin ? estates : undefined}
-              estateFilter={estateFilter}
-              onEstateFilterChange={setEstateFilter}
             />
           </View>
         }

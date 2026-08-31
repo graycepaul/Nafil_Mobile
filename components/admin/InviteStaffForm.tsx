@@ -34,13 +34,10 @@ const FINANCE_ROLE = { value: 'finance' as const, label: 'Finance' };
  */
 export function InviteStaffForm({
   estateName,
-  estates,
   onInvited,
   onClose,
 }: {
   estateName?: string;
-  /** super_admin only — lets them pick which estate the invite belongs to instead of it silently defaulting to their own home estate. */
-  estates?: { id: string; name: string }[];
   onInvited?: () => void;
   onClose: () => void;
 }) {
@@ -50,14 +47,16 @@ export function InviteStaffForm({
 
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<StaffInvite['role']>('security');
-  const [estateId, setEstateId] = useState<string | undefined>(profile?.estate_id ?? undefined);
   const [error, setError] = useState<string>();
   const [formError, setFormError] = useState<string>();
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState<StaffInvite | null>(null);
 
-  const targetEstateId = estates && estates.length > 0 ? estateId : profile?.estate_id;
-  const targetEstateName = estates?.find((e) => e.id === targetEstateId)?.name ?? estateName;
+  // Every role (including super_admin, now scoped to their own estate) can
+  // only ever invite into their own estate — staff_invites_insert's RLS
+  // check enforces the same thing server-side.
+  const targetEstateId = profile?.estate_id;
+  const targetEstateName = estateName;
 
   async function handleCreate() {
     const emailError = validateEmail(email);
@@ -114,28 +113,7 @@ export function InviteStaffForm({
       <Text className="mb-md text-base font-semibold text-paper-900 dark:text-ink-text">Invite staff</Text>
       {formError && <Notice message={formError} />}
 
-      {estates && estates.length > 1 ? (
-        <View className="flex-row gap-sm">
-          <Select
-            label="Estate"
-            showLabel
-            value={estateId ?? estates[0].id}
-            options={estates.map((e) => ({ value: e.id, label: e.name }))}
-            onChange={setEstateId}
-            className="flex-1"
-          />
-          <Select
-            label="Role"
-            showLabel
-            value={role}
-            options={ROLES}
-            onChange={setRole}
-            className="flex-1"
-          />
-        </View>
-      ) : (
-        <Select label="Role" showLabel value={role} options={ROLES} onChange={setRole} />
-      )}
+      <Select label="Role" showLabel value={role} options={ROLES} onChange={setRole} />
       <Input
         label="Email"
         placeholder="Email"

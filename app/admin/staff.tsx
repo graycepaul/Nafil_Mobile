@@ -27,7 +27,6 @@ export default function AdminStaffScreen() {
   const [error, setError] = useState<string>();
   const [inviting, setInviting] = useState(false);
   const [search, setSearch] = useState('');
-  const [estateFilter, setEstateFilter] = useState<string | undefined>();
   const isSuperAdmin = profile?.role === 'super_admin';
 
   // Deep-linked from the Dashboard's "+ Invite staff" quick action (?invite=1).
@@ -80,20 +79,6 @@ export default function AdminStaffScreen() {
     enabled: !!profile?.estate_id,
   });
 
-  // Only fetched for the picker inside InviteStaffForm — super_admin oversees
-  // every estate and needs to choose which one a new hire belongs to, rather
-  // than the invite silently landing in whichever estate happens to be their
-  // own home one.
-  const { data: estates } = useQuery({
-    queryKey: ['all_estates'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('estates').select('id, name').order('name');
-      if (error) throw error;
-      return data as { id: string; name: string }[];
-    },
-    enabled: isSuperAdmin,
-  });
-
   const {
     data: invites,
     refetch: refetchInvites,
@@ -134,11 +119,10 @@ export default function AdminStaffScreen() {
   const filteredStaff = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (staff ?? []).filter((s) => {
-      if (estateFilter && s.estate_id !== estateFilter) return false;
       if (q && !s.full_name?.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [staff, search, estateFilter]);
+  }, [staff, search]);
 
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: ['staff_invites_pending', profile?.estate_id] });
@@ -182,15 +166,11 @@ export default function AdminStaffScreen() {
             search={search}
             onSearchChange={setSearch}
             placeholder="Search by name"
-            estates={isSuperAdmin ? estates : undefined}
-            estateFilter={estateFilter}
-            onEstateFilterChange={setEstateFilter}
           />
 
           {inviting && (
             <InviteStaffForm
               estateName={estate?.name}
-              estates={isSuperAdmin ? estates : undefined}
               onInvited={invalidate}
               onClose={() => setInviting(false)}
             />

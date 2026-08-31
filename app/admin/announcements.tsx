@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, Pressable, Keyboard } from 'react-native';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
 import { apiPost } from '../../lib/api';
@@ -25,31 +25,18 @@ export default function AdminAnnouncementsScreen() {
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
   const queryClient = useQueryClient();
-  const isSuperAdmin = profile?.role === 'super_admin';
   const [emergency, setEmergency] = useState(false);
   const [category, setCategory] = useState<AlertCategory>('other');
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [estateId, setEstateId] = useState<string | undefined>(profile?.estate_id ?? undefined);
   const [posting, setPosting] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'error' | 'success'; message: string }>();
   const [sortBy, setSortBy] = useState<AnnouncementSort>('date');
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
-  const sortOptions: AnnouncementSort[] = isSuperAdmin ? ['date', 'estate', 'type'] : ['date', 'type'];
+  const sortOptions: AnnouncementSort[] = ['date', 'type'];
   const [listSearch, setListSearch] = useState('');
-  const [listEstateFilter, setListEstateFilter] = useState<string | undefined>();
 
-  const { data: estates } = useQuery({
-    queryKey: ['all_estates'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('estates').select('id, name').order('name');
-      if (error) throw error;
-      return data as { id: string; name: string }[];
-    },
-    enabled: isSuperAdmin,
-  });
-
-  const targetEstateId = isSuperAdmin ? estateId : profile?.estate_id;
+  const targetEstateId = profile?.estate_id;
 
   async function post() {
     if (!title.trim() || !body.trim() || !targetEstateId) return;
@@ -108,45 +95,11 @@ export default function AdminAnnouncementsScreen() {
   return (
     <>
     <AnnouncementsFeed
-      showEstate={isSuperAdmin}
       sortBy={sortBy}
       search={listSearch}
-      estateFilter={listEstateFilter}
       ListHeaderComponent={
         <View>
           {notice && <Notice tone={notice.tone} message={notice.message} />}
-
-          {isSuperAdmin && estates && estates.length > 1 && (
-            <View className="mb-lg">
-              <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">Estate</Text>
-              <View className="flex-row flex-wrap gap-sm">
-                {estates.map((e) => {
-                  const active = estateId === e.id;
-                  return (
-                    <Pressable
-                      key={e.id}
-                      onPress={() => setEstateId(e.id)}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: active }}
-                      className={`rounded-full border px-md py-xs ${
-                        active
-                          ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
-                          : 'border-paper-200 dark:border-ink-border'
-                      }`}
-                    >
-                      <Text
-                        className={`text-[13px] font-medium ${
-                          active ? 'text-white dark:text-ink-bg' : 'text-paper-500 dark:text-ink-textMuted'
-                        }`}
-                      >
-                        {e.name}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-          )}
 
           <Pressable
             onPress={() => setEmergency((v) => !v)}
@@ -217,9 +170,6 @@ export default function AdminAnnouncementsScreen() {
             search={listSearch}
             onSearchChange={setListSearch}
             placeholder="Search announcements"
-            estates={isSuperAdmin ? estates : undefined}
-            estateFilter={listEstateFilter}
-            onEstateFilterChange={setListEstateFilter}
           />
         </View>
       }

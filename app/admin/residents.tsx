@@ -25,7 +25,6 @@ export default function AdminResidentsScreen() {
   const [formError, setFormError] = useState<string>();
   const [activeTab, setActiveTab] = useState<ResidentsTab>('all');
   const [search, setSearch] = useState('');
-  const [estateFilter, setEstateFilter] = useState<string | undefined>();
   const isSuperAdmin = profile?.role === 'super_admin';
 
   // Deep-linked from the Dashboard's "Pending requests" stat card.
@@ -34,15 +33,6 @@ export default function AdminResidentsScreen() {
     if (openOnLoad === 'pending') setActiveTab('pending');
   }, [openOnLoad]);
 
-  const { data: estates } = useQuery({
-    queryKey: ['all_estates'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('estates').select('id, name').order('name');
-      if (error) throw error;
-      return data as { id: string; name: string }[];
-    },
-    enabled: isSuperAdmin,
-  });
 
   const {
     data: requests,
@@ -105,20 +95,18 @@ export default function AdminResidentsScreen() {
   const filteredRequests = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (requests ?? []).filter((req) => {
-      if (estateFilter && req.estate_id !== estateFilter) return false;
       if (q && !req.applicant?.full_name?.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [requests, search, estateFilter]);
+  }, [requests, search]);
 
   const filteredResidents = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (residents ?? []).filter((r) => {
-      if (estateFilter && r.estate_id !== estateFilter) return false;
       if (q && !r.full_name?.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [residents, search, estateFilter]);
+  }, [residents, search]);
 
   const pendingCount = requests?.length ?? 0;
 
@@ -128,9 +116,6 @@ export default function AdminResidentsScreen() {
         search={search}
         onSearchChange={setSearch}
         placeholder="Search by name"
-        estates={isSuperAdmin ? estates : undefined}
-        estateFilter={estateFilter}
-        onEstateFilterChange={setEstateFilter}
       />
     </View>
   );
