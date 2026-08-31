@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useState } from 'react';
-import { View, Text, FlatList, ScrollView, Pressable, ActivityIndicator, Image } from 'react-native';
+import { View, Text, FlatList, ScrollView, Pressable, ActivityIndicator, Image, RefreshControl } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
@@ -76,7 +76,12 @@ export default function MarketplaceScreen() {
     });
   }, [navigation, router, colors.onHeaderBg, hasStore]);
 
-  const { data: allListings, isLoading } = useQuery({
+  const {
+    data: allListings,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useQuery({
     queryKey: ['listings', profile?.estate_id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -99,6 +104,12 @@ export default function MarketplaceScreen() {
     });
   }, [allListings, query, category, typeFilter]);
 
+  // A lone last item in an odd-count 2-column grid otherwise stretches to
+  // fill the whole row (and, since its height is aspect-square, grows just
+  // as tall as it is wide) — this filler keeps it pinned to a normal
+  // half-width column instead.
+  const gridData = listings.length % 2 === 1 ? [...listings, { id: '__filler__' } as ListingWithSeller] : listings;
+
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-paper-50 dark:bg-ink-bg">
@@ -114,8 +125,9 @@ export default function MarketplaceScreen() {
       contentContainerClassName="p-lg"
       numColumns={2}
       columnWrapperClassName="gap-md"
-      data={listings}
+      data={gridData}
       keyExtractor={(item) => item.id}
+      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
       ListHeaderComponent={
         <View className="mb-md">
           <View className="flex-row items-start gap-sm">
@@ -183,7 +195,9 @@ export default function MarketplaceScreen() {
           message="Try a different search or category, or be the first to list something."
         />
       }
-      renderItem={({ item }) => (
+      renderItem={({ item }) => {
+        if (item.id === '__filler__') return <View className="flex-1" />;
+        return (
         <Pressable
           onPress={() => router.push(`/resident/marketplace-listing?id=${item.id}`)}
           className="mb-md flex-1 overflow-hidden rounded-md border border-paper-200 bg-white dark:border-ink-border dark:bg-ink-surface"
@@ -228,7 +242,8 @@ export default function MarketplaceScreen() {
             </Pressable>
           </View>
         </Pressable>
-      )}
+        );
+      }}
     />
 
     <Overlay visible={filterOpen} onDismiss={() => setFilterOpen(false)}>
