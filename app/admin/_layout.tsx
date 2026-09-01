@@ -1,4 +1,5 @@
 import { Tabs } from 'expo-router';
+import { useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme } from '../../context/theme-context';
@@ -9,6 +10,7 @@ import { AdminHeaderActions } from '../../components/ui/AdminHeaderActions';
 export default function AdminLayout() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const profile = useAuthStore((s) => s.profile);
   // finance handles marketplace/transfers/dues only — residents, staff,
   // issues, and announcements aren't its concern, so those tabs don't exist
@@ -16,7 +18,7 @@ export default function AdminLayout() {
   const isFinance = profile?.role === 'finance';
 
   return (
-    <Tabs screenOptions={themedTabOptions(colors, insets.bottom)}>
+    <Tabs screenOptions={themedTabOptions(colors, insets.bottom, width)}>
       <Tabs.Screen
         name="index"
         options={{

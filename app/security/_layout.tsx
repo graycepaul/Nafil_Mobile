@@ -1,4 +1,5 @@
 import { Tabs } from 'expo-router';
+import { useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme } from '../../context/theme-context';
@@ -8,9 +9,10 @@ import { SettingsHeaderButton } from '../../components/ui/SettingsHeaderButton';
 export default function SecurityLayout() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
 
   return (
-    <Tabs screenOptions={themedTabOptions(colors, insets.bottom)}>
+    <Tabs screenOptions={themedTabOptions(colors, insets.bottom, width)}>
       <Tabs.Screen
         name="index"
         options={{

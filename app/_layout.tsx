@@ -13,6 +13,7 @@ import {
   urlLooksLikeAuthLink,
 } from "../lib/auth-session";
 import { registerForPushNotifications } from "../lib/push-notifications";
+import { AppShell } from "../components/ui/AppShell";
 import type { UserRole } from "../types/database";
 
 const queryClient = new QueryClient();
@@ -137,7 +138,11 @@ function RootNavigation() {
     }
   }, [session, profile, loading, segments, router]);
 
-  return <Slot />;
+  return (
+    <AppShell>
+      <Slot />
+    </AppShell>
+  );
 }
 
 function ThemedStatusBar() {
