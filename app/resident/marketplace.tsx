@@ -1,5 +1,15 @@
 import { useLayoutEffect, useMemo, useState } from 'react';
-import { View, Text, FlatList, ScrollView, Pressable, ActivityIndicator, Image, RefreshControl } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  ScrollView,
+  Pressable,
+  ActivityIndicator,
+  Image,
+  RefreshControl,
+  useWindowDimensions,
+} from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
@@ -30,6 +40,7 @@ export default function MarketplaceScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const { colors } = useTheme();
+  const { width } = useWindowDimensions();
   const profile = useAuthStore((s) => s.profile);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<ListingCategory | 'All'>('All');
@@ -104,11 +115,22 @@ export default function MarketplaceScreen() {
     });
   }, [allListings, query, category, typeFilter]);
 
-  // A lone last item in an odd-count 2-column grid otherwise stretches to
-  // fill the whole row (and, since its height is aspect-square, grows just
-  // as tall as it is wide) — this filler keeps it pinned to a normal
-  // half-width column instead.
-  const gridData = listings.length % 2 === 1 ? [...listings, { id: '__filler__' } as ListingWithSeller] : listings;
+  // More columns as the viewport widens (2 on a phone up to 5 on a wide
+  // desktop) — fixed at 2 regardless of width, these aspect-square cards blew
+  // up to nearly half the screen each on a laptop. Matches AppShell/tab-options'
+  // breakpoints loosely rather than exactly; this just needs to feel right.
+  const numColumns = width >= 1280 ? 5 : width >= 1024 ? 4 : width >= 640 ? 3 : 2;
+
+  // An incomplete last row otherwise stretches its items to fill the row
+  // (and, since their height is aspect-square, grows just as tall as it is
+  // wide) — these fillers keep the row's real items pinned to a normal
+  // column width instead.
+  const remainder = listings.length % numColumns;
+  const fillerCount = remainder === 0 ? 0 : numColumns - remainder;
+  const gridData =
+    fillerCount > 0
+      ? [...listings, ...Array.from({ length: fillerCount }, (_, i) => ({ id: `__filler_${i}__` }) as ListingWithSeller)]
+      : listings;
 
   if (isLoading) {
     return (
@@ -121,9 +143,10 @@ export default function MarketplaceScreen() {
   return (
     <>
     <FlatList
+      key={numColumns}
       className="bg-paper-50 dark:bg-ink-bg"
-      contentContainerClassName="p-lg"
-      numColumns={2}
+      contentContainerClassName="p-lg lg:p-2xl"
+      numColumns={numColumns}
       columnWrapperClassName="gap-md"
       data={gridData}
       keyExtractor={(item) => item.id}
@@ -196,7 +219,7 @@ export default function MarketplaceScreen() {
         />
       }
       renderItem={({ item }) => {
-        if (item.id === '__filler__') return <View className="flex-1" />;
+        if (item.id.startsWith('__filler_')) return <View className="flex-1" />;
         return (
         <Pressable
           onPress={() => router.push(`/resident/marketplace-listing?id=${item.id}`)}
