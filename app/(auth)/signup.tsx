@@ -10,6 +10,7 @@ import { Input } from '../../components/ui/Input';
 import { Notice } from '../../components/ui/Notice';
 import { PasswordMeter } from '../../components/auth/PasswordMeter';
 import { authErrorMessage } from '../../lib/auth-errors';
+import { getAuthRedirectUrl } from '../../lib/auth-session';
 import { SOCIAL_AUTH_ENABLED } from '../../constants/auth-config';
 import {
   validateConfirmation,
@@ -46,7 +47,10 @@ export default function SignupScreen() {
     const { error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { full_name: fullName.trim() } },
+      options: {
+        data: { full_name: fullName.trim() },
+        emailRedirectTo: getAuthRedirectUrl('/'),
+      },
     });
     setLoading(false);
 

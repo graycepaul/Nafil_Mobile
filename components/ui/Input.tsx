@@ -3,10 +3,9 @@ import { View, Text, TextInput, Pressable, Platform, type TextInputProps } from 
 import { useTheme } from '../../context/theme-context';
 
 /**
- * Chrome paints its own focus outline (amber in dark mode) over ours. We draw a
- * themed border on focus that works on every platform, so the browser's is
- * redundant — suppressing it keeps focus looking intentional without costing
- * keyboard users their focus indicator.
+ * Fields are deliberately static: no visual change on focus at all, on any
+ * platform, so this only exists to stop the browser from painting its own
+ * focus outline (amber in dark mode) on top of that flat look.
  */
 const suppressBrowserOutline = Platform.select({
   web: { outlineStyle: 'none' } as object,
@@ -50,11 +49,11 @@ export function Input({
         className={`relative justify-center rounded-md border bg-white dark:bg-ink-surface ${
           error
             ? 'border-danger'
-            : 'border-paper-200 dark:border-ink-border focus-within:border-brand-800 dark:focus-within:border-brand-300 shadow-sm'
+            : 'border-paper-200 dark:border-ink-border'
         }`}
       >
         <TextInput
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholder}
           secureTextEntry={passwordToggle ? !revealed : props.secureTextEntry}
           accessibilityLabel={label}
           className={`bg-transparent text-[15px] text-paper-900 dark:text-ink-text py-[16px] pl-lg ${

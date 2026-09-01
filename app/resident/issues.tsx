@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { View, Text, FlatList, RefreshControl, ActivityIndicator, Pressable } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
@@ -32,6 +32,7 @@ export default function IssuesScreen() {
   const { colors } = useTheme();
   const queryClient = useQueryClient();
   const navigation = useNavigation();
+  const router = useRouter();
   const { new: openOnLoad } = useLocalSearchParams<{ new?: string }>();
   const [formOpen, setFormOpen] = useState(false);
   const [category, setCategory] = useState('');
@@ -106,6 +107,7 @@ export default function IssuesScreen() {
   }
 
   return (
+    <View className="flex-1 bg-white dark:bg-ink-bg">
     <FlatList
       className="bg-white dark:bg-ink-bg"
       contentContainerClassName="p-xl"
@@ -170,5 +172,15 @@ export default function IssuesScreen() {
         </Card>
       )}
     />
+
+      <Pressable
+        onPress={() => router.push('/resident/announcements')}
+        accessibilityRole="button"
+        accessibilityLabel="Announcements"
+        className="absolute bottom-xl right-xl h-14 w-14 items-center justify-center rounded-full bg-brand-800 shadow-lg active:opacity-90 dark:bg-brand-500"
+      >
+        <Ionicons name="megaphone-outline" color="#fff" size={22} />
+      </Pressable>
+    </View>
   );
 }

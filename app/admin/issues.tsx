@@ -30,7 +30,6 @@ export default function AdminIssuesScreen() {
   const [advancingId, setAdvancingId] = useState<string | null>(null);
   const [error, setError] = useState<string>();
   const [search, setSearch] = useState('');
-  const [estateFilter, setEstateFilter] = useState<string | undefined>();
   const isSuperAdmin = profile?.role === 'super_admin';
 
   const { data: issues, isLoading, refetch, isRefetching } = useQuery({
@@ -46,20 +45,9 @@ export default function AdminIssuesScreen() {
     enabled: !!profile,
   });
 
-  const { data: estates } = useQuery({
-    queryKey: ['all_estates'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('estates').select('id, name').order('name');
-      if (error) throw error;
-      return data as { id: string; name: string }[];
-    },
-    enabled: isSuperAdmin,
-  });
-
   const filteredIssues = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (issues ?? []).filter((issue) => {
-      if (estateFilter && issue.estate_id !== estateFilter) return false;
       if (
         q &&
         !issue.category.toLowerCase().includes(q) &&
@@ -69,7 +57,7 @@ export default function AdminIssuesScreen() {
         return false;
       return true;
     });
-  }, [issues, search, estateFilter]);
+  }, [issues, search]);
 
   async function advance(issue: Issue) {
     const next = NEXT_STATUS[issue.status];
@@ -111,9 +99,6 @@ export default function AdminIssuesScreen() {
             search={search}
             onSearchChange={setSearch}
             placeholder="Search by category, description, or reporter"
-            estates={isSuperAdmin ? estates : undefined}
-            estateFilter={estateFilter}
-            onEstateFilterChange={setEstateFilter}
           />
         </View>
       }

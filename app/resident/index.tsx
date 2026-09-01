@@ -163,8 +163,6 @@ export default function ResidentHome() {
         />
       </View>
 
-      {/* ── Quick actions ────────────────────────────────────────── */}
-
       {/* ── Recent announcements ─────────────────────────────────── */}
       <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">
         Latest announcements

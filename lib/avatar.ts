@@ -27,7 +27,12 @@ async function pickImage() {
 async function uploadToPath(uri: string, mimeType: string | null | undefined, path: string) {
   const ext = (uri.split('.').pop() || 'jpg').toLowerCase().split('?')[0];
   const contentType = mimeType ?? `image/${ext === 'jpg' ? 'jpeg' : ext}`;
-  const blob = await fetch(uri).then((r) => r.blob());
+  // @supabase/storage-js ignores the `contentType` option once the body is a
+  // Blob — it hands the Blob straight to a FormData, whose part gets its
+  // content type from the Blob's own `.type`, not the option — so it has to
+  // be re-wrapped here rather than relying on the option below.
+  const rawBlob = await fetch(uri).then((r) => r.blob());
+  const blob = new Blob([rawBlob], { type: contentType });
 
   const { error } = await supabase.storage.from('avatars').upload(path, blob, {
     contentType,

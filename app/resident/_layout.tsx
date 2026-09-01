@@ -4,7 +4,7 @@ import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme } from '../../context/theme-context';
 import { themedTabOptions } from '../../components/ui/tab-options';
 import { HomeHeader } from '../../components/ui/HomeHeader';
-import { SettingsHeaderButton } from '../../components/ui/SettingsHeaderButton';
+import { ProfileHeaderActions } from '../../components/ui/ProfileHeaderActions';
 
 export default function ResidentLayout() {
   const { colors } = useTheme();
@@ -28,6 +28,13 @@ export default function ResidentLayout() {
         }}
       />
       <Tabs.Screen
+        name="marketplace"
+        options={{
+          title: 'Market',
+          tabBarIcon: ({ color }) => <Ionicons name="storefront-outline" color={color as string} size={22} />,
+        }}
+      />
+      <Tabs.Screen
         name="issues"
         options={{
           title: 'Issues',
@@ -35,17 +42,10 @@ export default function ResidentLayout() {
         }}
       />
       <Tabs.Screen
-        name="announcements"
-        options={{
-          title: 'Announcements',
-          tabBarIcon: ({ color }) => <Ionicons name="megaphone-outline" color={color as string} size={22} />,
-        }}
-      />
-      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          headerRight: () => <SettingsHeaderButton />,
+          headerRight: () => <ProfileHeaderActions />,
           tabBarIcon: ({ color }) => <Ionicons name="person-outline" color={color as string} size={22} />,
         }}
       />
@@ -62,6 +62,37 @@ export default function ResidentLayout() {
         name="visitor-pass-history"
         // Reached via the Visitors tab header's history icon.
         options={{ title: 'Visit history', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
+        name="marketplace-listing"
+        // Reached by tapping a listing on the Market tab.
+        options={{ title: 'Listing', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
+        name="marketplace-new"
+        // Reached via the Market tab header's + icon.
+        options={{ title: 'New listing', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
+        name="wallet"
+        // Reached via the Profile header's wallet icon. Estate dues live here too.
+        options={{ title: 'Wallet', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
+        name="store"
+        // Reached via the Market tab header's store icon — only shown to residents who have listed something.
+        options={{ title: 'My store', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
+        name="wallet-transactions"
+        // Reached via "See all" on the Wallet screen.
+        options={{ title: 'All transactions', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
+        name="announcements"
+        // Reached via the floating icon on the Issues tab — moved out of the
+        // tab bar to keep it at 5 tabs.
+        options={{ title: 'Announcements', href: null, headerShown: false }}
       />
     </Tabs>
   );

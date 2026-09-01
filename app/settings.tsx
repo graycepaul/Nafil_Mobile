@@ -39,12 +39,19 @@ export default function SettingsScreen() {
     setDeleteError(undefined);
     try {
       await apiDelete('/account');
-      await signOut();
     } catch (err) {
+      // The account may already be gone even though this specific request
+      // failed — e.g. a prior attempt's response never reached the client.
+      // Signing out regardless means a real deletion never leaves the app
+      // looking like nothing happened while quietly running on a session
+      // for an account that no longer exists; at worst it logs out a user
+      // whose account is actually fine, and they just sign back in.
       setDeleteError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
-      setDeleting(false);
       setConfirmingDelete(false);
+      await signOut();
+      return;
     }
+    await signOut();
   }
 
   return (

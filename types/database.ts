@@ -1,4 +1,4 @@
-export type UserRole = 'resident' | 'security' | 'admin' | 'super_admin';
+export type UserRole = 'resident' | 'security' | 'admin' | 'super_admin' | 'finance';
 export type VisitorPassStatus = 'pending' | 'used' | 'expired' | 'revoked';
 export type VisitorLogMethod = 'qr' | 'code' | 'manual';
 export type IssueStatus = 'open' | 'in_progress' | 'resolved';
@@ -13,6 +13,8 @@ export interface Estate {
   id: string;
   name: string;
   address: string | null;
+  country: string | null;
+  state: string | null;
   created_at: string;
 }
 
@@ -48,7 +50,7 @@ export interface JoinRequestWithApplicant extends EstateJoinRequest {
 export interface StaffInvite {
   id: string;
   estate_id: string;
-  role: 'security' | 'admin';
+  role: 'security' | 'admin' | 'finance';
   email: string;
   code: string;
   status: StaffInviteStatus;
@@ -159,7 +161,13 @@ export type NotificationType =
   | 'join_request_approved'
   | 'staff_invite_accepted'
   | 'household_member_scanned'
-  | 'issue_reported';
+  | 'issue_reported'
+  | 'order_placed'
+  | 'order_completed'
+  | 'transfer_confirmed'
+  | 'transfer_rejected'
+  | 'listing_suspended'
+  | 'listing_reinstated';
 
 export interface Notification {
   id: string;
@@ -170,4 +178,124 @@ export interface Notification {
   data: Record<string, unknown>;
   read_at: string | null;
   created_at: string;
+}
+
+export type ListingType = 'good' | 'service';
+export type ListingStatus = 'active' | 'sold' | 'removed' | 'suspended';
+
+export interface Listing {
+  id: string;
+  estate_id: string;
+  seller_id: string;
+  type: ListingType;
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  /** Services only, for a "starting from" range. Null for goods and flat-rate services. */
+  price_max: number | null;
+  photo_urls: string[];
+  /** Goods only. */
+  pickup: boolean;
+  pickup_address: string | null;
+  home_delivery: boolean;
+  delivery_fee: number;
+  /** Services only. */
+  whatsapp: string | null;
+  status: ListingStatus;
+  created_at: string;
+}
+
+/** Shape returned by the marketplace's own queries, with the seller's display info joined in. */
+export interface ListingWithSeller extends Listing {
+  seller: Pick<Profile, 'full_name' | 'unit_no'> | null;
+}
+
+export type WalletTransactionStatus = 'completed' | 'pending';
+
+export interface Wallet {
+  profile_id: string;
+  balance: number;
+  updated_at: string;
+}
+
+export interface WalletTransaction {
+  id: string;
+  profile_id: string;
+  label: string;
+  amount: number;
+  status: WalletTransactionStatus;
+  created_at: string;
+}
+
+export type DueStatus = 'due' | 'overdue' | 'paid';
+export type DueCategory = 'general' | 'service_fee' | 'security';
+
+export interface Due {
+  id: string;
+  estate_id: string;
+  profile_id: string;
+  label: string;
+  amount: number;
+  due_date: string;
+  status: DueStatus;
+  category: DueCategory;
+  created_at: string;
+}
+
+export type OrderStatus = 'pending_transfer' | 'paid' | 'completed' | 'cancelled';
+
+export interface Order {
+  id: string;
+  estate_id: string;
+  listing_id: string;
+  seller_id: string;
+  buyer_id: string;
+  amount: number;
+  payment_method: string;
+  status: OrderStatus;
+  created_at: string;
+  completed_at: string | null;
+}
+
+/** Shape returned by the Store screen's orders query, with listing/buyer info joined in. */
+export interface OrderWithContext extends Order {
+  listing: Pick<Listing, 'title'> | null;
+  buyer: Pick<Profile, 'full_name' | 'unit_no'> | null;
+}
+
+export type TransferPurpose = 'wallet_topup' | 'dues' | 'marketplace_order';
+export type TransferStatus = 'pending' | 'confirmed' | 'rejected';
+
+export interface Transfer {
+  id: string;
+  estate_id: string;
+  profile_id: string;
+  purpose: TransferPurpose;
+  reference_id: string | null;
+  amount: number;
+  label: string;
+  status: TransferStatus;
+  created_at: string;
+  confirmed_at: string | null;
+  confirmed_by: string | null;
+  proof_url: string | null;
+}
+
+/** Shape returned by the admin transfer queue, with the submitter's info joined in. */
+export interface TransferWithSubmitter extends Transfer {
+  submitter: Pick<Profile, 'full_name' | 'unit_no'> | null;
+  estate: { name: string } | null;
+}
+
+/**
+ * Shape returned by the get_public_profiles RPC — the only way a plain
+ * resident can look up another resident's display info (profiles_select
+ * doesn't allow it directly, since that row also holds resident_code).
+ */
+export interface PublicProfile {
+  id: string;
+  full_name: string | null;
+  unit_no: string | null;
+  avatar_url: string | null;
 }

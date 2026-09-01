@@ -1,0 +1,14 @@
+{
+  "buildCommand": "npx expo export -p web",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "framework": null,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "env": {
+    "EXPO_PUBLIC_SUPABASE_URL": "https://itfepppqjtodmizbglze.supabase.co",
+    "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_4HCmN6FUnSrMex-s79i1Hw_gJjNL1F3",
+    "EXPO_PUBLIC_API_URL": "https://api.nafilestates.com"
+  }
+}
