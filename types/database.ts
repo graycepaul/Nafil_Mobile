@@ -229,6 +229,7 @@ export interface WalletTransaction {
 }
 
 export type DueStatus = 'due' | 'overdue' | 'paid';
+export type DueCategory = 'general' | 'service_fee' | 'security';
 
 export interface Due {
   id: string;
@@ -238,6 +239,7 @@ export interface Due {
   amount: number;
   due_date: string;
   status: DueStatus;
+  category: DueCategory;
   created_at: string;
 }
 
@@ -277,6 +279,7 @@ export interface Transfer {
   created_at: string;
   confirmed_at: string | null;
   confirmed_by: string | null;
+  proof_url: string | null;
 }
 
 /** Shape returned by the admin transfer queue, with the submitter's info joined in. */

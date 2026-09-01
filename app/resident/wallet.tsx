@@ -16,13 +16,15 @@ import { Toast } from '../../components/ui/Toast';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { PaymentMethodSheet, type PaymentMethod } from '../../components/resident/PaymentMethodSheet';
 import { DuesPaymentFlow } from '../../components/resident/DuesPaymentFlow';
-import type { Due, Transfer, Wallet, WalletTransaction } from '../../types/database';
+import { ContestTransferSheet } from '../../components/resident/ContestTransferSheet';
+import { uploadTransferProof } from '../../lib/transfer-proof';
+import type { Due, DueCategory, Transfer, Wallet, WalletTransaction } from '../../types/database';
 
 const INLINE_ACTIVITY_LIMIT = 3;
 
-const MORE_SERVICES: { icon: string; label: string }[] = [
-  { icon: 'shield-checkmark-outline', label: 'Security' },
-  { icon: 'construct-outline', label: 'Service fee' },
+const MORE_SERVICES: { icon: string; label: string; category: DueCategory }[] = [
+  { icon: 'shield-checkmark-outline', label: 'Security', category: 'security' },
+  { icon: 'construct-outline', label: 'Service fee', category: 'service_fee' },
 ];
 
 /**
@@ -94,6 +96,21 @@ export default function WalletScreen() {
     enabled: !!profile,
   });
 
+  const { data: rejectedTransfers } = useQuery({
+    queryKey: ['transfers_rejected', profile?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('transfers')
+        .select('*')
+        .eq('profile_id', profile!.id)
+        .eq('status', 'rejected')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as Transfer[];
+    },
+    enabled: !!profile,
+  });
+
   const pendingDueIds = new Set(
     (pendingTransfers ?? []).filter((t) => t.purpose === 'dues').map((t) => t.reference_id)
   );
@@ -102,7 +119,9 @@ export default function WalletScreen() {
   const [funding, setFunding] = useState(false);
   const [fundAmount, setFundAmount] = useState('10000');
   const [payingDues, setPayingDues] = useState(false);
+  const [payingCategory, setPayingCategory] = useState<DueCategory>();
   const [moreServicesOpen, setMoreServicesOpen] = useState(false);
+  const [contestingTransfer, setContestingTransfer] = useState<Transfer>();
   const [notice, setNotice] = useState<string>();
   const [error, setError] = useState<string>();
 
@@ -113,6 +132,28 @@ export default function WalletScreen() {
 
   function invalidateTransfers() {
     queryClient.invalidateQueries({ queryKey: ['transfers', profile?.id] });
+    queryClient.invalidateQueries({ queryKey: ['transfers_rejected', profile?.id] });
+  }
+
+  async function handleContestSubmit(photo: { uri: string; mimeType: string | null }) {
+    if (!contestingTransfer || !profile) return;
+    setError(undefined);
+    try {
+      const proofUrl = await uploadTransferProof(profile.id, photo);
+      const { error: rpcErr } = await supabase.rpc('contest_transfer', {
+        p_transfer_id: contestingTransfer.id,
+        p_proof_url: proofUrl,
+      });
+      if (rpcErr) {
+        setError(rpcErr.message);
+        return;
+      }
+      setNotice("Resubmitted. We'll let you know once it's reviewed again.");
+      invalidateTransfers();
+      setContestingTransfer(undefined);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong uploading your proof.');
+    }
   }
 
   async function handleConfirmFund(method: PaymentMethod) {
@@ -227,7 +268,10 @@ export default function WalletScreen() {
         <Card className="mb-xl flex-row justify-around py-lg">
           <View className="items-center gap-sm">
             <Pressable
-              onPress={() => setPayingDues(true)}
+              onPress={() => {
+                setPayingCategory(undefined);
+                setPayingDues(true);
+              }}
               accessibilityRole="button"
               accessibilityLabel="Estate dues"
               className="relative h-14 w-14 items-center justify-center rounded-full bg-brand-50 active:opacity-80 dark:bg-brand-900"
@@ -285,6 +329,40 @@ export default function WalletScreen() {
                   <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
                     {formatNaira(t.amount)}
                   </Text>
+                </Card>
+              ))}
+            </View>
+          </>
+        )}
+
+        {(rejectedTransfers ?? []).length > 0 && (
+          <>
+            <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">
+              Rejected transfers
+            </Text>
+            <View className="mb-xl gap-sm">
+              {(rejectedTransfers ?? []).map((t) => (
+                <Card key={t.id}>
+                  <View className="flex-row items-center gap-sm">
+                    <View className="h-9 w-9 items-center justify-center rounded-md bg-danger-muted dark:bg-danger-mutedDark">
+                      <Ionicons name="close-outline" size={16} color={colors.danger} />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">{t.label}</Text>
+                      <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
+                        Submitted {relativeTime(t.created_at)} · Not confirmed
+                      </Text>
+                    </View>
+                    <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
+                      {formatNaira(t.amount)}
+                    </Text>
+                  </View>
+                  <Button
+                    label="Contest — upload proof of payment"
+                    variant="secondary"
+                    onPress={() => setContestingTransfer(t)}
+                    className="mt-md"
+                  />
                 </Card>
               ))}
             </View>
@@ -380,7 +458,7 @@ export default function WalletScreen() {
 
       <Overlay visible={payingDues} onDismiss={() => setPayingDues(false)}>
         <DuesPaymentFlow
-          items={unpaidDues}
+          items={payingCategory ? unpaidDues.filter((item) => item.category === payingCategory) : unpaidDues}
           walletBalance={balance}
           onConfirm={handlePayDues}
           onCancel={() => setPayingDues(false)}
@@ -391,31 +469,58 @@ export default function WalletScreen() {
         <Card className="bg-white p-lg dark:bg-ink-surface">
           <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">More services</Text>
           <View className="gap-sm">
-            {MORE_SERVICES.map((service) => (
-              <Pressable
-                key={service.label}
-                onPress={() => {
-                  setMoreServicesOpen(false);
-                  setNotice(`${service.label} isn’t available yet. Coming soon.`);
-                }}
-                accessibilityRole="button"
-                className="flex-row items-center gap-md rounded-md border border-paper-200 p-md active:opacity-80 dark:border-ink-border"
-              >
-                <View className="h-9 w-9 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
-                  <Ionicons name={service.icon as never} size={18} color={colors.primary} />
-                </View>
-                <Text className="flex-1 text-base text-paper-900 dark:text-ink-text">{service.label}</Text>
-                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-              </Pressable>
-            ))}
+            {MORE_SERVICES.map((service) => {
+              const items = unpaidDues.filter((item) => item.category === service.category);
+              const total = items.reduce((sum, item) => sum + item.amount, 0);
+              return (
+                <Pressable
+                  key={service.label}
+                  onPress={() => {
+                    setMoreServicesOpen(false);
+                    if (items.length === 0) {
+                      setNotice(`No open ${service.label.toLowerCase()} charges right now.`);
+                      return;
+                    }
+                    setPayingCategory(service.category);
+                    setPayingDues(true);
+                  }}
+                  accessibilityRole="button"
+                  className="flex-row items-center gap-md rounded-md border border-paper-200 p-md active:opacity-80 dark:border-ink-border"
+                >
+                  <View className="h-9 w-9 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
+                    <Ionicons name={service.icon as never} size={18} color={colors.primary} />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-base text-paper-900 dark:text-ink-text">{service.label}</Text>
+                    {items.length > 0 && (
+                      <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
+                        {formatNaira(total)} due
+                      </Text>
+                    )}
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                </Pressable>
+              );
+            })}
           </View>
           <Button label="Close" variant="ghost" onPress={() => setMoreServicesOpen(false)} className="mt-md" />
         </Card>
       </Overlay>
 
+      <Overlay visible={!!contestingTransfer} onDismiss={() => setContestingTransfer(undefined)}>
+        {contestingTransfer && (
+          <ContestTransferSheet
+            transfer={contestingTransfer}
+            onConfirm={handleContestSubmit}
+            onCancel={() => setContestingTransfer(undefined)}
+          />
+        )}
+      </Overlay>
+
       <Toast
         message={error ?? notice}
         tone={error ? 'error' : 'success'}
+        topOffset={72}
         onDismiss={() => {
           setError(undefined);
           setNotice(undefined);

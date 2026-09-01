@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import { View, Text, Pressable, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -10,13 +11,28 @@ import { formatNaira, relativeTime } from '../../lib/format';
 import { Card } from '../../components/ui/Card';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
-import type { Due, DueStatus, Profile } from '../../types/database';
+import { SearchAndEstateFilter } from '../../components/admin/SearchAndEstateFilter';
+import type { Due, DueCategory, DueStatus, Profile } from '../../types/database';
 
 const STATUS_TONE: Record<DueStatus, BadgeTone> = {
   due: 'info',
   overdue: 'danger',
   paid: 'success',
 };
+
+const STATUS_FILTERS: { value: DueStatus | undefined; label: string }[] = [
+  { value: undefined, label: 'All statuses' },
+  { value: 'due', label: 'Due' },
+  { value: 'overdue', label: 'Overdue' },
+  { value: 'paid', label: 'Paid' },
+];
+
+const CATEGORY_FILTERS: { value: DueCategory | undefined; label: string }[] = [
+  { value: undefined, label: 'All categories' },
+  { value: 'general', label: 'General' },
+  { value: 'service_fee', label: 'Service fee' },
+  { value: 'security', label: 'Security' },
+];
 
 type DueWithResident = Due & { resident: Pick<Profile, 'full_name' | 'unit_no'> | null };
 
@@ -26,6 +42,9 @@ export default function AdminDuesScreen() {
   const insets = useSafeAreaInsets();
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<DueStatus>();
+  const [categoryFilter, setCategoryFilter] = useState<DueCategory>();
 
   const { data: dues, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['dues_admin', profile?.estate_id],
@@ -39,6 +58,17 @@ export default function AdminDuesScreen() {
     },
     enabled: !!profile,
   });
+
+  const filteredDues = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (dues ?? []).filter((item) => {
+      if (statusFilter && item.status !== statusFilter) return false;
+      if (categoryFilter && item.category !== categoryFilter) return false;
+      if (q && !item.label.toLowerCase().includes(q) && !item.resident?.full_name?.toLowerCase().includes(q))
+        return false;
+      return true;
+    });
+  }, [dues, search, statusFilter, categoryFilter]);
 
   if (isLoading) {
     return (
@@ -74,13 +104,74 @@ export default function AdminDuesScreen() {
         className="bg-white dark:bg-ink-bg"
         contentContainerClassName="p-xl"
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
-        data={dues}
+        ListHeaderComponent={
+          <View>
+            <SearchAndEstateFilter
+              search={search}
+              onSearchChange={setSearch}
+              placeholder="Search by label or resident"
+            />
+            <View className="mb-md flex-row flex-wrap gap-sm">
+              {STATUS_FILTERS.map((f) => {
+                const active = statusFilter === f.value;
+                return (
+                  <Pressable
+                    key={f.label}
+                    onPress={() => setStatusFilter(f.value)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    className={`rounded-full border px-md py-xs ${
+                      active
+                        ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
+                        : 'border-paper-200 dark:border-ink-border'
+                    }`}
+                  >
+                    <Text
+                      className={`text-[13px] font-medium ${
+                        active ? 'text-white dark:text-ink-bg' : 'text-paper-500 dark:text-ink-textMuted'
+                      }`}
+                    >
+                      {f.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <View className="mb-lg flex-row flex-wrap gap-sm">
+              {CATEGORY_FILTERS.map((f) => {
+                const active = categoryFilter === f.value;
+                return (
+                  <Pressable
+                    key={f.label}
+                    onPress={() => setCategoryFilter(f.value)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    className={`rounded-full border px-md py-xs ${
+                      active
+                        ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
+                        : 'border-paper-200 dark:border-ink-border'
+                    }`}
+                  >
+                    <Text
+                      className={`text-[13px] font-medium ${
+                        active ? 'text-white dark:text-ink-bg' : 'text-paper-500 dark:text-ink-textMuted'
+                      }`}
+                    >
+                      {f.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        }
+        data={filteredDues}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={
           <EmptyState
             icon={<Ionicons name="receipt-outline" color={colors.textMuted} size={26} />}
-            title="No dues assigned yet"
-            message="Tap + to charge residents a service charge, levy, or other estate fee."
+            title="No dues match"
+            message="Tap + to charge residents a service charge, levy, or other estate fee, or adjust your filters."
           />
         }
         renderItem={({ item }) => (

@@ -11,7 +11,21 @@ import { useTheme } from '../../context/theme-context';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Notice } from '../../components/ui/Notice';
-import type { Profile } from '../../types/database';
+import { Card } from '../../components/ui/Card';
+import { Overlay } from '../../components/ui/Overlay';
+import type { DueCategory, Profile } from '../../types/database';
+
+const CATEGORIES: { value: DueCategory; label: string }[] = [
+  { value: 'general', label: 'General' },
+  { value: 'service_fee', label: 'Service fee' },
+  { value: 'security', label: 'Security' },
+];
+
+function defaultDueDate() {
+  const d = new Date();
+  d.setDate(d.getDate() + 14);
+  return d;
+}
 
 export default function AssignDuesScreen() {
   const router = useRouter();
@@ -25,12 +39,10 @@ export default function AssignDuesScreen() {
   const [allSelected, setAllSelected] = useState(false);
   const [label, setLabel] = useState('');
   const [amount, setAmount] = useState('');
-  const [dueDate, setDueDate] = useState<Date>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 14);
-    return d;
-  });
-  const [webDate, setWebDate] = useState('');
+  const [category, setCategory] = useState<DueCategory>('general');
+  const [dueDate, setDueDate] = useState<Date>(defaultDueDate);
+  const [pendingDate, setPendingDate] = useState<Date>(defaultDueDate);
+  const [webDate, setWebDate] = useState(() => defaultDueDate().toISOString().slice(0, 10));
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>();
@@ -89,6 +101,7 @@ export default function AssignDuesScreen() {
         label: label.trim(),
         amount: Number(amount),
         due_date: resolvedDate.toISOString(),
+        category,
       }))
     );
     setSubmitting(false);
@@ -136,6 +149,34 @@ export default function AssignDuesScreen() {
           onChangeText={(v) => setAmount(v.replace(/[^0-9]/g, ''))}
         />
 
+        <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">Category</Text>
+        <View className="mb-lg flex-row flex-wrap gap-sm">
+          {CATEGORIES.map((c) => {
+            const active = category === c.value;
+            return (
+              <Pressable
+                key={c.value}
+                onPress={() => setCategory(c.value)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                className={`rounded-full border px-md py-sm ${
+                  active
+                    ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
+                    : 'border-paper-200 dark:border-ink-border'
+                }`}
+              >
+                <Text
+                  className={`text-[13px] font-semibold ${
+                    active ? 'text-white dark:text-ink-bg' : 'text-paper-900 dark:text-ink-text'
+                  }`}
+                >
+                  {c.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
         <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">Due date</Text>
         {isWeb ? (
           <View className="mb-lg">
@@ -155,13 +196,19 @@ export default function AssignDuesScreen() {
                 fontSize: 15,
                 color: colors.text,
                 backgroundColor: colors.inputBg,
+                cursor: 'pointer',
               },
             })}
           </View>
         ) : (
           <Pressable
-            onPress={() => setShowDatePicker(true)}
-            className="mb-lg rounded-md border border-paper-200 px-md py-md dark:border-ink-border"
+            onPress={() => {
+              setPendingDate(dueDate);
+              setShowDatePicker(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Change due date"
+            className="mb-lg flex-row items-center justify-between rounded-md border border-paper-200 px-md py-md active:opacity-80 dark:border-ink-border"
           >
             <Text className="text-base text-paper-900 dark:text-ink-text">
               {dueDate.toLocaleDateString(undefined, {
@@ -171,19 +218,42 @@ export default function AssignDuesScreen() {
                 year: 'numeric',
               })}
             </Text>
+            <Ionicons name="calendar-outline" size={18} color={colors.textMuted} />
           </Pressable>
         )}
-        {showDatePicker && (
-          <DateTimePicker
-            value={dueDate}
-            mode="date"
-            minimumDate={new Date()}
-            onChange={(event, selectedValue) => {
-              setShowDatePicker(Platform.OS === 'ios');
-              if (event.type === 'dismissed' || !selectedValue) return;
-              setDueDate(selectedValue);
-            }}
-          />
+
+        {!isWeb && (
+          <Overlay visible={showDatePicker} onDismiss={() => setShowDatePicker(false)}>
+            <Card className="bg-white p-lg dark:bg-ink-surface">
+              <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">Select due date</Text>
+              <DateTimePicker
+                value={pendingDate}
+                mode="date"
+                display="spinner"
+                minimumDate={new Date()}
+                onChange={(event, selectedValue) => {
+                  if (event.type === 'dismissed' || !selectedValue) return;
+                  setPendingDate(selectedValue);
+                }}
+              />
+              <View className="mt-md flex-row gap-sm">
+                <Button
+                  label="Cancel"
+                  variant="ghost"
+                  onPress={() => setShowDatePicker(false)}
+                  className="flex-1"
+                />
+                <Button
+                  label="Done"
+                  onPress={() => {
+                    setDueDate(pendingDate);
+                    setShowDatePicker(false);
+                  }}
+                  className="flex-1"
+                />
+              </View>
+            </Card>
+          </Overlay>
         )}
 
         <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">

@@ -28,6 +28,14 @@ const STATUS_TONE: Record<ListingStatus, BadgeTone> = {
 
 type ListingWithEstate = ListingWithSeller & { estate: { name: string } | null };
 
+const STATUS_FILTERS: { value: ListingStatus | undefined; label: string }[] = [
+  { value: undefined, label: 'All statuses' },
+  { value: 'active', label: 'Active' },
+  { value: 'sold', label: 'Sold' },
+  { value: 'suspended', label: 'Suspended' },
+  { value: 'removed', label: 'Removed' },
+];
+
 /** super_admin/finance view of every listing in the estate — browse and suspend, not delete. */
 export default function AdminMarketplaceScreen() {
   const router = useRouter();
@@ -37,6 +45,7 @@ export default function AdminMarketplaceScreen() {
   const queryClient = useQueryClient();
   const markMarketViewed = useAdminUiStore((s) => s.markMarketViewed);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<ListingStatus>();
   const [confirming, setConfirming] = useState<{ id: string; title: string; action: 'suspend' | 'lift' } | null>(null);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string>();
@@ -84,6 +93,7 @@ export default function AdminMarketplaceScreen() {
   const filteredListings = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (listings ?? []).filter((listing) => {
+      if (statusFilter && listing.status !== statusFilter) return false;
       if (
         q &&
         !listing.title.toLowerCase().includes(q) &&
@@ -93,7 +103,7 @@ export default function AdminMarketplaceScreen() {
         return false;
       return true;
     });
-  }, [listings, search]);
+  }, [listings, search, statusFilter]);
 
   async function handleConfirmSuspend() {
     if (!confirming) return;
@@ -156,6 +166,32 @@ export default function AdminMarketplaceScreen() {
               onSearchChange={setSearch}
               placeholder="Search by title, category, or seller"
             />
+            <View className="mb-lg flex-row flex-wrap gap-sm">
+              {STATUS_FILTERS.map((f) => {
+                const active = statusFilter === f.value;
+                return (
+                  <Pressable
+                    key={f.label}
+                    onPress={() => setStatusFilter(f.value)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    className={`rounded-full border px-md py-xs ${
+                      active
+                        ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
+                        : 'border-paper-200 dark:border-ink-border'
+                    }`}
+                  >
+                    <Text
+                      className={`text-[13px] font-medium ${
+                        active ? 'text-white dark:text-ink-bg' : 'text-paper-500 dark:text-ink-textMuted'
+                      }`}
+                    >
+                      {f.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
         }
         data={filteredListings}

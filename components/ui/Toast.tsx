@@ -29,11 +29,15 @@ export function Toast({
   tone = "error",
   onDismiss,
   duration = 4000,
+  topOffset = 16,
 }: {
   message?: string;
   tone?: Tone;
   onDismiss: () => void;
   duration?: number;
+  /** Distance below the safe area top inset. Bump this on screens with a
+   * custom header so the toast lands below it instead of overlapping it. */
+  topOffset?: number;
 }) {
   const insets = useSafeAreaInsets();
   useEffect(() => {
@@ -46,7 +50,7 @@ export function Toast({
 
   return (
     <View
-      style={{ top: insets.top + 16 }}
+      style={{ top: insets.top + topOffset }}
       className="absolute left-lg right-lg top-lg z-[60]"
       pointerEvents="box-none"
     >
