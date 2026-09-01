@@ -1,10 +1,10 @@
 import { Tabs } from 'expo-router';
-import { useWindowDimensions } from 'react-native';
+import { Platform, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme } from '../../context/theme-context';
 import { useAuthStore } from '../../store/auth-store';
-import { themedTabOptions } from '../../components/ui/tab-options';
+import { themedTabOptions, TAB_PROMOTION_BREAKPOINT } from '../../components/ui/tab-options';
 import { AdminHeaderActions } from '../../components/ui/AdminHeaderActions';
 
 export default function AdminLayout() {
@@ -16,6 +16,9 @@ export default function AdminLayout() {
   // issues, and announcements aren't its concern, so those tabs don't exist
   // for it at all rather than being reachable-but-empty.
   const isFinance = profile?.role === 'finance';
+  const isSuperAdmin = profile?.role === 'super_admin';
+  const canManageMarket = isSuperAdmin || isFinance;
+  const showExtraTabs = Platform.OS === 'web' && width >= TAB_PROMOTION_BREAKPOINT;
 
   return (
     <Tabs screenOptions={themedTabOptions(colors, insets.bottom, width)}>
@@ -66,8 +69,15 @@ export default function AdminLayout() {
       />
       <Tabs.Screen
         name="marketplace"
-        // Reached via the Dashboard header's market icon (super_admin/finance only).
-        options={{ title: 'Marketplace', href: null, headerShown: false }}
+        // super_admin/finance only. Off the tab bar on a phone-width bottom
+        // bar (reached via the Dashboard header's market icon instead) —
+        // promoted to a real tab once there's room at tablet width and up.
+        options={{
+          title: 'Marketplace',
+          href: canManageMarket && showExtraTabs ? undefined : null,
+          headerShown: false,
+          tabBarIcon: ({ color }) => <Ionicons name="storefront-outline" color={color as string} size={22} />,
+        }}
       />
       <Tabs.Screen
         name="marketplace-listing"
@@ -81,8 +91,16 @@ export default function AdminLayout() {
       />
       <Tabs.Screen
         name="dues"
-        // Reached via the Dashboard's "Estate dues" stat card.
-        options={{ title: 'Estate dues', href: null, headerShown: false }}
+        // super_admin only (finance still reaches this via the Dashboard's
+        // "Estate dues" stat card and the Marketplace screen's Finance menu,
+        // same as on a phone). Promoted to a real tab for super_admin once
+        // there's room at tablet width and up.
+        options={{
+          title: 'Estate dues',
+          href: isSuperAdmin && showExtraTabs ? undefined : null,
+          headerShown: false,
+          tabBarIcon: ({ color }) => <Ionicons name="receipt-outline" color={color as string} size={22} />,
+        }}
       />
       <Tabs.Screen
         name="dues-new"

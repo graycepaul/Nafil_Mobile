@@ -1,9 +1,9 @@
 import { Tabs } from 'expo-router';
-import { useWindowDimensions } from 'react-native';
+import { Platform, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme } from '../../context/theme-context';
-import { themedTabOptions } from '../../components/ui/tab-options';
+import { themedTabOptions, TAB_PROMOTION_BREAKPOINT } from '../../components/ui/tab-options';
 import { HomeHeader } from '../../components/ui/HomeHeader';
 import { ProfileHeaderActions } from '../../components/ui/ProfileHeaderActions';
 
@@ -11,6 +11,7 @@ export default function ResidentLayout() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const showExtraTabs = Platform.OS === 'web' && width >= TAB_PROMOTION_BREAKPOINT;
 
   return (
     <Tabs screenOptions={themedTabOptions(colors, insets.bottom, width)}>
@@ -92,9 +93,15 @@ export default function ResidentLayout() {
       />
       <Tabs.Screen
         name="announcements"
-        // Reached via the floating icon on the Issues tab — moved out of the
-        // tab bar to keep it at 5 tabs.
-        options={{ title: 'Announcements', href: null, headerShown: false }}
+        // Off the tab bar on a phone-width bottom bar (reached via the
+        // floating icon on Issues instead) — promoted to a real tab once
+        // there's room for a 6th at tablet width and up.
+        options={{
+          title: 'Announcements',
+          href: showExtraTabs ? undefined : null,
+          headerShown: false,
+          tabBarIcon: ({ color }) => <Ionicons name="megaphone-outline" color={color as string} size={22} />,
+        }}
       />
     </Tabs>
   );
