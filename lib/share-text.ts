@@ -1,4 +1,4 @@
-import { Platform, Share } from 'react-native';
+import { Linking, Platform, Share } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 
 export type ShareOutcome = 'shared' | 'copied' | 'downloaded' | 'dismissed';
@@ -30,4 +30,24 @@ export async function shareText(message: string): Promise<ShareOutcome> {
 
   const result = await Share.share({ message });
   return result.action === Share.dismissedAction ? 'dismissed' : 'shared';
+}
+
+/**
+ * Skips the OS share sheet and opens WhatsApp directly with the message
+ * pre-filled, via WhatsApp's own `wa.me` link (works the same on native and
+ * web — no recipient number means it just opens WhatsApp/WhatsApp Web with a
+ * chat picker, message already in the compose box). Same "the sender's own
+ * device sends it" shape as `shareText` — this is a convenience shortcut to
+ * one specific app from `shareText`'s full list, not a messaging API call.
+ */
+export async function shareTextToWhatsApp(message: string): Promise<ShareOutcome> {
+  const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+  try {
+    await Linking.openURL(url);
+    return 'shared';
+  } catch {
+    // WhatsApp isn't installed/reachable — fall back to the OS share sheet
+    // (or clipboard on web) rather than leaving the resident stuck.
+    return shareText(message);
+  }
 }

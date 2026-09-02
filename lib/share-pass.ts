@@ -1,4 +1,4 @@
-import { shareText, type ShareOutcome } from './share-text';
+import { shareText, shareTextToWhatsApp, type ShareOutcome } from './share-text';
 import type { VisitorPass } from '../types/database';
 
 export function buildPassMessage(pass: VisitorPass, estateName?: string) {
@@ -26,4 +26,8 @@ export type { ShareOutcome };
 
 export async function sharePass(pass: VisitorPass, estateName?: string): Promise<ShareOutcome> {
   return shareText(buildPassMessage(pass, estateName));
+}
+
+export async function sharePassToWhatsApp(pass: VisitorPass, estateName?: string): Promise<ShareOutcome> {
+  return shareTextToWhatsApp(buildPassMessage(pass, estateName));
 }

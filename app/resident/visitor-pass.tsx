@@ -4,7 +4,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { sharePass } from '../../lib/share-pass';
+import { sharePass, sharePassToWhatsApp } from '../../lib/share-pass';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { expiryLabel, titleCase } from '../../lib/format';
@@ -296,7 +296,19 @@ export default function VisitorPassScreen() {
 
           return (
             <Card>
-              <View className="flex-row items-center gap-lg">
+              {isActionable && (
+                <Pressable
+                  onPress={() => setPendingRevoke(item)}
+                  disabled={revokingId === item.id}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel pass"
+                  hitSlop={8}
+                  className="absolute right-sm top-sm z-10 h-7 w-7 items-center justify-center rounded-full bg-paper-100 active:opacity-70 dark:bg-ink-raised"
+                >
+                  <Ionicons name="close" size={16} color={colors.textMuted} />
+                </Pressable>
+              )}
+              <View className="flex-row items-center gap-lg pr-2xl">
                 <View className="rounded-[4px] bg-white p-xs">
                   <QRCode value={item.code} size={72} />
                 </View>
@@ -322,6 +334,15 @@ export default function VisitorPassScreen() {
               </View>
               {isActionable && (
                 <View className="mt-md flex-row gap-sm">
+                  <Pressable
+                    onPress={() => sharePassToWhatsApp(item, estate?.name)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Share with visitor on WhatsApp"
+                    className="min-h-[52px] flex-1 flex-row items-center justify-center gap-sm rounded-md bg-[#25D366] px-lg active:opacity-90"
+                  >
+                    <Ionicons name="logo-whatsapp" size={18} color="#fff" />
+                    <Text className="text-base font-semibold text-white">WhatsApp</Text>
+                  </Pressable>
                   <Button
                     label="Share with visitor"
                     variant="secondary"
@@ -332,12 +353,6 @@ export default function VisitorPassScreen() {
                       }
                     }}
                     className="flex-1"
-                  />
-                  <Button
-                    label="Cancel"
-                    variant="ghost"
-                    loading={revokingId === item.id}
-                    onPress={() => setPendingRevoke(item)}
                   />
                 </View>
               )}
