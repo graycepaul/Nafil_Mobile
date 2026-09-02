@@ -43,15 +43,30 @@ export default function SecurityAlertScreen() {
     // in-app, so this is reported as its own (non-fatal) notice rather than
     // rolled back.
     try {
-      const result = await apiPost<{ recipients: number }>('/alerts/broadcast', {
-        title: title.trim(),
-        body: body.trim(),
-        category,
-      });
-      setNotice({
-        tone: 'success',
-        message: `Alert sent: ${result.recipients} device${result.recipients === 1 ? '' : 's'} notified, plus the in-app announcement.`,
-      });
+      const result = await apiPost<{ recipients: number; tickets_sent: number; errors: string[] }>(
+        '/alerts/broadcast',
+        { title: title.trim(), body: body.trim(), category }
+      );
+      // A 200 response only means the backend accepted the request and tried
+      // — Expo's API can still reject the whole batch (as it silently did
+      // until a payload bug was fixed here), leaving tickets_sent at 0 with
+      // no thrown error. `recipients` alone can't tell success from that.
+      if (result.tickets_sent === 0 && result.recipients > 0) {
+        setNotice({
+          tone: 'error',
+          message: `Announcement posted, but the push notification didn't send to any of the ${result.recipients} device${result.recipients === 1 ? '' : 's'} found.${result.errors[0] ? ` (${result.errors[0]})` : ''}`,
+        });
+      } else if (result.tickets_sent < result.recipients) {
+        setNotice({
+          tone: 'success',
+          message: `Alert sent: ${result.tickets_sent} of ${result.recipients} device${result.recipients === 1 ? '' : 's'} notified, plus the in-app announcement.`,
+        });
+      } else {
+        setNotice({
+          tone: 'success',
+          message: `Alert sent: ${result.recipients} device${result.recipients === 1 ? '' : 's'} notified, plus the in-app announcement.`,
+        });
+      }
     } catch (pushError) {
       setNotice({
         tone: 'error',
