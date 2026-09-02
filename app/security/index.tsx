@@ -75,6 +75,8 @@ export default function SecurityScanScreen() {
       setResult({
         tone: 'success',
         title: 'Resident verified',
+        photoUrl: residentMatch.avatar_url,
+        photoName: residentMatch.full_name,
         rows: [
           { label: 'Name', value: residentMatch.full_name ?? 'Resident' },
           { label: 'Unit', value: residentMatch.unit_no ?? 'N/A' },
@@ -99,12 +101,16 @@ export default function SecurityScanScreen() {
           tone: 'error',
           title: 'Access denied',
           message: `${householdMatch.full_name}'s access was revoked by the resident.`,
+          photoUrl: householdMatch.avatar_url,
+          photoName: householdMatch.full_name,
         });
       } else if (householdMatch.status === 'pending_review') {
         setResult({
           tone: 'error',
           title: 'Needs review',
           message: `${householdMatch.full_name}'s card is due for the resident to review before it can be used again.`,
+          photoUrl: householdMatch.avatar_url,
+          photoName: householdMatch.full_name,
         });
       } else {
         // Supabase's query/rpc builders are lazy thenables: the request
@@ -129,6 +135,8 @@ export default function SecurityScanScreen() {
         setResult({
           tone: 'success',
           title: 'Access granted',
+          photoUrl: householdMatch.avatar_url,
+          photoName: householdMatch.full_name,
           rows: [
             { label: 'Name', value: householdMatch.full_name },
             { label: 'Relationship', value: householdMatch.relationship },

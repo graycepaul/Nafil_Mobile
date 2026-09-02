@@ -1,6 +1,7 @@
 import { View, Text } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme } from '../../context/theme-context';
+import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { Overlay } from '../ui/Overlay';
 
@@ -9,6 +10,9 @@ export type ScanResult = {
   title: string;
   message?: string;
   rows?: { label: string; value: string }[];
+  /** The resident/household member's own photo, when the scan matched one — lets the guard actually check the face against the person in front of them, not just a name on screen. Omitted for a visitor pass (no photo on file) or a system-level result (code not recognized). */
+  photoUrl?: string | null;
+  photoName?: string | null;
 };
 
 /**
@@ -27,19 +31,38 @@ export function ScanResultModal({ result, onClose }: { result: ScanResult | null
       <View className="w-full rounded-lg bg-white p-xl shadow-lg dark:bg-ink-bg">
         {result && (
           <>
-            <View
-              className={`mb-md h-14 w-14 items-center justify-center self-center rounded-full ${
-                result.tone === 'success'
-                  ? 'bg-success-muted dark:bg-success-mutedDark'
-                  : 'bg-danger-muted dark:bg-danger-mutedDark'
-              }`}
-            >
-              <Ionicons
-                name={result.tone === 'success' ? 'checkmark-circle' : 'close-circle'}
-                size={30}
-                color={result.tone === 'success' ? colors.success : colors.danger}
-              />
-            </View>
+            {result.photoUrl || result.photoName ? (
+              <View className="mb-md items-center self-center">
+                <View className="relative">
+                  <Avatar uri={result.photoUrl} name={result.photoName} size={72} />
+                  <View
+                    className={`absolute -bottom-1 -right-1 h-6 w-6 items-center justify-center rounded-full border-2 border-white dark:border-ink-bg ${
+                      result.tone === 'success' ? 'bg-success' : 'bg-danger'
+                    }`}
+                  >
+                    <Ionicons
+                      name={result.tone === 'success' ? 'checkmark' : 'close'}
+                      size={14}
+                      color="#fff"
+                    />
+                  </View>
+                </View>
+              </View>
+            ) : (
+              <View
+                className={`mb-md h-14 w-14 items-center justify-center self-center rounded-full ${
+                  result.tone === 'success'
+                    ? 'bg-success-muted dark:bg-success-mutedDark'
+                    : 'bg-danger-muted dark:bg-danger-mutedDark'
+                }`}
+              >
+                <Ionicons
+                  name={result.tone === 'success' ? 'checkmark-circle' : 'close-circle'}
+                  size={30}
+                  color={result.tone === 'success' ? colors.success : colors.danger}
+                />
+              </View>
+            )}
 
             <Text className="text-center text-lg font-semibold text-paper-900 dark:text-ink-text">
               {result.title}
