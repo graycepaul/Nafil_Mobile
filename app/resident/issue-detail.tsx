@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, Image, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
@@ -7,6 +7,8 @@ import { supabase } from '../../lib/supabase';
 import { useTheme } from '../../context/theme-context';
 import { relativeTime } from '../../lib/format';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
+import { RemoteImage } from '../../components/ui/RemoteImage';
+import { DetailSkeleton } from '../../components/ui/DetailSkeleton';
 import type { Issue, IssueStatus } from '../../types/database';
 
 const STATUS_TONE: Record<IssueStatus, BadgeTone> = {
@@ -38,10 +40,12 @@ export default function IssueDetailScreen() {
     enabled: !!id,
   });
 
+  const heroHeight = width * 0.75;
+
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View className="flex-1 bg-white dark:bg-ink-bg">
+        <DetailSkeleton heroHeight={heroHeight} />
       </View>
     );
   }
@@ -54,8 +58,6 @@ export default function IssueDetailScreen() {
     );
   }
 
-  const heroHeight = width * 0.75;
-
   return (
     <View className="flex-1 bg-white dark:bg-ink-bg">
       <ScrollView contentContainerClassName="pb-xl" bounces={false}>
@@ -63,13 +65,7 @@ export default function IssueDetailScreen() {
           {issue.photo_urls.length > 0 ? (
             <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
               {issue.photo_urls.map((url) => (
-                <Image
-                  key={url}
-                  source={{ uri: url }}
-                  style={{ width, height: heroHeight }}
-                  className="bg-paper-100 dark:bg-ink-surface"
-                  resizeMode="cover"
-                />
+                <RemoteImage key={url} uri={url} style={{ width, height: heroHeight }} />
               ))}
             </ScrollView>
           ) : (
@@ -118,7 +114,7 @@ export default function IssueDetailScreen() {
               </Text>
               <View className="flex-row flex-wrap gap-sm">
                 {issue.photo_urls.map((url) => (
-                  <Image key={url} source={{ uri: url }} className="h-20 w-20 rounded-md" />
+                  <RemoteImage key={url} uri={url} className="h-20 w-20 rounded-md" />
                 ))}
               </View>
             </>

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ActivityIndicator, Pressable } from 'react-native';
+import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
 import ViewShot, { type ViewShotRef } from 'react-native-view-shot';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
@@ -17,6 +17,7 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { Overlay } from '../../components/ui/Overlay';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { CardSkeletonList } from '../../components/ui/CardSkeleton';
 import type { Estate, HouseholdMember } from '../../types/database';
 
 export default function ProfileScreen() {
@@ -153,8 +154,8 @@ export default function ProfileScreen() {
 
   if (isLoading || !profile) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View className="flex-1 bg-white dark:bg-ink-bg">
+        <CardSkeletonList media />
       </View>
     );
   }

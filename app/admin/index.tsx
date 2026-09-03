@@ -10,8 +10,10 @@ import { relativeTime } from '../../lib/format';
 import { Avatar } from '../../components/ui/Avatar';
 import { Card } from '../../components/ui/Card';
 import { StatCard } from '../../components/ui/StatCard';
+import { StatCardSkeleton } from '../../components/ui/StatCardSkeleton';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { CardSkeleton } from '../../components/ui/CardSkeleton';
 import { emergencyLabel } from '../../components/AnnouncementsFeed';
 import type { Announcement, Estate } from '../../types/database';
 
@@ -52,7 +54,7 @@ export default function AdminDashboardScreen() {
     enabled: !!profile?.estate_id,
   });
 
-  const { data: residentCount } = useQuery({
+  const { data: residentCount, isLoading: residentCountLoading } = useQuery({
     queryKey: ['dashboard_resident_count', profile?.id],
     queryFn: async () => {
       const { count } = await supabase
@@ -65,7 +67,7 @@ export default function AdminDashboardScreen() {
     enabled: !!profile && !isFinance,
   });
 
-  const { data: staffCount } = useQuery({
+  const { data: staffCount, isLoading: staffCountLoading } = useQuery({
     queryKey: ['dashboard_staff_count', profile?.id],
     queryFn: async () => {
       const { count } = await supabase
@@ -78,7 +80,7 @@ export default function AdminDashboardScreen() {
     enabled: !!profile && isGeneralAdmin,
   });
 
-  const { data: openIssueCount } = useQuery({
+  const { data: openIssueCount, isLoading: openIssueCountLoading } = useQuery({
     queryKey: ['dashboard_open_issues', profile?.id],
     queryFn: async () => {
       const { count } = await supabase
@@ -90,7 +92,7 @@ export default function AdminDashboardScreen() {
     enabled: !!profile && !isFinance,
   });
 
-  const { data: pendingRequestCount } = useQuery({
+  const { data: pendingRequestCount, isLoading: pendingRequestCountLoading } = useQuery({
     queryKey: ['dashboard_pending_requests', profile?.id],
     queryFn: async () => {
       const { count } = await supabase
@@ -102,7 +104,7 @@ export default function AdminDashboardScreen() {
     enabled: !!profile && isGeneralAdmin,
   });
 
-  const { data: pendingTransferCount } = useQuery({
+  const { data: pendingTransferCount, isLoading: pendingTransferCountLoading } = useQuery({
     queryKey: ['dashboard_pending_transfers', profile?.id],
     queryFn: async () => {
       const { count } = await supabase
@@ -114,7 +116,7 @@ export default function AdminDashboardScreen() {
     enabled: !!profile && canManageMarket,
   });
 
-  const { data: outstandingDuesCount } = useQuery({
+  const { data: outstandingDuesCount, isLoading: outstandingDuesCountLoading } = useQuery({
     queryKey: ['dashboard_outstanding_dues', profile?.id],
     queryFn: async () => {
       const { count } = await supabase
@@ -126,7 +128,7 @@ export default function AdminDashboardScreen() {
     enabled: !!profile && canManageMarket,
   });
 
-  const { data: recentAnnouncements } = useQuery({
+  const { data: recentAnnouncements, isLoading: announcementsLoading } = useQuery({
     queryKey: ['dashboard_recent_announcements', profile?.id],
     queryFn: async () => {
       const { data } = await supabase
@@ -203,32 +205,48 @@ export default function AdminDashboardScreen() {
       {isGeneralAdmin && (
         <>
           <View className="mb-md flex-row gap-md">
-            <StatCard
-              icon={<Ionicons name="people-outline" color={colors.primary} size={18} />}
-              value={residentCount ?? 0}
-              label="Residents"
-              onPress={() => router.push('/admin/residents')}
-            />
-            <StatCard
-              icon={<Ionicons name="shield-outline" color={colors.primary} size={18} />}
-              value={staffCount ?? 0}
-              label="Staff"
-              onPress={() => router.push('/admin/staff')}
-            />
+            {residentCountLoading ? (
+              <StatCardSkeleton />
+            ) : (
+              <StatCard
+                icon={<Ionicons name="people-outline" color={colors.primary} size={18} />}
+                value={residentCount ?? 0}
+                label="Residents"
+                onPress={() => router.push('/admin/residents')}
+              />
+            )}
+            {staffCountLoading ? (
+              <StatCardSkeleton />
+            ) : (
+              <StatCard
+                icon={<Ionicons name="shield-outline" color={colors.primary} size={18} />}
+                value={staffCount ?? 0}
+                label="Staff"
+                onPress={() => router.push('/admin/staff')}
+              />
+            )}
           </View>
           <View className="mb-lg flex-row gap-md">
-            <StatCard
-              icon={<Ionicons name="build-outline" color={colors.primary} size={18} />}
-              value={openIssueCount ?? 0}
-              label="Open issues"
-              onPress={() => router.push('/admin/issues')}
-            />
-            <StatCard
-              icon={<Ionicons name="person-add-outline" color={colors.primary} size={18} />}
-              value={pendingRequestCount ?? 0}
-              label="Pending requests"
-              onPress={() => router.push('/admin/residents?tab=pending')}
-            />
+            {openIssueCountLoading ? (
+              <StatCardSkeleton />
+            ) : (
+              <StatCard
+                icon={<Ionicons name="build-outline" color={colors.primary} size={18} />}
+                value={openIssueCount ?? 0}
+                label="Open issues"
+                onPress={() => router.push('/admin/issues')}
+              />
+            )}
+            {pendingRequestCountLoading ? (
+              <StatCardSkeleton />
+            ) : (
+              <StatCard
+                icon={<Ionicons name="person-add-outline" color={colors.primary} size={18} />}
+                value={pendingRequestCount ?? 0}
+                label="Pending requests"
+                onPress={() => router.push('/admin/residents?tab=pending')}
+              />
+            )}
           </View>
         </>
       )}
@@ -236,57 +254,86 @@ export default function AdminDashboardScreen() {
       {isSuperAdmin && (
         <>
           <View className="mb-md flex-row gap-md">
-            <StatCard
-              icon={<Ionicons name="people-outline" color={colors.primary} size={18} />}
-              value={residentCount ?? 0}
-              label="Residents"
-              onPress={() => router.push('/admin/residents')}
-            />
-            <StatCard
-              icon={<Ionicons name="build-outline" color={colors.primary} size={18} />}
-              value={openIssueCount ?? 0}
-              label="Open issues"
-              onPress={() => router.push('/admin/issues')}
-            />
+            {residentCountLoading ? (
+              <StatCardSkeleton />
+            ) : (
+              <StatCard
+                icon={<Ionicons name="people-outline" color={colors.primary} size={18} />}
+                value={residentCount ?? 0}
+                label="Residents"
+                onPress={() => router.push('/admin/residents')}
+              />
+            )}
+            {openIssueCountLoading ? (
+              <StatCardSkeleton />
+            ) : (
+              <StatCard
+                icon={<Ionicons name="build-outline" color={colors.primary} size={18} />}
+                value={openIssueCount ?? 0}
+                label="Open issues"
+                onPress={() => router.push('/admin/issues')}
+              />
+            )}
           </View>
           <View className="mb-lg flex-row gap-md">
-            <StatCard
-              icon={<Ionicons name="swap-horizontal-outline" color={colors.primary} size={18} />}
-              value={pendingTransferCount ?? 0}
-              label="Pending transfers"
-              onPress={() => router.push('/admin/transfers')}
-            />
-            <StatCard
-              icon={<Ionicons name="receipt-outline" color={colors.primary} size={18} />}
-              value={outstandingDuesCount ?? 0}
-              label="Outstanding dues"
-              onPress={() => router.push('/admin/dues')}
-            />
+            {pendingTransferCountLoading ? (
+              <StatCardSkeleton />
+            ) : (
+              <StatCard
+                icon={<Ionicons name="swap-horizontal-outline" color={colors.primary} size={18} />}
+                value={pendingTransferCount ?? 0}
+                label="Pending transfers"
+                onPress={() => router.push('/admin/transfers')}
+              />
+            )}
+            {outstandingDuesCountLoading ? (
+              <StatCardSkeleton />
+            ) : (
+              <StatCard
+                icon={<Ionicons name="receipt-outline" color={colors.primary} size={18} />}
+                value={outstandingDuesCount ?? 0}
+                label="Outstanding dues"
+                onPress={() => router.push('/admin/dues')}
+              />
+            )}
           </View>
         </>
       )}
 
       {isFinance && (
         <View className="mb-lg flex-row gap-md">
-          <StatCard
-            icon={<Ionicons name="swap-horizontal-outline" color={colors.primary} size={18} />}
-            value={pendingTransferCount ?? 0}
-            label="Pending transfers"
-            onPress={() => router.push('/admin/transfers')}
-          />
-          <StatCard
-            icon={<Ionicons name="receipt-outline" color={colors.primary} size={18} />}
-            value={outstandingDuesCount ?? 0}
-            label="Outstanding dues"
-            onPress={() => router.push('/admin/dues')}
-          />
+          {pendingTransferCountLoading ? (
+            <StatCardSkeleton />
+          ) : (
+            <StatCard
+              icon={<Ionicons name="swap-horizontal-outline" color={colors.primary} size={18} />}
+              value={pendingTransferCount ?? 0}
+              label="Pending transfers"
+              onPress={() => router.push('/admin/transfers')}
+            />
+          )}
+          {outstandingDuesCountLoading ? (
+            <StatCardSkeleton />
+          ) : (
+            <StatCard
+              icon={<Ionicons name="receipt-outline" color={colors.primary} size={18} />}
+              value={outstandingDuesCount ?? 0}
+              label="Outstanding dues"
+              onPress={() => router.push('/admin/dues')}
+            />
+          )}
         </View>
       )}
 
       <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">
         Latest announcements
       </Text>
-      {recentAnnouncements && recentAnnouncements.length > 0 ? (
+      {announcementsLoading ? (
+        <View>
+          <CardSkeleton media />
+          <CardSkeleton media />
+        </View>
+      ) : recentAnnouncements && recentAnnouncements.length > 0 ? (
         <View className="gap-md">
           {recentAnnouncements.map((announcement) => (
             <Pressable

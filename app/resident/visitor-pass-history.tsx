@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { View, Text, Pressable, SectionList, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, SectionList, RefreshControl } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +11,7 @@ import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { CardSkeletonList } from '../../components/ui/CardSkeleton';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { VisitorPass, VisitorPassStatus } from '../../types/database';
 
@@ -124,8 +125,8 @@ export default function VisitorPassHistoryScreen() {
       </View>
 
       {isLoading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color={colors.primary} />
+        <View className="flex-1">
+          <CardSkeletonList />
         </View>
       ) : (
         <View className="flex-1 px-xl">

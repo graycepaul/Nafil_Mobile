@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Linking, ActivityIndicator, Image, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, Pressable, Linking, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -14,6 +14,8 @@ import { Overlay } from '../../components/ui/Overlay';
 import { Toast } from '../../components/ui/Toast';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Avatar } from '../../components/ui/Avatar';
+import { RemoteImage } from '../../components/ui/RemoteImage';
+import { DetailSkeleton } from '../../components/ui/DetailSkeleton';
 import { MarketplaceCheckoutFlow } from '../../components/resident/MarketplaceCheckoutFlow';
 import type { PaymentMethod } from '../../components/resident/PaymentMethodSheet';
 import { CATEGORY_ICON, formatListingPrice, type ListingCategory } from '../../components/resident/marketplace-categories';
@@ -67,8 +69,8 @@ export default function MarketplaceListingScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View className="flex-1 bg-white dark:bg-ink-bg">
+        <DetailSkeleton heroHeight={heroHeight} />
       </View>
     );
   }
@@ -158,13 +160,7 @@ export default function MarketplaceListingScreen() {
           {listing.photo_urls.length > 0 ? (
             <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
               {listing.photo_urls.map((url) => (
-                <Image
-                  key={url}
-                  source={{ uri: url }}
-                  style={{ width: windowWidth, height: heroHeight }}
-                  className="bg-paper-100 dark:bg-ink-surface"
-                  resizeMode="cover"
-                />
+                <RemoteImage key={url} uri={url} style={{ width: windowWidth, height: heroHeight }} />
               ))}
             </ScrollView>
           ) : (

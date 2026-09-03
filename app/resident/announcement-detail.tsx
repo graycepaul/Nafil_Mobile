@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
@@ -7,6 +7,8 @@ import { supabase } from '../../lib/supabase';
 import { useTheme } from '../../context/theme-context';
 import { relativeTime } from '../../lib/format';
 import { StatusBadge } from '../../components/ui/StatusBadge';
+import { RemoteImage } from '../../components/ui/RemoteImage';
+import { Skeleton } from '../../components/ui/Skeleton';
 import { emergencyLabel } from '../../components/AnnouncementsFeed';
 import type { Announcement } from '../../types/database';
 
@@ -28,8 +30,17 @@ export default function AnnouncementDetailScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View className="flex-1 bg-white dark:bg-ink-bg">
+        <View style={{ paddingTop: insets.top + 16 }} className="flex-row items-center gap-md px-lg pb-lg">
+          <Ionicons name="arrow-back" color={colors.onHeaderBg} size={22} />
+          <Text className="text-[22px] font-bold text-paper-900 dark:text-ink-text">Announcement</Text>
+        </View>
+        <View className="gap-sm p-lg">
+          <Skeleton className="h-6 w-3/4 rounded-sm" />
+          <Skeleton className="mt-md h-3 w-full rounded-sm" />
+          <Skeleton className="h-3 w-full rounded-sm" />
+          <Skeleton className="h-3 w-2/3 rounded-sm" />
+        </View>
       </View>
     );
   }
@@ -57,6 +68,9 @@ export default function AnnouncementDetailScreen() {
       </View>
 
       <ScrollView contentContainerClassName="p-lg">
+        {announcement.photo_url && (
+          <RemoteImage uri={announcement.photo_url} className="mb-lg h-56 w-full rounded-md" />
+        )}
         {isEmergency && (
           <View className="mb-sm">
             <StatusBadge label={emergencyLabel(announcement.category)} tone="danger" />

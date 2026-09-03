@@ -16,8 +16,10 @@ import { relativeTime } from "../../lib/format";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
 import { StatCard } from "../../components/ui/StatCard";
+import { StatCardSkeleton } from "../../components/ui/StatCardSkeleton";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { CardSkeleton } from "../../components/ui/CardSkeleton";
 import { emergencyLabel } from "../../components/AnnouncementsFeed";
 import type { Announcement, Estate } from "../../types/database";
 
@@ -42,7 +44,7 @@ export default function ResidentHome() {
     enabled: !!profile?.estate_id,
   });
 
-  const { data: activePassCount } = useQuery({
+  const { data: activePassCount, isLoading: activePassCountLoading } = useQuery({
     queryKey: ["dashboard_active_passes", profile?.id],
     queryFn: async () => {
       // status='pending' alone overcounts: nothing flips it to 'expired'
@@ -58,7 +60,7 @@ export default function ResidentHome() {
     enabled: !!profile,
   });
 
-  const { data: openIssueCount } = useQuery({
+  const { data: openIssueCount, isLoading: openIssueCountLoading } = useQuery({
     queryKey: ["dashboard_open_issues", profile?.id],
     queryFn: async () => {
       const { count } = await supabase
@@ -70,7 +72,7 @@ export default function ResidentHome() {
     enabled: !!profile,
   });
 
-  const { data: recentAnnouncements } = useQuery({
+  const { data: recentAnnouncements, isLoading: announcementsLoading } = useQuery({
     queryKey: ["dashboard_recent_announcements", profile?.estate_id],
     queryFn: async () => {
       const { data } = await supabase
@@ -149,25 +151,38 @@ export default function ResidentHome() {
 
       {/* ── Quick stats ──────────────────────────────────────────── */}
       <View className="mb-lg flex-row gap-md">
-        <StatCard
-          icon={<Ionicons name="ticket-outline" color={colors.primary} size={18} />}
-          value={activePassCount ?? 0}
-          label="Active passes"
-          onPress={() => router.push("/resident/visitor-pass")}
-        />
-        <StatCard
-          icon={<Ionicons name="build-outline" color={colors.primary} size={18} />}
-          value={openIssueCount ?? 0}
-          label="Open issues"
-          onPress={() => router.push("/resident/issues")}
-        />
+        {activePassCountLoading ? (
+          <StatCardSkeleton />
+        ) : (
+          <StatCard
+            icon={<Ionicons name="ticket-outline" color={colors.primary} size={18} />}
+            value={activePassCount ?? 0}
+            label="Active passes"
+            onPress={() => router.push("/resident/visitor-pass")}
+          />
+        )}
+        {openIssueCountLoading ? (
+          <StatCardSkeleton />
+        ) : (
+          <StatCard
+            icon={<Ionicons name="build-outline" color={colors.primary} size={18} />}
+            value={openIssueCount ?? 0}
+            label="Open issues"
+            onPress={() => router.push("/resident/issues")}
+          />
+        )}
       </View>
 
       {/* ── Recent announcements ─────────────────────────────────── */}
       <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">
         Latest announcements
       </Text>
-      {recentAnnouncements && recentAnnouncements.length > 0 ? (
+      {announcementsLoading ? (
+        <View>
+          <CardSkeleton media />
+          <CardSkeleton media />
+        </View>
+      ) : recentAnnouncements && recentAnnouncements.length > 0 ? (
         <View className="gap-md">
           {recentAnnouncements.map((announcement) => (
             <Pressable

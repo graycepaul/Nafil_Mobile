@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ActivityIndicator, Image, Pressable } from 'react-native';
+import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
@@ -8,6 +8,8 @@ import { useTheme } from '../../context/theme-context';
 import { Card } from '../../components/ui/Card';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { RemoteImage } from '../../components/ui/RemoteImage';
+import { CardSkeletonList } from '../../components/ui/CardSkeleton';
 import { SearchAndEstateFilter } from '../../components/admin/SearchAndEstateFilter';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { Issue, IssueStatus } from '../../types/database';
@@ -65,8 +67,8 @@ export default function AdminIssuesScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View className="flex-1 bg-white dark:bg-ink-bg">
+        <CardSkeletonList media />
       </View>
     );
   }
@@ -96,7 +98,7 @@ export default function AdminIssuesScreen() {
         <Pressable onPress={() => router.push(`/admin/issue-detail?id=${item.id}`)}>
           <Card className="flex-row gap-md">
             {item.photo_urls[0] && (
-              <Image source={{ uri: item.photo_urls[0] }} className="h-16 w-16 rounded-md" />
+              <RemoteImage uri={item.photo_urls[0]} className="h-16 w-16 rounded-md" />
             )}
             <View className="flex-1">
               <View className="flex-row items-start justify-between gap-sm">

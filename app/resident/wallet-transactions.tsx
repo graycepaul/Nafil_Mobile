@@ -1,4 +1,4 @@
-import { View, Text, FlatList, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
@@ -9,6 +9,7 @@ import { useTheme } from '../../context/theme-context';
 import { formatNaira, relativeTime } from '../../lib/format';
 import { Card } from '../../components/ui/Card';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { CardSkeletonList } from '../../components/ui/CardSkeleton';
 import type { WalletTransaction } from '../../types/database';
 
 /** Full wallet history, reached via "See all" on the Wallet screen. */
@@ -34,8 +35,8 @@ export default function WalletTransactionsScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View className="flex-1 bg-white dark:bg-ink-bg">
+        <CardSkeletonList />
       </View>
     );
   }

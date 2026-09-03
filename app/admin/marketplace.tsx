@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, FlatList, RefreshControl, ActivityIndicator, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, FlatList, RefreshControl, Platform, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -16,6 +16,7 @@ import { Overlay } from '../../components/ui/Overlay';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { CardSkeletonList } from '../../components/ui/CardSkeleton';
 import { SearchAndEstateFilter } from '../../components/admin/SearchAndEstateFilter';
 import { TAB_PROMOTION_BREAKPOINT } from '../../components/ui/tab-options';
 import type { ListingStatus, ListingWithSeller } from '../../types/database';
@@ -125,8 +126,8 @@ export default function AdminMarketplaceScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View className="flex-1 bg-white dark:bg-ink-bg">
+        <CardSkeletonList />
       </View>
     );
   }

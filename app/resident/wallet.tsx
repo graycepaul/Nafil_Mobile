@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -14,6 +14,8 @@ import { Input } from '../../components/ui/Input';
 import { Overlay } from '../../components/ui/Overlay';
 import { Toast } from '../../components/ui/Toast';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { Skeleton } from '../../components/ui/Skeleton';
+import { CardSkeletonList } from '../../components/ui/CardSkeleton';
 import { PaymentMethodSheet, type PaymentMethod } from '../../components/resident/PaymentMethodSheet';
 import { DuesPaymentFlow } from '../../components/resident/DuesPaymentFlow';
 import { ContestTransferSheet } from '../../components/resident/ContestTransferSheet';
@@ -233,8 +235,11 @@ export default function WalletScreen() {
 
   if (walletLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View className="flex-1 bg-paper-50 dark:bg-ink-bg">
+        <View className="p-lg">
+          <Skeleton className="mb-xl h-40 rounded-md" />
+        </View>
+        <CardSkeletonList />
       </View>
     );
   }

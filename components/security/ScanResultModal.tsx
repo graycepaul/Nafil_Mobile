@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { View, Text, Image, Pressable, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme } from '../../context/theme-context';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { Overlay } from '../ui/Overlay';
+import { RemoteImage } from '../ui/RemoteImage';
 
 export type ScanResult = {
   tone: 'success' | 'error';
@@ -113,8 +114,8 @@ export function ScanResultModal({ result, onClose }: { result: ScanResult | null
 
       <Overlay visible={viewingPhoto && !!result?.photoUrl} onDismiss={() => setViewingPhoto(false)}>
         {result?.photoUrl && (
-          <Image
-            source={{ uri: result.photoUrl }}
+          <RemoteImage
+            uri={result.photoUrl}
             style={{ width: maxPhotoSize, height: maxPhotoSize }}
             className="self-center rounded-lg"
             resizeMode="contain"
