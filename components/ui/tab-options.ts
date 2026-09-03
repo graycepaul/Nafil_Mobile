@@ -5,6 +5,17 @@ import type { ThemeColors } from '../../constants/colors';
 export const DESKTOP_SIDEBAR_BREAKPOINT = 1024;
 
 /**
+ * Matches Tailwind's default `md` breakpoint. A phone-width bottom bar tops
+ * out at ~5 tabs before it gets cramped, so a few screens that would
+ * otherwise crowd it (Announcements, admin Marketplace/Dues) are reached via
+ * an icon instead and hidden from the bar entirely (`href: null`) below
+ * this width. At/above it — a tablet in portrait, same width or wider than
+ * this well before the sidebar breakpoint kicks in — there's room to just
+ * show them as real tabs instead of one more tap away.
+ */
+export const TAB_PROMOTION_BREAKPOINT = 768;
+
+/**
  * Shared tab navigator styling so every role's tab bar matches the theme.
  * No blanket headerRight here — the settings gear only belongs on each
  * role's primary/home tab (and resident's Profile), so it's set per-screen

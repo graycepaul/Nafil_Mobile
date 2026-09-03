@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, FlatList, RefreshControl, ActivityIndicator, Platform, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -17,6 +17,7 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { SearchAndEstateFilter } from '../../components/admin/SearchAndEstateFilter';
+import { TAB_PROMOTION_BREAKPOINT } from '../../components/ui/tab-options';
 import type { ListingStatus, ListingWithSeller } from '../../types/database';
 
 const STATUS_TONE: Record<ListingStatus, BadgeTone> = {
@@ -42,6 +43,8 @@ export default function AdminMarketplaceScreen() {
   const insets = useSafeAreaInsets();
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const isPromotedTab = Platform.OS === 'web' && width >= TAB_PROMOTION_BREAKPOINT;
   const queryClient = useQueryClient();
   const markMarketViewed = useAdminUiStore((s) => s.markMarketViewed);
   const [search, setSearch] = useState('');
@@ -135,9 +138,11 @@ export default function AdminMarketplaceScreen() {
         className="flex-row items-center justify-between px-lg pb-lg"
       >
         <View className="flex-row items-center gap-md">
-          <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" hitSlop={8}>
-            <Ionicons name="arrow-back" color={colors.onHeaderBg} size={22} />
-          </Pressable>
+          {!isPromotedTab && (
+            <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" hitSlop={8}>
+              <Ionicons name="arrow-back" color={colors.onHeaderBg} size={22} />
+            </Pressable>
+          )}
           <Text className="text-[22px] font-bold text-paper-900 dark:text-ink-text">Marketplace</Text>
         </View>
         <Pressable

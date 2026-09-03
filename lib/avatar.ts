@@ -80,6 +80,12 @@ export async function pickAndUploadPendingInviteAvatar(code: string): Promise<Pi
  * (`{residentId}/household/{memberId}.<ext>`) keeps this within the existing
  * `avatar_insert_own` storage policy — it only checks the top-level folder
  * matches the caller's uid, so no new storage migration is needed.
+ *
+ * Used for changing an *existing* member's photo (profile.tsx), where a
+ * memberId already exists and pick-then-immediately-upload is the right
+ * shape. Adding a *new* member picks first and uploads separately — see
+ * `pickHouseholdAvatarPhoto`/`uploadHouseholdAvatar` below — since there's no
+ * memberId to key the upload path on until the record is created.
  */
 export async function pickAndUploadHouseholdAvatar(
   residentId: string,
@@ -89,4 +95,25 @@ export async function pickAndUploadHouseholdAvatar(
   if ('error' in picked || 'cancelled' in picked) return picked;
   const ext = (picked.asset.uri.split('.').pop() || 'jpg').toLowerCase().split('?')[0];
   return uploadToPath(picked.asset.uri, picked.asset.mimeType, `${residentId}/household/${memberId}.${ext}`);
+}
+
+/**
+ * Picks (with the same square-crop UX as every other avatar picker here)
+ * without uploading anywhere — for the "add a household member" form, which
+ * needs the photo chosen up front, in the form itself, before a memberId
+ * exists to key an upload path on. Pair with `uploadHouseholdAvatar` once
+ * the record's been created.
+ */
+export async function pickHouseholdAvatarPhoto() {
+  return pickImage();
+}
+
+/** Uploads a photo already picked via `pickHouseholdAvatarPhoto`, once a memberId exists to key the path on. */
+export async function uploadHouseholdAvatar(
+  residentId: string,
+  memberId: string,
+  asset: { uri: string; mimeType: string | null | undefined }
+): Promise<PickAndUploadResult> {
+  const ext = (asset.uri.split('.').pop() || 'jpg').toLowerCase().split('?')[0];
+  return uploadToPath(asset.uri, asset.mimeType, `${residentId}/household/${memberId}.${ext}`);
 }
