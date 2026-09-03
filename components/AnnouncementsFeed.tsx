@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, RefreshControl, ActivityIndicator, Pressable } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../store/auth-store';
 import { useTheme } from '../context/theme-context';
 import { relativeTime } from '../lib/format';
 import { Card } from './ui/Card';
@@ -57,6 +59,13 @@ export function AnnouncementsFeed({
   estateFilter?: string;
 }) {
   const { colors } = useTheme();
+  const router = useRouter();
+  const role = useAuthStore((s) => s.profile?.role);
+  // Only residents and admin-family roles (admin/super_admin/finance) ever
+  // render this feed — security has no announcements screen at all — so
+  // this binary covers every real caller without needing a route prop
+  // threaded through both call sites.
+  const detailBase = role === 'resident' ? '/resident/announcement-detail' : '/admin/announcement-detail';
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -114,19 +123,23 @@ export function AnnouncementsFeed({
       renderItem={({ item }) => {
         const isEmergency = item.severity === 'emergency';
         return (
-          <Card accent={isEmergency ? 'danger' : 'default'}>
-            {isEmergency && (
-              <View className="mb-xs">
-                <StatusBadge label={emergencyLabel(item.category)} tone="danger" />
-              </View>
-            )}
-            <Text className="text-base font-bold text-paper-900 dark:text-ink-text">{item.title}</Text>
-            <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">{item.body}</Text>
-            <Text className="mt-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
-              {relativeTime(item.created_at)}
-              {showEstate && item.estate?.name ? ` · ${item.estate.name}` : ''}
-            </Text>
-          </Card>
+          <Pressable onPress={() => router.push(`${detailBase}?id=${item.id}`)}>
+            <Card accent={isEmergency ? 'danger' : 'default'}>
+              {isEmergency && (
+                <View className="mb-xs">
+                  <StatusBadge label={emergencyLabel(item.category)} tone="danger" />
+                </View>
+              )}
+              <Text className="text-base font-bold text-paper-900 dark:text-ink-text">{item.title}</Text>
+              <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted" numberOfLines={1}>
+                {item.body}
+              </Text>
+              <Text className="mt-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
+                {relativeTime(item.created_at)}
+                {showEstate && item.estate?.name ? ` · ${item.estate.name}` : ''}
+              </Text>
+            </Card>
+          </Pressable>
         );
       }}
     />

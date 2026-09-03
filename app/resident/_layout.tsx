@@ -108,6 +108,11 @@ export default function ResidentLayout() {
           tabBarIcon: ({ color }) => <Ionicons name="megaphone-outline" color={color as string} size={22} />,
         }}
       />
+      <Tabs.Screen
+        name="announcement-detail"
+        // Reached by tapping an announcement on the Announcements tab (or the Home dashboard preview).
+        options={{ title: 'Announcement', href: null, headerShown: false }}
+      />
     </Tabs>
   );
 }

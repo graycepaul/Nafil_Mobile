@@ -172,7 +172,7 @@ export default function ResidentHome() {
           {recentAnnouncements.map((announcement) => (
             <Pressable
               key={announcement.id}
-              onPress={() => router.push("/resident/announcements")}
+              onPress={() => router.push(`/resident/announcement-detail?id=${announcement.id}`)}
             >
               <Card
                 accent={

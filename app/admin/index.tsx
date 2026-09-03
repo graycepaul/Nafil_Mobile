@@ -289,7 +289,10 @@ export default function AdminDashboardScreen() {
       {recentAnnouncements && recentAnnouncements.length > 0 ? (
         <View className="gap-md">
           {recentAnnouncements.map((announcement) => (
-            <Pressable key={announcement.id} onPress={() => router.push('/admin/announcements')}>
+            <Pressable
+              key={announcement.id}
+              onPress={() => router.push(`/admin/announcement-detail?id=${announcement.id}`)}
+            >
               <Card accent={announcement.severity === 'emergency' ? 'danger' : 'default'}>
                 <View className="flex-row items-start gap-sm">
                   <View className="h-8 w-8 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
