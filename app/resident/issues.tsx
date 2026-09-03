@@ -1,11 +1,13 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ActivityIndicator, Pressable } from 'react-native';
+import { View, Text, FlatList, RefreshControl, ActivityIndicator, Pressable, Image } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { relativeTime } from '../../lib/format';
+import { pickPhoto } from '../../lib/pick-photo';
+import { uploadIssuePhotos } from '../../lib/issue-photos';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
@@ -27,6 +29,8 @@ const STATUS_LABEL: Record<IssueStatus, string> = {
   resolved: 'Resolved',
 };
 
+const MAX_PHOTOS = 4;
+
 export default function IssuesScreen() {
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
@@ -37,8 +41,23 @@ export default function IssuesScreen() {
   const [formOpen, setFormOpen] = useState(false);
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [photoMimeTypes, setPhotoMimeTypes] = useState<Record<string, string | null>>({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string>();
+
+  async function addPhoto() {
+    if (photos.length >= MAX_PHOTOS) return;
+    const result = await pickPhoto();
+    if ('uri' in result) {
+      setPhotos((prev) => [...prev, result.uri]);
+      setPhotoMimeTypes((prev) => ({ ...prev, [result.uri]: result.mimeType }));
+    } else if ('error' in result) setFormError(result.error);
+  }
+
+  function removePhoto(uri: string) {
+    setPhotos((prev) => prev.filter((p) => p !== uri));
+  }
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- re-opens on repeat deep link even after the resident closes it
@@ -80,22 +99,34 @@ export default function IssuesScreen() {
     if (!category.trim() || !description.trim() || !profile?.estate_id) return;
     setFormError(undefined);
     setSubmitting(true);
-    const { error } = await supabase.from('issues').insert({
-      estate_id: profile.estate_id,
-      resident_id: profile.id,
-      category: category.trim(),
-      description: description.trim(),
-    });
-    setSubmitting(false);
-    if (error) {
-      setFormError(error.message);
-      return;
+    try {
+      const photoUrls =
+        photos.length > 0
+          ? await uploadIssuePhotos(
+              profile.id,
+              photos.map((uri) => ({ uri, mimeType: photoMimeTypes[uri] ?? null }))
+            )
+          : [];
+      const { error } = await supabase.from('issues').insert({
+        estate_id: profile.estate_id,
+        resident_id: profile.id,
+        category: category.trim(),
+        description: description.trim(),
+        photo_urls: photoUrls,
+      });
+      if (error) throw error;
+      setCategory('');
+      setDescription('');
+      setPhotos([]);
+      setPhotoMimeTypes({});
+      setFormOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['issues', profile.id] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard_open_issues'] });
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Could not report this issue. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
-    setCategory('');
-    setDescription('');
-    setFormOpen(false);
-    queryClient.invalidateQueries({ queryKey: ['issues', profile.id] });
-    queryClient.invalidateQueries({ queryKey: ['dashboard_open_issues'] });
   }
 
   if (isLoading) {
@@ -132,6 +163,37 @@ export default function IssuesScreen() {
                 onChangeText={setDescription}
                 multiline
               />
+
+              <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">
+                Photos ({photos.length}/{MAX_PHOTOS}) — optional
+              </Text>
+              <View className="mb-lg flex-row flex-wrap gap-sm">
+                {photos.map((uri) => (
+                  <View key={uri} className="relative">
+                    <Image source={{ uri }} className="h-20 w-20 rounded-md" />
+                    <Pressable
+                      onPress={() => removePhoto(uri)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Remove photo"
+                      hitSlop={8}
+                      className="absolute -right-1.5 -top-1.5 h-5 w-5 items-center justify-center rounded-full bg-danger"
+                    >
+                      <Ionicons name="close" size={12} color="#fff" />
+                    </Pressable>
+                  </View>
+                ))}
+                {photos.length < MAX_PHOTOS && (
+                  <Pressable
+                    onPress={addPhoto}
+                    accessibilityRole="button"
+                    accessibilityLabel="Add photo"
+                    className="h-20 w-20 items-center justify-center rounded-md border border-dashed border-paper-200 dark:border-ink-border"
+                  >
+                    <Ionicons name="camera-outline" size={22} color={colors.textMuted} />
+                  </Pressable>
+                )}
+              </View>
+
               <Button
                 label="Report issue"
                 onPress={submitIssue}
@@ -165,6 +227,13 @@ export default function IssuesScreen() {
           <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
             {item.description}
           </Text>
+          {item.photo_urls.length > 0 && (
+            <View className="mt-sm flex-row flex-wrap gap-sm">
+              {item.photo_urls.map((uri) => (
+                <Image key={uri} source={{ uri }} className="h-16 w-16 rounded-md" />
+              ))}
+            </View>
+          )}
           <Text className="mt-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
             {relativeTime(item.created_at)}
             {item.resolved_at ? ` · resolved ${relativeTime(item.resolved_at)}` : ''}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, RefreshControl, ActivityIndicator, Image } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
@@ -121,6 +121,13 @@ export default function AdminIssuesScreen() {
             <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
               {item.description}
             </Text>
+            {item.photo_urls.length > 0 && (
+              <View className="mt-sm flex-row flex-wrap gap-sm">
+                {item.photo_urls.map((uri) => (
+                  <Image key={uri} source={{ uri }} className="h-16 w-16 rounded-md" />
+                ))}
+              </View>
+            )}
             <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
               Reported by {item.reporter?.full_name ?? 'Unknown resident'}
               {item.reporter?.unit_no ? ` · Unit ${item.reporter.unit_no}` : ''}
