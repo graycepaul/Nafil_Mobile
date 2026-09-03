@@ -18,6 +18,11 @@ async function pickImage() {
     allowsEditing: true,
     aspect: [1, 1],
     quality: 0.7,
+    // Without this, iOS can hand back the original HEIC file for a photo
+    // taken on an iPhone — Supabase Storage's allowed_mime_types rejects it
+    // outright, and HEIC doesn't render reliably outside Apple's own stack
+    // anyway. "Compatible" has the system hand back a JPEG instead.
+    preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
   });
   if (result.canceled || !result.assets[0]) return { cancelled: true } as const;
 

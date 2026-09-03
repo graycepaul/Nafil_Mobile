@@ -1,6 +1,7 @@
-import { View, Text, Image } from 'react-native';
+import { View, Text } from 'react-native';
 import { useTheme } from '../../context/theme-context';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
+import { RemoteImage } from './RemoteImage';
 
 function initials(name?: string | null) {
   if (!name) return null;
@@ -31,8 +32,8 @@ export function Avatar({
 
   if (uri) {
     return (
-      <Image
-        source={{ uri }}
+      <RemoteImage
+        uri={uri}
         style={{ width: size, height: size, borderRadius: size / 2 }}
         className="bg-paper-50 dark:bg-ink-surface"
       />

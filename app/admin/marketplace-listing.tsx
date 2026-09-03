@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Image, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,8 @@ import { formatNaira, relativeTime } from '../../lib/format';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Avatar } from '../../components/ui/Avatar';
+import { RemoteImage } from '../../components/ui/RemoteImage';
+import { DetailSkeleton } from '../../components/ui/DetailSkeleton';
 import { Toast } from '../../components/ui/Toast';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
@@ -73,8 +75,8 @@ export default function AdminMarketplaceListingScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View className="flex-1 bg-white dark:bg-ink-bg">
+        <DetailSkeleton heroHeight={windowWidth} />
       </View>
     );
   }
@@ -94,13 +96,7 @@ export default function AdminMarketplaceListingScreen() {
           {listing.photo_urls.length > 0 ? (
             <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
               {listing.photo_urls.map((url) => (
-                <Image
-                  key={url}
-                  source={{ uri: url }}
-                  style={{ width: windowWidth, height: windowWidth }}
-                  className="bg-paper-100 dark:bg-ink-surface"
-                  resizeMode="cover"
-                />
+                <RemoteImage key={url} uri={url} style={{ width: windowWidth, height: windowWidth }} />
               ))}
             </ScrollView>
           ) : (

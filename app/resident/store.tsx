@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -12,8 +12,10 @@ import { formatListingPrice } from '../../components/resident/marketplace-catego
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { StatCard } from '../../components/ui/StatCard';
+import { StatCardSkeleton } from '../../components/ui/StatCardSkeleton';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { CardSkeletonList } from '../../components/ui/CardSkeleton';
 import { Toast } from '../../components/ui/Toast';
 import type { ListingStatus, ListingWithSeller, Order, OrderStatus, PublicProfile } from '../../types/database';
 
@@ -128,8 +130,17 @@ export default function StoreScreen() {
 
   if (ordersLoading || listingsLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View className="flex-1 bg-paper-50 dark:bg-ink-bg">
+        <View className="p-lg">
+          <View className="mb-md flex-row">
+            <StatCardSkeleton />
+          </View>
+          <View className="mb-xl flex-row gap-md">
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </View>
+        </View>
+        <CardSkeletonList />
       </View>
     );
   }

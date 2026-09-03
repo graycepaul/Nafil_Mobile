@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Notice } from '../../components/ui/Notice';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { CardSkeletonList } from '../../components/ui/CardSkeleton';
 import { InviteStaffForm } from '../../components/admin/InviteStaffForm';
 import { SearchAndEstateFilter } from '../../components/admin/SearchAndEstateFilter';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
@@ -81,6 +82,7 @@ export default function AdminStaffScreen() {
 
   const {
     data: invites,
+    isLoading: isLoadingInvites,
     refetch: refetchInvites,
     isRefetching: isRefetchingInvites,
   } = useQuery({
@@ -99,6 +101,7 @@ export default function AdminStaffScreen() {
 
   const {
     data: staff,
+    isLoading: isLoadingStaff,
     refetch: refetchStaff,
     isRefetching: isRefetchingStaff,
   } = useQuery({
@@ -123,6 +126,14 @@ export default function AdminStaffScreen() {
       return true;
     });
   }, [staff, search]);
+
+  if (isLoadingInvites || isLoadingStaff) {
+    return (
+      <View className="flex-1 bg-white dark:bg-ink-bg">
+        <CardSkeletonList media />
+      </View>
+    );
+  }
 
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: ['staff_invites_pending', profile?.estate_id] });

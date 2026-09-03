@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ActivityIndicator, Pressable } from 'react-native';
+import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
@@ -16,6 +16,7 @@ import { Notice } from '../../components/ui/Notice';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { CardSkeletonList } from '../../components/ui/CardSkeleton';
 import { ScheduleVisitForm } from '../../components/resident/ScheduleVisitForm';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { VisitorPass, VisitorPassStatus, ScheduledVisit } from '../../types/database';
@@ -180,8 +181,8 @@ export default function VisitorPassScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View className="flex-1 bg-white dark:bg-ink-bg">
+        <CardSkeletonList media />
       </View>
     );
   }

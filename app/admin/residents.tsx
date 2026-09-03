@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Notice } from '../../components/ui/Notice';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { CardSkeletonList } from '../../components/ui/CardSkeleton';
 import { SearchAndEstateFilter } from '../../components/admin/SearchAndEstateFilter';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { JoinRequestWithApplicant, Profile } from '../../types/database';
@@ -36,6 +37,7 @@ export default function AdminResidentsScreen() {
 
   const {
     data: requests,
+    isLoading: isLoadingRequests,
     refetch: refetchRequests,
     isRefetching: isRefetchingRequests,
   } = useQuery({
@@ -56,6 +58,7 @@ export default function AdminResidentsScreen() {
 
   const {
     data: residents,
+    isLoading: isLoadingResidents,
     refetch: refetchResidents,
     isRefetching: isRefetchingResidents,
   } = useQuery({
@@ -109,6 +112,14 @@ export default function AdminResidentsScreen() {
   }, [residents, search]);
 
   const pendingCount = requests?.length ?? 0;
+
+  if (isLoadingRequests || isLoadingResidents) {
+    return (
+      <View className="flex-1 bg-white dark:bg-ink-bg">
+        <CardSkeletonList media />
+      </View>
+    );
+  }
 
   const searchFilter = (
     <View className="pt-lg">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Image, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -13,6 +13,7 @@ import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
 import { Notice } from '../../components/ui/Notice';
+import { CardSkeletonList } from '../../components/ui/CardSkeleton';
 import {
   GOOD_CATEGORIES,
   SERVICE_CATEGORIES,
@@ -35,7 +36,6 @@ const DESCRIPTION_PLACEHOLDER: Record<ListingType, string> = {
 export default function NewMarketplaceListingScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const isEditing = !!id;
-  const { colors } = useTheme();
 
   const { data: existingListing, isLoading: loadingExisting } = useQuery({
     queryKey: ['listing', id],
@@ -49,8 +49,8 @@ export default function NewMarketplaceListingScreen() {
 
   if (isEditing && loadingExisting) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View className="flex-1 bg-white dark:bg-ink-bg">
+        <CardSkeletonList />
       </View>
     );
   }

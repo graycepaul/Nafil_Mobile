@@ -142,6 +142,7 @@ export interface Announcement {
   body: string;
   severity: AnnouncementSeverity;
   category: AlertCategory | null;
+  photo_url: string | null;
   created_at: string;
 }
 

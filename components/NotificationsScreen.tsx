@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, Pressable, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, FlatList, RefreshControl } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import { useTheme } from '../context/theme-context';
 import { relativeTime } from '../lib/format';
 import { Card } from './ui/Card';
 import { EmptyState } from './ui/EmptyState';
+import { CardSkeletonList } from './ui/CardSkeleton';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { IoniconsIconName } from '@react-native-vector-icons/ionicons';
 import type { Notification, NotificationType } from '../types/database';
@@ -94,9 +95,7 @@ export function NotificationsScreen() {
     return (
       <View className="flex-1 bg-white dark:bg-ink-bg">
         {header}
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <CardSkeletonList />
       </View>
     );
   }

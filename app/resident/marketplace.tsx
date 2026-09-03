@@ -5,8 +5,6 @@ import {
   FlatList,
   ScrollView,
   Pressable,
-  ActivityIndicator,
-  Image,
   RefreshControl,
   useWindowDimensions,
 } from 'react-native';
@@ -22,6 +20,8 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Overlay } from '../../components/ui/Overlay';
+import { RemoteImage } from '../../components/ui/RemoteImage';
+import { GridSkeleton } from '../../components/ui/GridSkeleton';
 import {
   CATEGORY_ICON,
   LISTING_CATEGORIES,
@@ -134,8 +134,8 @@ export default function MarketplaceScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-paper-50 dark:bg-ink-bg">
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View className="flex-1 bg-paper-50 dark:bg-ink-bg">
+        <GridSkeleton numColumns={numColumns} />
       </View>
     );
   }
@@ -226,7 +226,7 @@ export default function MarketplaceScreen() {
           className="mb-md flex-1 overflow-hidden rounded-md border border-paper-200 bg-white dark:border-ink-border dark:bg-ink-surface"
         >
           {item.photo_urls.length > 0 ? (
-            <Image source={{ uri: item.photo_urls[0] }} className="aspect-square w-full" resizeMode="cover" />
+            <RemoteImage uri={item.photo_urls[0]} className="aspect-square w-full" />
           ) : (
             <View className="aspect-square w-full items-center justify-center bg-brand-50 dark:bg-brand-900">
               <Ionicons

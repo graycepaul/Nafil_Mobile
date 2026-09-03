@@ -1,12 +1,16 @@
 import { useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../store/auth-store';
 import { useTheme } from '../context/theme-context';
 import { relativeTime } from '../lib/format';
 import { Card } from './ui/Card';
 import { StatusBadge } from './ui/StatusBadge';
 import { EmptyState } from './ui/EmptyState';
+import { RemoteImage } from './ui/RemoteImage';
+import { CardSkeletonList } from './ui/CardSkeleton';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { ALERT_CATEGORIES } from './AlertCategoryPicker';
 import type { Announcement } from '../types/database';
@@ -57,6 +61,13 @@ export function AnnouncementsFeed({
   estateFilter?: string;
 }) {
   const { colors } = useTheme();
+  const router = useRouter();
+  const role = useAuthStore((s) => s.profile?.role);
+  // Only residents and admin-family roles (admin/super_admin/finance) ever
+  // render this feed — security has no announcements screen at all — so
+  // this binary covers every real caller without needing a route prop
+  // threaded through both call sites.
+  const detailBase = role === 'resident' ? '/resident/announcement-detail' : '/admin/announcement-detail';
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -88,8 +99,8 @@ export function AnnouncementsFeed({
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View className="flex-1 bg-white dark:bg-ink-bg">
+        <CardSkeletonList media />
       </View>
     );
   }
@@ -114,19 +125,28 @@ export function AnnouncementsFeed({
       renderItem={({ item }) => {
         const isEmergency = item.severity === 'emergency';
         return (
-          <Card accent={isEmergency ? 'danger' : 'default'}>
-            {isEmergency && (
-              <View className="mb-xs">
-                <StatusBadge label={emergencyLabel(item.category)} tone="danger" />
+          <Pressable onPress={() => router.push(`${detailBase}?id=${item.id}`)}>
+            <Card accent={isEmergency ? 'danger' : 'default'} className="flex-row gap-md">
+              {item.photo_url && (
+                <RemoteImage uri={item.photo_url} className="h-16 w-16 rounded-md" />
+              )}
+              <View className="flex-1">
+                {isEmergency && (
+                  <View className="mb-xs">
+                    <StatusBadge label={emergencyLabel(item.category)} tone="danger" />
+                  </View>
+                )}
+                <Text className="text-base font-bold text-paper-900 dark:text-ink-text">{item.title}</Text>
+                <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted" numberOfLines={1}>
+                  {item.body}
+                </Text>
+                <Text className="mt-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
+                  {relativeTime(item.created_at)}
+                  {showEstate && item.estate?.name ? ` · ${item.estate.name}` : ''}
+                </Text>
               </View>
-            )}
-            <Text className="text-base font-bold text-paper-900 dark:text-ink-text">{item.title}</Text>
-            <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">{item.body}</Text>
-            <Text className="mt-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
-              {relativeTime(item.created_at)}
-              {showEstate && item.estate?.name ? ` · ${item.estate.name}` : ''}
-            </Text>
-          </Card>
+            </Card>
+          </Pressable>
         );
       }}
     />

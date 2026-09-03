@@ -72,6 +72,11 @@ export default function ResidentLayout() {
         options={{ title: 'Listing', href: null, headerShown: false }}
       />
       <Tabs.Screen
+        name="issue-detail"
+        // Reached by tapping a report on the Issues tab.
+        options={{ title: 'Issue', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
         name="marketplace-new"
         // Reached via the Market tab header's + icon.
         options={{ title: 'New listing', href: null, headerShown: false }}
@@ -102,6 +107,11 @@ export default function ResidentLayout() {
           headerShown: false,
           tabBarIcon: ({ color }) => <Ionicons name="megaphone-outline" color={color as string} size={22} />,
         }}
+      />
+      <Tabs.Screen
+        name="announcement-detail"
+        // Reached by tapping an announcement on the Announcements tab (or the Home dashboard preview).
+        options={{ title: 'Announcement', href: null, headerShown: false }}
       />
     </Tabs>
   );

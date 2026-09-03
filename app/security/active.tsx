@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { View, Text, SectionList, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, SectionList, RefreshControl } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Notice } from '../../components/ui/Notice';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { CardSkeletonList } from '../../components/ui/CardSkeleton';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { VisitorLog } from '../../types/database';
 
@@ -86,8 +87,8 @@ export default function ActiveVisitorsScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View className="flex-1 bg-white dark:bg-ink-bg">
+        <CardSkeletonList />
       </View>
     );
   }

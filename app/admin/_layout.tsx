@@ -85,6 +85,16 @@ export default function AdminLayout() {
         options={{ title: 'Listing', href: null, headerShown: false }}
       />
       <Tabs.Screen
+        name="issue-detail"
+        // Reached by tapping a report on the Issues tab.
+        options={{ title: 'Issue', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
+        name="announcement-detail"
+        // Reached by tapping an announcement on the Announcements tab (or the Dashboard preview).
+        options={{ title: 'Announcement', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
         name="transfers"
         // Reached via the Dashboard's "Pending transfers" stat card.
         options={{ title: 'Pending transfers', href: null, headerShown: false }}
