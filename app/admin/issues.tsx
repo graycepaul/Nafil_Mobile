@@ -1,21 +1,27 @@
 import { useMemo, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ActivityIndicator, Image } from 'react-native';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { View, Text, FlatList, RefreshControl, ActivityIndicator, Image, Pressable } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
-import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
-import { Notice } from '../../components/ui/Notice';
+import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { SearchAndEstateFilter } from '../../components/admin/SearchAndEstateFilter';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { Issue, IssueStatus } from '../../types/database';
 
-const NEXT_STATUS: Record<IssueStatus, IssueStatus | null> = {
-  open: 'in_progress',
-  in_progress: 'resolved',
-  resolved: null,
+const STATUS_TONE: Record<IssueStatus, BadgeTone> = {
+  open: 'warning',
+  in_progress: 'info',
+  resolved: 'success',
+};
+
+const STATUS_LABEL: Record<IssueStatus, string> = {
+  open: 'Open',
+  in_progress: 'In progress',
+  resolved: 'Resolved',
 };
 
 type IssueWithContext = Issue & {
@@ -26,9 +32,7 @@ type IssueWithContext = Issue & {
 export default function AdminIssuesScreen() {
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
-  const queryClient = useQueryClient();
-  const [advancingId, setAdvancingId] = useState<string | null>(null);
-  const [error, setError] = useState<string>();
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const isSuperAdmin = profile?.role === 'super_admin';
 
@@ -59,26 +63,6 @@ export default function AdminIssuesScreen() {
     });
   }, [issues, search]);
 
-  async function advance(issue: Issue) {
-    const next = NEXT_STATUS[issue.status];
-    if (!next) return;
-    setError(undefined);
-    setAdvancingId(issue.id);
-    const { error } = await supabase
-      .from('issues')
-      .update({
-        status: next,
-        resolved_at: next === 'resolved' ? new Date().toISOString() : null,
-      })
-      .eq('id', issue.id);
-    setAdvancingId(null);
-    if (error) {
-      setError(error.message);
-      return;
-    }
-    queryClient.invalidateQueries({ queryKey: ['issues_admin', profile?.estate_id] });
-  }
-
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-white dark:bg-ink-bg">
@@ -93,14 +77,11 @@ export default function AdminIssuesScreen() {
       contentContainerClassName="p-xl"
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
       ListHeaderComponent={
-        <View>
-          {error && <Notice message={error} />}
-          <SearchAndEstateFilter
-            search={search}
-            onSearchChange={setSearch}
-            placeholder="Search by category, description, or reporter"
-          />
-        </View>
+        <SearchAndEstateFilter
+          search={search}
+          onSearchChange={setSearch}
+          placeholder="Search by category, description, or reporter"
+        />
       }
       data={filteredIssues}
       keyExtractor={(item) => item.id}
@@ -111,46 +92,31 @@ export default function AdminIssuesScreen() {
           message="Issues residents report will show up here."
         />
       }
-      renderItem={({ item }) => {
-        const next = NEXT_STATUS[item.status];
-        return (
-          <Card>
-            <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
-              {item.category}
-            </Text>
-            <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
-              {item.description}
-            </Text>
-            {item.photo_urls.length > 0 && (
-              <View className="mt-sm flex-row flex-wrap gap-sm">
-                {item.photo_urls.map((uri) => (
-                  <Image key={uri} source={{ uri }} className="h-16 w-16 rounded-md" />
-                ))}
+      renderItem={({ item }) => (
+        <Pressable onPress={() => router.push(`/admin/issue-detail?id=${item.id}`)}>
+          <Card className="flex-row gap-md">
+            {item.photo_urls[0] && (
+              <Image source={{ uri: item.photo_urls[0] }} className="h-16 w-16 rounded-md" />
+            )}
+            <View className="flex-1">
+              <View className="flex-row items-start justify-between gap-sm">
+                <Text className="flex-1 text-base font-semibold text-paper-900 dark:text-ink-text">
+                  {item.category}
+                </Text>
+                <StatusBadge label={STATUS_LABEL[item.status]} tone={STATUS_TONE[item.status]} />
               </View>
-            )}
-            <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
-              Reported by {item.reporter?.full_name ?? 'Unknown resident'}
-              {item.reporter?.unit_no ? ` · Unit ${item.reporter.unit_no}` : ''}
-              {isSuperAdmin && item.estate?.name ? ` · ${item.estate.name}` : ''}
-            </Text>
-            <Text
-              className={`mt-sm capitalize text-[13px] text-brand-800 dark:text-brand-300 ${
-                next ? 'mb-sm' : ''
-              }`}
-            >
-              {item.status.replace('_', ' ')}
-            </Text>
-            {next && (
-              <Button
-                label={`Mark ${next.replace('_', ' ')}`}
-                onPress={() => advance(item)}
-                loading={advancingId === item.id}
-                disabled={advancingId !== null && advancingId !== item.id}
-              />
-            )}
+              <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted" numberOfLines={1}>
+                {item.description}
+              </Text>
+              <Text className="mt-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
+                {item.reporter?.full_name ?? 'Unknown resident'}
+                {item.reporter?.unit_no ? ` · Unit ${item.reporter.unit_no}` : ''}
+                {isSuperAdmin && item.estate?.name ? ` · ${item.estate.name}` : ''}
+              </Text>
+            </View>
           </Card>
-        );
-      }}
+        </Pressable>
+      )}
     />
   );
 }

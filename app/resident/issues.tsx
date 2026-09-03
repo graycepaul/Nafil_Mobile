@@ -217,28 +217,28 @@ export default function IssuesScreen() {
         />
       }
       renderItem={({ item }) => (
-        <Card>
-          <View className="flex-row items-start justify-between">
-            <Text className="flex-1 text-base font-semibold text-paper-900 dark:text-ink-text">
-              {item.category}
-            </Text>
-            <StatusBadge label={STATUS_LABEL[item.status]} tone={STATUS_TONE[item.status]} />
-          </View>
-          <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
-            {item.description}
-          </Text>
-          {item.photo_urls.length > 0 && (
-            <View className="mt-sm flex-row flex-wrap gap-sm">
-              {item.photo_urls.map((uri) => (
-                <Image key={uri} source={{ uri }} className="h-16 w-16 rounded-md" />
-              ))}
+        <Pressable onPress={() => router.push(`/resident/issue-detail?id=${item.id}`)}>
+          <Card className="flex-row gap-md">
+            {item.photo_urls[0] && (
+              <Image source={{ uri: item.photo_urls[0] }} className="h-16 w-16 rounded-md" />
+            )}
+            <View className="flex-1">
+              <View className="flex-row items-start justify-between gap-sm">
+                <Text className="flex-1 text-base font-semibold text-paper-900 dark:text-ink-text">
+                  {item.category}
+                </Text>
+                <StatusBadge label={STATUS_LABEL[item.status]} tone={STATUS_TONE[item.status]} />
+              </View>
+              <Text className="mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted" numberOfLines={1}>
+                {item.description}
+              </Text>
+              <Text className="mt-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
+                {relativeTime(item.created_at)}
+                {item.resolved_at ? ` · resolved ${relativeTime(item.resolved_at)}` : ''}
+              </Text>
             </View>
-          )}
-          <Text className="mt-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
-            {relativeTime(item.created_at)}
-            {item.resolved_at ? ` · resolved ${relativeTime(item.resolved_at)}` : ''}
-          </Text>
-        </Card>
+          </Card>
+        </Pressable>
       )}
     />
 
