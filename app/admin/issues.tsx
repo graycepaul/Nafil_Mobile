@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
+import { View, Text, SectionList, RefreshControl, Pressable } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
@@ -11,6 +11,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { RemoteImage } from '../../components/ui/RemoteImage';
 import { CardSkeletonList } from '../../components/ui/CardSkeleton';
 import { SearchAndEstateFilter } from '../../components/admin/SearchAndEstateFilter';
+import { groupByDate } from '../../lib/date-groups';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { Issue, IssueStatus } from '../../types/database';
 
@@ -73,10 +74,13 @@ export default function AdminIssuesScreen() {
     );
   }
 
+  const sections = groupByDate(filteredIssues, (item) => item.created_at);
+
   return (
-    <FlatList
+    <SectionList
       className="bg-white dark:bg-ink-bg"
       contentContainerClassName="p-xl"
+      stickySectionHeadersEnabled={false}
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
       ListHeaderComponent={
         <SearchAndEstateFilter
@@ -85,7 +89,7 @@ export default function AdminIssuesScreen() {
           placeholder="Search by category, description, or reporter"
         />
       }
-      data={filteredIssues}
+      sections={sections}
       keyExtractor={(item) => item.id}
       ListEmptyComponent={
         <EmptyState
@@ -94,6 +98,11 @@ export default function AdminIssuesScreen() {
           message="Issues residents report will show up here."
         />
       }
+      renderSectionHeader={({ section }) => (
+        <Text className="mb-sm mt-md text-[13px] font-semibold text-paper-500 dark:text-ink-textMuted">
+          {section.title}
+        </Text>
+      )}
       renderItem={({ item }) => (
         <Pressable onPress={() => router.push(`/admin/issue-detail?id=${item.id}`)}>
           <Card className="flex-row gap-md">
