@@ -1,14 +1,5 @@
 import type { Notification, UserRole } from '../types/database';
 
-/** Matches ROLE_HOME in app/_layout.tsx — duplicated rather than imported since that file isn't a module other screens pull from. */
-const ROLE_HOME: Record<UserRole, string> = {
-  resident: '/resident',
-  security: '/security',
-  admin: '/admin',
-  super_admin: '/admin',
-  finance: '/admin',
-};
-
 const ADMIN_ROLES: UserRole[] = ['admin', 'super_admin', 'finance'];
 
 /**
@@ -23,7 +14,12 @@ export function notificationRoute(item: Notification, role: UserRole | undefined
   const isAdmin = role ? ADMIN_ROLES.includes(role) : false;
 
   switch (item.type) {
+    // Emergency alerts are announcements too (severity: 'emergency') — the
+    // trigger that creates this notification stashes the same
+    // announcement_id either way (0012_notifications.sql), so both land on
+    // the same detail screen.
     case 'announcement':
+    case 'emergency':
       return d.announcement_id
         ? `/${isAdmin ? 'admin' : 'resident'}/announcement-detail?id=${d.announcement_id}`
         : undefined;
@@ -48,8 +44,6 @@ export function notificationRoute(item: Notification, role: UserRole | undefined
       return d.listing_id
         ? `/${isAdmin ? 'admin' : 'resident'}/marketplace-listing?id=${d.listing_id}`
         : undefined;
-    case 'emergency':
-      return role ? ROLE_HOME[role] : undefined;
     // 'join_request_approved' has no detail screen of its own — the
     // resident's estate assignment is already visible on Home once approved.
     default:

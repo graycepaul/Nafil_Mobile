@@ -159,7 +159,24 @@ function useNotificationRouting(
     if (Platform.OS === "web") return;
 
     const receivedSub = Notifications.addNotificationReceivedListener((notification) => {
-      queryClient.invalidateQueries({ queryKey: ["notifications_unread"] });
+      // Previously only the unread badge count refreshed here — the actual
+      // notifications list and every dashboard widget it can affect (open
+      // issues, recent announcements, active passes, pending requests...)
+      // sat stale until a manual pull-to-refresh, even though the push had
+      // already arrived. A predicate catches all of them at once rather
+      // than hand-mapping each notification type to the specific dashboard
+      // query it happens to affect.
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            typeof key === "string" &&
+            (key === "notifications" ||
+              key === "notifications_unread" ||
+              key.startsWith("dashboard_"))
+          );
+        },
+      });
 
       // A push only reaches this listener while the app is already open —
       // backgrounded/killed just gets the OS banner, there's no JS running
