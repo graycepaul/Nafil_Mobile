@@ -161,6 +161,30 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
 
       await queryClient.invalidateQueries({ queryKey: ['listings'] });
       await queryClient.invalidateQueries({ queryKey: ['store_listings', profile.id] });
+
+      if (!isEditing) {
+        // This screen's key is always 'new' for a fresh listing (see the
+        // comment on MarketplaceForm's key prop above), so expo-router keeps
+        // this exact instance mounted across repeat visits instead of
+        // remounting it — without this reset, publishing a listing and then
+        // tapping "+" again showed the just-published listing's own title,
+        // price, and description still sitting in the fields.
+        setType('good');
+        setTitle('');
+        setPrice('');
+        setPriceTo('');
+        setCategory(GOOD_CATEGORIES[0]);
+        setDescription('');
+        setPhotos([]);
+        setPhotoMimeTypes({});
+        setPickupAvailable(true);
+        setPickupAddress('');
+        setHomeDeliveryAvailable(false);
+        setDeliveryFee('');
+        setFreeDelivery(false);
+        setWhatsapp('');
+      }
+
       // Not router.back(): this screen is a pushed href:null route reached
       // from either Market (new) or Store (edit), and on web that back-stack
       // hop unreliably lands on the Tabs navigator's initial route (Home)
@@ -220,7 +244,18 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
 
         <Input label="Title" showLabel placeholder="e.g. 3-seater fabric sofa" value={title} onChangeText={setTitle} />
 
-        <View className="flex-row gap-sm">
+        {/*
+          z-20 here, not just on Select's own internal wrapper: z-index only
+          ranks siblings within the same stacking context. Select's dropdown
+          is already the top z-index *inside* this row, but this row itself
+          previously had no z-index (effectively 0) — tied with every field
+          below it (Description, delivery method, ...), which also sit at 0,
+          so DOM order broke the tie in their favor and painted them over
+          the open dropdown instead of the dropdown appearing on top. This
+          lets the whole row (dropdown included) outrank those later
+          siblings regardless of DOM order.
+        */}
+        <View className="z-10 flex-row gap-sm">
           <View className="flex-1">
             <Select
               label="Category"
