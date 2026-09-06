@@ -1,7 +1,7 @@
 export type UserRole = 'resident' | 'security' | 'admin' | 'super_admin' | 'finance';
 export type VisitorPassStatus = 'pending' | 'used' | 'expired' | 'revoked';
 export type VisitorLogMethod = 'qr' | 'code' | 'manual';
-export type IssueStatus = 'open' | 'in_progress' | 'resolved';
+export type IssueStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
 export type AnnouncementSeverity = 'info' | 'emergency';
 export type JoinRequestStatus = 'pending' | 'approved' | 'rejected';
 export type StaffInviteStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
@@ -130,6 +130,14 @@ export interface Issue {
   status: IssueStatus;
   created_at: string;
   resolved_at: string | null;
+}
+
+export interface IssueComment {
+  id: string;
+  issue_id: string;
+  author_id: string;
+  body: string;
+  created_at: string;
 }
 
 export type AlertCategory = 'missing_child' | 'security_breach' | 'epidemic' | 'other';

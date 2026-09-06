@@ -13,24 +13,29 @@ import { Notice } from '../../components/ui/Notice';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { RemoteImage } from '../../components/ui/RemoteImage';
 import { DetailSkeleton } from '../../components/ui/DetailSkeleton';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { IssueFeedbackThread } from '../../components/issues/IssueFeedbackThread';
 import type { Issue, IssueStatus } from '../../types/database';
 
 const STATUS_TONE: Record<IssueStatus, BadgeTone> = {
   open: 'warning',
   in_progress: 'info',
   resolved: 'success',
+  closed: 'neutral',
 };
 
 const STATUS_LABEL: Record<IssueStatus, string> = {
   open: 'Open',
   in_progress: 'In progress',
   resolved: 'Resolved',
+  closed: 'Closed',
 };
 
 const NEXT_STATUS: Record<IssueStatus, IssueStatus | null> = {
   open: 'in_progress',
   in_progress: 'resolved',
   resolved: null,
+  closed: null,
 };
 
 type IssueWithContext = Issue & {
@@ -49,6 +54,8 @@ export default function AdminIssueDetailScreen() {
   const isSuperAdmin = profile?.role === 'super_admin';
   const [advancing, setAdvancing] = useState(false);
   const [error, setError] = useState<string>();
+  const [confirmingClose, setConfirmingClose] = useState(false);
+  const [closing, setClosing] = useState(false);
 
   const { data: issue, isLoading } = useQuery({
     queryKey: ['issue_admin', id],
@@ -78,6 +85,25 @@ export default function AdminIssueDetailScreen() {
       })
       .eq('id', issue.id);
     setAdvancing(false);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['issue_admin', id] });
+    queryClient.invalidateQueries({ queryKey: ['issues_admin', profile?.estate_id] });
+    queryClient.invalidateQueries({ queryKey: ['dashboard_open_issues'] });
+  }
+
+  async function closeIssue() {
+    if (!issue) return;
+    setError(undefined);
+    setClosing(true);
+    const { error } = await supabase
+      .from('issues')
+      .update({ status: 'closed' })
+      .eq('id', issue.id);
+    setClosing(false);
+    setConfirmingClose(false);
     if (error) {
       setError(error.message);
       return;
@@ -181,8 +207,33 @@ export default function AdminIssueDetailScreen() {
               className="mt-lg"
             />
           )}
+
+          {issue.status === 'resolved' && (
+            <Button
+              label="Close this issue"
+              variant="secondary"
+              onPress={() => setConfirmingClose(true)}
+              className="mt-md"
+            />
+          )}
+
+          {(issue.status === 'resolved' || issue.status === 'closed') && (
+            <IssueFeedbackThread issueId={issue.id} canPost={issue.status === 'resolved'} />
+          )}
         </View>
       </ScrollView>
+
+      <ConfirmDialog
+        visible={confirmingClose}
+        title="Close this issue?"
+        message="The feedback thread ends once this is closed — the resident won't be able to add more messages, and this can't be reopened."
+        confirmLabel="Close issue"
+        cancelLabel="Keep open"
+        destructive
+        loading={closing}
+        onConfirm={closeIssue}
+        onCancel={() => setConfirmingClose(false)}
+      />
     </View>
   );
 }

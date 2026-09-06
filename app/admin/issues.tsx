@@ -19,12 +19,14 @@ const STATUS_TONE: Record<IssueStatus, BadgeTone> = {
   open: 'warning',
   in_progress: 'info',
   resolved: 'success',
+  closed: 'neutral',
 };
 
 const STATUS_LABEL: Record<IssueStatus, string> = {
   open: 'Open',
   in_progress: 'In progress',
   resolved: 'Resolved',
+  closed: 'Closed',
 };
 
 type IssueWithContext = Issue & {

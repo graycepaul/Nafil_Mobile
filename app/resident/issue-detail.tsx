@@ -9,18 +9,21 @@ import { relativeTime } from '../../lib/format';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { RemoteImage } from '../../components/ui/RemoteImage';
 import { DetailSkeleton } from '../../components/ui/DetailSkeleton';
+import { IssueFeedbackThread } from '../../components/issues/IssueFeedbackThread';
 import type { Issue, IssueStatus } from '../../types/database';
 
 const STATUS_TONE: Record<IssueStatus, BadgeTone> = {
   open: 'warning',
   in_progress: 'info',
   resolved: 'success',
+  closed: 'neutral',
 };
 
 const STATUS_LABEL: Record<IssueStatus, string> = {
   open: 'Open',
   in_progress: 'In progress',
   resolved: 'Resolved',
+  closed: 'Closed',
 };
 
 export default function IssueDetailScreen() {
@@ -118,6 +121,10 @@ export default function IssueDetailScreen() {
                 ))}
               </View>
             </>
+          )}
+
+          {(issue.status === 'resolved' || issue.status === 'closed') && (
+            <IssueFeedbackThread issueId={issue.id} canPost={issue.status === 'resolved'} />
           )}
         </View>
       </ScrollView>
