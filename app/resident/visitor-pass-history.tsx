@@ -152,7 +152,7 @@ export default function VisitorPassHistoryScreen() {
               />
             }
             renderSectionHeader={({ section }) => (
-              <Text className="mb-sm bg-white py-sm text-right text-sm font-semibold text-paper-500 dark:bg-ink-bg dark:text-ink-textMuted">
+              <Text className="mb-sm bg-white py-sm text-sm font-semibold text-paper-500 dark:bg-ink-bg dark:text-ink-textMuted">
                 {section.title}
               </Text>
             )}
