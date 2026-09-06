@@ -176,7 +176,9 @@ export type NotificationType =
   | 'transfer_confirmed'
   | 'transfer_rejected'
   | 'listing_suspended'
-  | 'listing_reinstated';
+  | 'listing_reinstated'
+  | 'transfer_contested'
+  | 'issue_feedback';
 
 export interface Notification {
   id: string;

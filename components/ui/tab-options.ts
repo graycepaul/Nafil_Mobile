@@ -90,8 +90,16 @@ export function themedTabOptions(colors: ThemeColors, bottomInset: number = 0, w
     // desktop-width screen runs out of room. Only sets width/maxWidth/
     // alignSelf, not height, so it doesn't interfere with any screen's own
     // flex-1 vertical fill.
+    //
+    // backgroundColor is set unconditionally (not just on the desktop
+    // branch): React Navigation's scene container otherwise defaults to its
+    // stock light-theme background (`rgb(242, 242, 242)`), which this app
+    // never overrides via a NavigationContainer theme. In light mode that's
+    // close enough to go unnoticed; in dark mode it shows through as a
+    // visible gray band wherever a screen's own content has a gap (e.g. a
+    // SectionList's header/spacing) that doesn't fully cover it.
     sceneStyle: isDesktopSidebar
-      ? { width: '100%' as const, maxWidth: 1100, alignSelf: 'center' as const }
-      : undefined,
+      ? { width: '100%' as const, maxWidth: 1100, alignSelf: 'center' as const, backgroundColor: colors.background }
+      : { backgroundColor: colors.background },
   };
 }

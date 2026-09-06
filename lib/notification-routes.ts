@@ -27,6 +27,10 @@ export function notificationRoute(item: Notification, role: UserRole | undefined
       return d.issue_id ? `/resident/issue-detail?id=${d.issue_id}` : undefined;
     case 'issue_reported':
       return d.issue_id ? `/admin/issue-detail?id=${d.issue_id}` : undefined;
+    case 'issue_feedback':
+      return d.issue_id
+        ? `/${isAdmin ? 'admin' : 'resident'}/issue-detail?id=${d.issue_id}`
+        : undefined;
     case 'visitor_pass_used':
       return '/resident/visitor-pass-history';
     case 'staff_invite_accepted':
@@ -39,6 +43,8 @@ export function notificationRoute(item: Notification, role: UserRole | undefined
     case 'transfer_confirmed':
     case 'transfer_rejected':
       return '/resident/wallet-transactions';
+    case 'transfer_contested':
+      return '/admin/transfers';
     case 'listing_suspended':
     case 'listing_reinstated':
       return d.listing_id
