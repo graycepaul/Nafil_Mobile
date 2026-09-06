@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, Pressable, Platform } from 'react-native';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { View, Text, SectionList, RefreshControl, Pressable, Platform } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
@@ -10,6 +10,7 @@ import { pickVisitorPhone } from '../../lib/contacts';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { expiryLabel, titleCase } from '../../lib/format';
+import { groupByDate } from '../../lib/date-groups';
 import { validatePhone } from '../../lib/validation';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -118,6 +119,8 @@ export default function VisitorPassScreen() {
     enabled: !!profile,
   });
 
+  const sections = useMemo(() => groupByDate(passes ?? [], (p) => p.created_at), [passes]);
+
   const { data: scheduledVisits, refetch: refetchScheduled } = useQuery({
     queryKey: ['scheduled_visits', profile?.id],
     queryFn: async () => {
@@ -204,10 +207,11 @@ export default function VisitorPassScreen() {
 
   return (
     <>
-      <FlatList
+      <SectionList
         className="bg-white dark:bg-ink-bg"
         contentContainerClassName="p-xl"
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
+        stickySectionHeadersEnabled={false}
         ListHeaderComponent={
           <View>
             {activeForm === 'pass' ? (
@@ -306,7 +310,7 @@ export default function VisitorPassScreen() {
             </Text>
           </View>
         }
-        data={passes ?? []}
+        sections={sections}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={
           <EmptyState
@@ -315,6 +319,11 @@ export default function VisitorPassScreen() {
             message="Tap + up top to generate one and share the code with your visitor."
           />
         }
+        renderSectionHeader={({ section }) => (
+          <Text className="mb-sm mt-md text-right text-[13px] font-semibold text-paper-500 dark:text-ink-textMuted">
+            {section.title}
+          </Text>
+        )}
         renderItem={({ item }) => {
           // The DB's `status` only flips to 'expired' via a scheduled job that
           // isn't deployed yet — so a pass past its window still reads 'pending'

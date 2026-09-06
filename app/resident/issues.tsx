@@ -225,7 +225,7 @@ export default function IssuesScreen() {
         />
       }
       renderSectionHeader={({ section }) => (
-        <Text className="mb-sm mt-md text-[13px] font-semibold text-paper-500 dark:text-ink-textMuted">
+        <Text className="mb-sm mt-md text-right text-[13px] font-semibold text-paper-500 dark:text-ink-textMuted">
           {section.title}
         </Text>
       )}
