@@ -19,6 +19,8 @@ import {
   subscribeToPushTokenChanges,
 } from "../lib/push-notifications";
 import { AppShell } from "../components/ui/AppShell";
+import { EmergencyAlertModal } from "../components/EmergencyAlertModal";
+import { useEmergencyAlertStore } from "../store/emergency-alert-store";
 import type { UserRole } from "../types/database";
 
 const queryClient = new QueryClient();
@@ -156,8 +158,21 @@ function useNotificationRouting(
   useEffect(() => {
     if (Platform.OS === "web") return;
 
-    const receivedSub = Notifications.addNotificationReceivedListener(() => {
+    const receivedSub = Notifications.addNotificationReceivedListener((notification) => {
       queryClient.invalidateQueries({ queryKey: ["notifications_unread"] });
+
+      // A push only reaches this listener while the app is already open —
+      // backgrounded/killed just gets the OS banner, there's no JS running
+      // to react to. This is what makes an emergency interrupt whatever
+      // screen the resident is already on, on top of the OS notification
+      // they also got.
+      const data = notification.request.content.data as { kind?: string } | undefined;
+      if (data?.kind === "emergency_alert") {
+        useEmergencyAlertStore.getState().show({
+          title: notification.request.content.title ?? "Emergency alert",
+          body: notification.request.content.body ?? "",
+        });
+      }
     });
 
     const responseSub = Notifications.addNotificationResponseReceivedListener(
@@ -249,6 +264,7 @@ function RootNavigation() {
   return (
     <AppShell>
       <Slot />
+      <EmergencyAlertModal />
     </AppShell>
   );
 }
