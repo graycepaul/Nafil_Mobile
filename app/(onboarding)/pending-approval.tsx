@@ -13,7 +13,7 @@ type RequestWithEstate = EstateJoinRequest & { estate: Estate | null };
 
 /**
  * What a resident sees between submitting a join request and being approved.
- * Deliberately not a bare "pending" label on an empty tab bar — that reads as
+ * Deliberately not a bare "pending" label on an empty tab bar - that reads as
  * broken, not as "working as intended." Shows exactly what was submitted and
  * when, so there's no doubt the request went through, plus a way to check
  * again without needing to sign out and back in.

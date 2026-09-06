@@ -7,7 +7,7 @@ import { useAdminUiStore } from '../../store/admin-ui-store';
 import { useTheme } from '../../context/theme-context';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 
-/** Dashboard's header-right row: market (finance/super_admin only), notifications, then settings — same pattern as resident's HomeHeaderActions. */
+/** Dashboard's header-right row: market (finance/super_admin only), notifications, then settings - same pattern as resident's HomeHeaderActions. */
 export function AdminHeaderActions() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -29,7 +29,7 @@ export function AdminHeaderActions() {
     refetchInterval: 30_000,
   });
 
-  // Only the most recent active listing's timestamp — cheap to fetch, and
+  // Only the most recent active listing's timestamp - cheap to fetch, and
   // all that's needed to know whether anything's arrived since this device
   // last opened the Marketplace screen.
   const { data: latestListingAt } = useQuery({

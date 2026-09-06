@@ -39,7 +39,7 @@ const STATUS_FILTERS: { value: ListingStatus | undefined; label: string }[] = [
   { value: 'removed', label: 'Removed' },
 ];
 
-/** super_admin/finance view of every listing in the estate — browse and suspend, not delete. */
+/** super_admin/finance view of every listing in the estate - browse and suspend, not delete. */
 export default function AdminMarketplaceScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -57,7 +57,7 @@ export default function AdminMarketplaceScreen() {
   const [financeMenuOpen, setFinanceMenuOpen] = useState(false);
   const isSuperAdmin = profile?.role === 'super_admin';
 
-  // Clears the Dashboard's Market badge — it's tracking "anything posted
+  // Clears the Dashboard's Market badge - it's tracking "anything posted
   // since this device last opened this screen", not an unresolved queue.
   useEffect(() => {
     markMarketViewed();
@@ -76,7 +76,7 @@ export default function AdminMarketplaceScreen() {
     enabled: !!profile,
   });
 
-  // Same queryKeys the Dashboard's own stat cards use — shared cache, not a duplicate fetch.
+  // Same queryKeys the Dashboard's own stat cards use - shared cache, not a duplicate fetch.
   const { data: pendingTransferCount } = useQuery({
     queryKey: ['dashboard_pending_transfers', profile?.id],
     queryFn: async () => {

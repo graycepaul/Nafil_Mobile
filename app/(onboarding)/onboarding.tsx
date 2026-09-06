@@ -8,7 +8,7 @@ import { useAuthStore } from '../../store/auth-store';
 import type { EstateJoinRequest } from '../../types/database';
 
 /**
- * Not a screen — a router. Decides which onboarding step a resident belongs on
+ * Not a screen - a router. Decides which onboarding step a resident belongs on
  * and immediately redirects, based on what's actually true in the database
  * rather than which step they came from. That's what makes the wizard resumable:
  * close the app mid-flow and reopening lands you back exactly where you left off,
@@ -17,7 +17,7 @@ import type { EstateJoinRequest } from '../../types/database';
  * The first thing it does, before any resident-wizard logic, is try to finalize
  * a staff invite by email match. This is where a just-confirmed staff signup
  * actually becomes staff: they land here with a brand-new session and a
- * default resident-shaped profile (role='resident', approved=false — the
+ * default resident-shaped profile (role='resident', approved=false - the
  * signup trigger's default for everyone), and this call is what turns that
  * into role='security'/estate_id set/approved=true. It's a harmless no-op for
  * every genuine resident, who has no matching invite.
@@ -38,13 +38,13 @@ export default function OnboardingRouter() {
 
       if (accepted) {
         // Profile is no longer resident-shaped. Refreshing updates the store,
-        // which the root layout's own effect reacts to and routes accordingly —
+        // which the root layout's own effect reacts to and routes accordingly -
         // nothing further for this component to decide.
         await refreshProfile();
         return;
       }
 
-      // Not a staff invite — proceed as an ordinary resident.
+      // Not a staff invite - proceed as an ordinary resident.
       if (!profile!.phone) {
         router.replace('/profile-setup');
         return;

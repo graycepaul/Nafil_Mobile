@@ -1,7 +1,7 @@
 /**
  * Compares two "MAJOR.MINOR.PATCH"-style version strings. Returns negative if
  * `a` is older than `b`, positive if newer, 0 if equal. Deliberately doesn't
- * pull in a semver package — app.json's version field is always a plain
+ * pull in a semver package - app.json's version field is always a plain
  * three-part number here, nothing this app needs handles pre-release tags
  * or build metadata.
  */

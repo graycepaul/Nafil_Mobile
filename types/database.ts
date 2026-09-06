@@ -301,7 +301,7 @@ export interface TransferWithSubmitter extends Transfer {
 }
 
 /**
- * Shape returned by the get_public_profiles RPC — the only way a plain
+ * Shape returned by the get_public_profiles RPC - the only way a plain
  * resident can look up another resident's display info (profiles_select
  * doesn't allow it directly, since that row also holds resident_code).
  */
@@ -312,7 +312,7 @@ export interface PublicProfile {
   avatar_url: string | null;
 }
 
-/** Singleton row read on launch to gate/nudge on app version — see 0035_app_config.sql. */
+/** Singleton row read on launch to gate/nudge on app version - see 0035_app_config.sql. */
 export interface AppConfig {
   min_supported_version: string;
   latest_version: string;

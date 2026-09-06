@@ -17,7 +17,7 @@ type LinkStatus = 'checking' | 'ready' | 'invalid';
  *
  * Both cases are the same UI: Supabase hands the browser/app a valid session from
  * the link (via `detectSessionInUrl` on web, or `establishSessionFromUrl` on native
- * — see `_layout.tsx`), and this screen just needs the user to set a password
+ * - see `_layout.tsx`), and this screen just needs the user to set a password
  * before continuing. We don't currently distinguish "reset" from "invite" in copy;
  * the action is identical either way.
  *

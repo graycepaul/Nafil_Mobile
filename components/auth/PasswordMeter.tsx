@@ -4,7 +4,7 @@ import { passwordStrength } from '../../lib/validation';
 const TONE_CLASSES = { weak: 'bg-danger', fair: 'bg-warning', strong: 'bg-success' } as const;
 const TEXT_CLASSES = { weak: 'text-danger', fair: 'text-warning', strong: 'text-success' } as const;
 
-/** Three-segment strength hint. Advisory only — the enforced rule is minimum length. */
+/** Three-segment strength hint. Advisory only - the enforced rule is minimum length. */
 export function PasswordMeter({ password }: { password: string }) {
   const { level, label } = passwordStrength(password);
   const filled = { weak: 1, fair: 2, strong: 3 }[level];

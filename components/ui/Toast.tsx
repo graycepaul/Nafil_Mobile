@@ -15,12 +15,12 @@ const TONE_CLASSES: Record<Tone, string> = {
  * feedback next to the field it's about, but for feedback about an action
  * taken further down a long scrolling screen (e.g. household list), an
  * inline notice at the top of that same scroll view is invisible unless the
- * user happens to already be scrolled up — this renders as a sibling
+ * user happens to already be scrolled up - this renders as a sibling
  * `absolute` overlay instead, same technique as `Overlay`, so it's visible
  * regardless of scroll position. Auto-dismisses so it doesn't need its own
  * close button to go away.
  *
- * `z-[60]` — one above `Overlay`'s `z-50` — so a toast fired while a card
+ * `z-[60]` - one above `Overlay`'s `z-50` - so a toast fired while a card
  * modal is open (e.g. from the Share button) still shows on top of the dim
  * backdrop instead of being painted over by it.
  */

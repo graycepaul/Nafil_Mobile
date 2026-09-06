@@ -7,7 +7,7 @@ import { Card } from '../components/ui/Card';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 
 /**
- * Shared across every role, same reasoning as /settings — nothing here is
+ * Shared across every role, same reasoning as /settings - nothing here is
  * role-specific. There's no support-ticket system yet, so this is a direct
  * line to the estate's own admin/management contact rather than a fake
  * "submit a ticket" flow that goes nowhere.

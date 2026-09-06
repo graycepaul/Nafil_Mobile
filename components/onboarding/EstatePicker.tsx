@@ -14,7 +14,7 @@ interface EstatePickerProps {
 /**
  * Type-ahead search over the estate directory rather than a free-text field.
  * A resident typing "victoria gardns" and admin having to guess which real
- * estate they meant is worse for everyone than picking from real rows —
+ * estate they meant is worse for everyone than picking from real rows -
  * this way the join request is always unambiguous.
  */
 export function EstatePicker({ value, onChange, error }: EstatePickerProps) {

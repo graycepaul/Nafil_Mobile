@@ -24,7 +24,7 @@ export default function AdminAnnouncementDetailScreen() {
   const { colors } = useTheme();
   const profile = useAuthStore((s) => s.profile);
   const isSuperAdmin = profile?.role === 'super_admin';
-  // Read once on arrival — the toast is transient, it's fine if it wouldn't
+  // Read once on arrival - the toast is transient, it's fine if it wouldn't
   // replay on a later re-visit to this same URL (state resets per mount).
   const [toast] = useState(() =>
     toastTone && toastMsg ? { tone: toastTone as 'success' | 'error', message: toastMsg } : undefined

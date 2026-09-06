@@ -17,7 +17,7 @@ const ROLE_HOME: Record<UserRole, string> = {
 };
 
 /**
- * Rendered once at the app root (app/_layout.tsx) — not per-screen — so an
+ * Rendered once at the app root (app/_layout.tsx) - not per-screen - so an
  * emergency alert interrupts whatever the resident is doing, not just the
  * ones who happen to be looking at Home or the notifications list. Set by
  * the foreground notification listener; a background/killed-app push still

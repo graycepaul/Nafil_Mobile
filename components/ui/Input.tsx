@@ -14,7 +14,7 @@ const suppressBrowserOutline = Platform.select({
 
 interface InputProps extends TextInputProps {
   /**
-   * Accessible name. Rendered visually only when `showLabel` is set — the auth
+   * Accessible name. Rendered visually only when `showLabel` is set - the auth
    * screens are placeholder-only by design, but screen readers still need a name.
    */
   label?: string;

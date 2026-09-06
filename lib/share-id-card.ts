@@ -21,7 +21,7 @@ export async function shareHouseholdCard(member: HouseholdMember, estateName?: s
 
 /**
  * Shares the card as a picture (captured by the caller via
- * `react-native-view-shot`) rather than plain text — the whole point of a
+ * `react-native-view-shot`) rather than plain text - the whole point of a
  * frequent-visitor card is that it has the member's photo on it for security
  * to check against their face, and a code alone loses that. Falls back to
  * `shareHouseholdCard`'s text message if image sharing isn't available.

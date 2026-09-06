@@ -39,7 +39,7 @@ export const layout = {
 /**
  * Subtle elevation.
  *
- * Web takes `boxShadow` — react-native-web deprecated the `shadow*` props and warns
+ * Web takes `boxShadow` - react-native-web deprecated the `shadow*` props and warns
  * on every render if you use them. Native still wants the shadow props plus
  * `elevation`, so each level is declared per-platform rather than relying on a
  * translation layer.
@@ -60,7 +60,7 @@ const shadow = (
   })!;
 
 export const elevation = {
-  /** Very soft lift on form fields — what gives the auth screens their airy feel. */
+  /** Very soft lift on form fields - what gives the auth screens their airy feel. */
   input: shadow('0 2px 10px rgba(30, 41, 107, 0.06)', {
     color: '#1E296B',
     opacity: 0.06,

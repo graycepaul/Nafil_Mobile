@@ -1,6 +1,6 @@
 import { Text, Linking } from 'react-native';
 
-/** Consent line shown wherever an account actually gets created — not on every login, since existing users already agreed once. */
+/** Consent line shown wherever an account actually gets created - not on every login, since existing users already agreed once. */
 export function TermsNotice({ actionLabel = 'signing up' }: { actionLabel?: string }) {
   return (
     <Text className="mt-md text-center text-[12px] leading-[17px] text-paper-500 dark:text-ink-textMuted">

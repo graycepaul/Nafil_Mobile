@@ -12,7 +12,7 @@ export default function AdminLayout() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const profile = useAuthStore((s) => s.profile);
-  // finance handles marketplace/transfers/dues only — residents, staff,
+  // finance handles marketplace/transfers/dues only - residents, staff,
   // issues, and announcements aren't its concern, so those tabs don't exist
   // for it at all rather than being reachable-but-empty.
   const isFinance = profile?.role === 'finance';
@@ -70,7 +70,7 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="marketplace"
         // super_admin/finance only. Off the tab bar on a phone-width bottom
-        // bar (reached via the Dashboard header's market icon instead) —
+        // bar (reached via the Dashboard header's market icon instead) -
         // promoted to a real tab once there's room at tablet width and up.
         options={{
           title: 'Marketplace',

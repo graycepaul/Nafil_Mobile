@@ -14,7 +14,7 @@ interface ConfirmDialogProps {
   onCancel: () => void;
 }
 
-/** Cross-platform confirmation dialog — see `Overlay` for why this isn't RN's `Modal`. */
+/** Cross-platform confirmation dialog - see `Overlay` for why this isn't RN's `Modal`. */
 export function ConfirmDialog({
   visible,
   title,

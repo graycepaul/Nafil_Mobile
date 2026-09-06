@@ -166,7 +166,7 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
         // This screen's key is always 'new' for a fresh listing (see the
         // comment on MarketplaceForm's key prop above), so expo-router keeps
         // this exact instance mounted across repeat visits instead of
-        // remounting it — without this reset, publishing a listing and then
+        // remounting it - without this reset, publishing a listing and then
         // tapping "+" again showed the just-published listing's own title,
         // price, and description still sitting in the fields.
         setType('good');
@@ -248,7 +248,7 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
           z-20 here, not just on Select's own internal wrapper: z-index only
           ranks siblings within the same stacking context. Select's dropdown
           is already the top z-index *inside* this row, but this row itself
-          previously had no z-index (effectively 0) — tied with every field
+          previously had no z-index (effectively 0) - tied with every field
           below it (Description, delivery method, ...), which also sit at 0,
           so DOM order broke the tie in their favor and painted them over
           the open dropdown instead of the dropdown appearing on top. This

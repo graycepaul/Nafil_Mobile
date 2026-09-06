@@ -10,18 +10,18 @@ import { Button } from '../../components/ui/Button';
 type SignupRole = 'resident' | 'staff' | 'community';
 
 /**
- * "Sign up as" — the fork between the ways a person gets into Nafil Estates.
+ * "Sign up as" - the fork between the ways a person gets into Nafil Estates.
  *
  * Resident is a real open signup. Security/staff accounts are provisioned by
- * an estate admin (the employer), not self-registered — a stranger self-declaring
+ * an estate admin (the employer), not self-registered - a stranger self-declaring
  * "I'm security" and getting waved through by a busy admin would hand them live
  * gate-verification access before any real vetting happened. There's still no
- * path here to becoming an admin *of an existing estate* — every admin after
+ * path here to becoming an admin *of an existing estate* - every admin after
  * the first is created by that estate's own admin, never self-serve.
  *
  * "Register a new community" is a different thing entirely: it doesn't grant
  * admin over an estate that already exists, it creates the estate itself and
- * makes the signing-up person its first admin — there's no one else to
+ * makes the signing-up person its first admin - there's no one else to
  * approve them against, since they ARE the estate's founding account. This is
  * the self-serve onboarding path for a brand-new estate that isn't on the
  * platform yet.

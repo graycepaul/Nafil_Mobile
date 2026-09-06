@@ -300,7 +300,7 @@ export default function ProfileScreen() {
       <Overlay visible={!!viewingMember} onDismiss={() => setViewingMember(null)}>
         {viewingMember && (
           <>
-            {/* What the resident actually sees — plain card, no mat. */}
+            {/* What the resident actually sees - plain card, no mat. */}
             <IDCardView
               photoUrl={viewingMember.avatar_url}
               name={viewingMember.full_name}
@@ -312,13 +312,13 @@ export default function ProfileScreen() {
 
             {/* Off-screen twin, captured for sharing instead of the card
                 above. It's matted on a solid frame rather than captured
-                tight to its own edge — html2canvas (react-native-view-shot's
+                tight to its own edge - html2canvas (react-native-view-shot's
                 web capture backend) doesn't anti-alias a border-radius
                 cleanly against nothing, leaving a stray light sliver right
                 at the corners. A solid backdrop behind it hides that seam
                 instead of fighting it, and reads as an intentional
                 card-on-a-mat look rather than a bug. Kept out of the visible
-                layout (absolute + far off-screen, not display:none — a
+                layout (absolute + far off-screen, not display:none - a
                 non-rendered node has no bitmap for html2canvas to grab). */}
             <View
               style={{ position: 'absolute', left: -9999, top: 0 }}

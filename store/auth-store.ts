@@ -42,13 +42,13 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     });
 
     // Confirming an email (or resetting a password) commonly happens in a
-    // *different* tab/browser than the one waiting on "check your email" —
+    // *different* tab/browser than the one waiting on "check your email" -
     // that waiting tab has no way to find out a session now exists until
     // something makes it look again, hence needing a manual reload. Native
     // has the same problem across app backgrounding: iOS/Android can freeze
     // JS timers while backgrounded, so the SDK's own refresh timer may not
     // have fired by the time the user returns. Supabase's own docs recommend
-    // exactly this pattern for React Native — tie autoRefresh to AppState —
+    // exactly this pattern for React Native - tie autoRefresh to AppState -
     // and re-checking the session on the same trigger closes the web gap too.
     let removeAppStateListener: (() => void) | undefined;
     if (Platform.OS === 'web') {
@@ -82,7 +82,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   refreshSession: async () => {
     const { data: { session } } = await supabase.auth.getSession();
     const current = get().session;
-    // Skip the profile refetch when nothing actually changed — this fires on
+    // Skip the profile refetch when nothing actually changed - this fires on
     // every tab-focus/app-foreground, not just the one time it matters.
     if (session?.access_token === current?.access_token) return;
     const profile = session?.user ? await fetchProfile(session.user.id) : null;

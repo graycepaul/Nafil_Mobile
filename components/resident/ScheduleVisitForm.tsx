@@ -16,7 +16,7 @@ import { Card } from '../ui/Card';
  *
  * @react-native-community/datetimepicker has no web build at all (iOS/
  * Android/Windows only), so web uses the browser's own native <input
- * type="date"/"time"> pickers instead — still a real picker, no free text.
+ * type="date"/"time"> pickers instead - still a real picker, no free text.
  */
 export function ScheduleVisitForm({
   residentId,

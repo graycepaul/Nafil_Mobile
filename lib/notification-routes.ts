@@ -6,7 +6,7 @@ const ADMIN_ROLES: UserRole[] = ['admin', 'super_admin', 'finance'];
  * Where tapping a notification should take you, based on its type and the
  * id its trigger stashed in `data` (see the jsonb_build_object calls across
  * 0012/0013/0017/0020/0024/0027_*.sql for the exact key each type uses).
- * Returns undefined for a type with no specific detail screen to land on —
+ * Returns undefined for a type with no specific detail screen to land on -
  * the caller should just leave the user on the notifications list.
  */
 export function notificationRoute(item: Notification, role: UserRole | undefined): string | undefined {
@@ -14,7 +14,7 @@ export function notificationRoute(item: Notification, role: UserRole | undefined
   const isAdmin = role ? ADMIN_ROLES.includes(role) : false;
 
   switch (item.type) {
-    // Emergency alerts are announcements too (severity: 'emergency') — the
+    // Emergency alerts are announcements too (severity: 'emergency') - the
     // trigger that creates this notification stashes the same
     // announcement_id either way (0012_notifications.sql), so both land on
     // the same detail screen.
@@ -52,7 +52,7 @@ export function notificationRoute(item: Notification, role: UserRole | undefined
       return d.listing_id
         ? `/${isAdmin ? 'admin' : 'resident'}/marketplace-listing?id=${d.listing_id}`
         : undefined;
-    // 'join_request_approved' has no detail screen of its own — the
+    // 'join_request_approved' has no detail screen of its own - the
     // resident's estate assignment is already visible on Home once approved.
     default:
       return undefined;

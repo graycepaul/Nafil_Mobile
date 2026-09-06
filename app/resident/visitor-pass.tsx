@@ -38,7 +38,7 @@ export default function VisitorPassScreen() {
   const navigation = useNavigation();
   const router = useRouter();
   const { new: openOnLoad } = useLocalSearchParams<{ new?: string }>();
-  // 'pass' is the default and the only two states share one slot — the
+  // 'pass' is the default and the only two states share one slot - the
   // Schedule form replaces Generate Pass rather than stacking below it, so
   // there's never a question of which form an action applies to.
   const [activeForm, setActiveForm] = useState<'pass' | 'schedule'>('pass');
@@ -66,7 +66,7 @@ export default function VisitorPassScreen() {
     enabled: !!profile?.estate_id,
   });
 
-  // Deep-linked from Home's "+ Visitor pass" quick action (?new=1) — lands
+  // Deep-linked from Home's "+ Visitor pass" quick action (?new=1) - lands
   // back on the Generate Pass form in case the resident deep-links in while
   // the Schedule form happens to be showing.
   useEffect(() => {
@@ -326,7 +326,7 @@ export default function VisitorPassScreen() {
         )}
         renderItem={({ item }) => {
           // The DB's `status` only flips to 'expired' via a scheduled job that
-          // isn't deployed yet — so a pass past its window still reads 'pending'
+          // isn't deployed yet - so a pass past its window still reads 'pending'
           // here. Compute the effective state client-side rather than show a
           // "Pending" badge next to "Expired 2h ago", which reads as contradictory.
           // Security enforces the real window at check-in regardless of this.

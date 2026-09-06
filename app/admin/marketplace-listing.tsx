@@ -26,7 +26,7 @@ const STATUS_TONE: Record<ListingStatus, BadgeTone> = {
   suspended: 'danger',
 };
 
-/** Read-only listing detail for super_admin/finance — no buy flow, just moderation. */
+/** Read-only listing detail for super_admin/finance - no buy flow, just moderation. */
 export default function AdminMarketplaceListingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();

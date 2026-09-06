@@ -21,7 +21,7 @@ export function CardSkeleton({ media = false }: { media?: boolean }) {
   );
 }
 
-/** Renders `count` `CardSkeleton`s — the usual stand-in for a loading list. */
+/** Renders `count` `CardSkeleton`s - the usual stand-in for a loading list. */
 export function CardSkeletonList({ count = 4, media = false }: { count?: number; media?: boolean }) {
   return (
     <View className="p-xl">

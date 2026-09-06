@@ -6,7 +6,7 @@ import { useAuthStore } from "../../store/auth-store";
 import { useTheme } from "../../context/theme-context";
 import { Ionicons } from "@react-native-vector-icons/ionicons";
 
-/** Home tab's header-right row: notifications, support, settings — the only tab that gets all three. */
+/** Home tab's header-right row: notifications, support, settings - the only tab that gets all three. */
 export function HomeHeaderActions() {
   const router = useRouter();
   const { colors } = useTheme();

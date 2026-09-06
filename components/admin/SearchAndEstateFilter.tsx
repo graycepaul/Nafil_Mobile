@@ -6,7 +6,7 @@ import { useTheme } from '../../context/theme-context';
 const suppressBrowserOutline = Platform.select({ web: { outlineStyle: 'none' } as object, default: {} });
 
 /**
- * Search bar with a filter icon button beside it — tapping the icon reveals
+ * Search bar with a filter icon button beside it - tapping the icon reveals
  * the estate chip row below rather than showing it inline all the time.
  * Deliberately not the shared `Input` component: its py-[16px] is sized for
  * primary form fields, and comes out too tall for a compact list toolbar.
@@ -23,7 +23,7 @@ export function SearchAndEstateFilter({
   search: string;
   onSearchChange: (value: string) => void;
   placeholder: string;
-  /** Pass only when isSuperAdmin — omitting hides the filter button entirely. */
+  /** Pass only when isSuperAdmin - omitting hides the filter button entirely. */
   estates?: { id: string; name: string }[];
   estateFilter?: string;
   onEstateFilterChange?: (estateId: string | undefined) => void;

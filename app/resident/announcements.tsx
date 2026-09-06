@@ -9,7 +9,7 @@ import { TAB_PROMOTION_BREAKPOINT } from '../../components/ui/tab-options';
 /**
  * On a phone-width bottom bar this is reached via the floating icon on
  * Issues (see `_layout.tsx`), pushed onto the stack, hence the back button.
- * At tablet width and up it's promoted to a real tab instead — same screen,
+ * At tablet width and up it's promoted to a real tab instead - same screen,
  * just without a back arrow, since there's no "back" from a tab you tapped.
  */
 export default function ResidentAnnouncements() {

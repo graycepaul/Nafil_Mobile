@@ -24,7 +24,7 @@ const COUNTRY_OPTIONS = AFRICAN_COUNTRIES.map((c) => ({ value: c, label: c }));
 const NIGERIA_STATE_OPTIONS = NIGERIA_STATES.map((s) => ({ value: s, label: s }));
 
 /**
- * Onboards a brand-new estate, not a person joining one — the third fork off
+ * Onboards a brand-new estate, not a person joining one - the third fork off
  * role-select, next to resident and staff. There's no admin to approve this
  * signup against because this account IS that estate's first admin; the
  * community details travel in the same `raw_user_meta_data` signup payload
@@ -48,7 +48,7 @@ export default function CreateCommunityScreen() {
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [formError, setFormError] = useState<string>();
   const [loading, setLoading] = useState(false);
-  // Country and State sit side by side — without sharing this, each Select
+  // Country and State sit side by side - without sharing this, each Select
   // only tracks its own open state, so opening one while the other is
   // already open leaves both open at once.
   const [openDropdown, setOpenDropdown] = useState<'country' | 'state' | null>(null);
@@ -58,7 +58,7 @@ export default function CreateCommunityScreen() {
   function handleCountryChange(next: AfricanCountry) {
     setCountry(next);
     // A state picked from one country's list (or typed free-text for a
-    // country without one) isn't meaningful for the other — clear it rather
+    // country without one) isn't meaningful for the other - clear it rather
     // than silently carrying over a mismatched value.
     setStateName('');
     clear('stateName');
@@ -107,7 +107,7 @@ export default function CreateCommunityScreen() {
   return (
     <AuthShell
       title="Register your community"
-      subtitle="You'll be the estate's first admin — set up its record, then invite your team."
+      subtitle="You'll be the estate's first admin - set up its record, then invite your team."
       onBack={() => router.back()}
       footer={
         <View className="flex-row items-center justify-center gap-[6px]">

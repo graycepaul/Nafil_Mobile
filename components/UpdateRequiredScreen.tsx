@@ -11,7 +11,7 @@ interface UpdateRequiredScreenProps {
 
 /**
  * Replaces the entire app (rendered instead of <Slot/> in app/_layout.tsx,
- * not as an overlay on top of it) — this version is old enough that nothing
+ * not as an overlay on top of it) - this version is old enough that nothing
  * behind it can be trusted to work correctly against the current backend,
  * so there's deliberately no dismiss/skip here, unlike UpdateAvailableModal.
  */

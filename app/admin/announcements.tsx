@@ -116,14 +116,14 @@ export default function AdminAnnouncementsScreen() {
       // Same reasoning as security's Alert screen: the announcement above
       // is the in-app record, this is the part that reaches a resident's
       // phone even if they never open the app. A push failure here doesn't
-      // undo the announcement — it's surfaced as its own toast instead.
+      // undo the announcement - it's surfaced as its own toast instead.
       try {
         const result = await apiPost<{ recipients: number; tickets_sent: number; errors: string[] }>(
           '/alerts/broadcast',
           { title: title.trim(), body: body.trim(), category, estate_id: targetEstateId }
         );
         // A 200 response only means the backend accepted the request and tried
-        // — Expo's API can still reject the whole batch, leaving tickets_sent
+        // - Expo's API can still reject the whole batch, leaving tickets_sent
         // at 0 with no thrown error. `recipients` alone can't tell success
         // from that.
         if (result.tickets_sent === 0 && result.recipients > 0) {
@@ -214,7 +214,7 @@ export default function AdminAnnouncementsScreen() {
           />
 
           <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">
-            Photo — optional
+            Photo - optional
           </Text>
           <View className="mb-lg flex-row gap-sm">
             {photo ? (

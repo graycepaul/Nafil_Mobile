@@ -36,7 +36,7 @@ const ROLE_HOME: Record<UserRole, string> = {
   finance: "/admin",
 };
 
-// Only these roles have a dedicated notifications list today — security
+// Only these roles have a dedicated notifications list today - security
 // falls back to its home screen rather than a route that doesn't exist yet.
 const ROLE_NOTIFICATIONS: Partial<Record<UserRole, string>> = {
   resident: "/resident/notifications",
@@ -47,11 +47,11 @@ const ROLE_NOTIFICATIONS: Partial<Record<UserRole, string>> = {
 
 const AUTH_GROUP = "(auth)";
 const ONBOARDING_GROUP = "(onboarding)";
-// Shared across every role (theme, sign-out) — not nested under any role's
+// Shared across every role (theme, sign-out) - not nested under any role's
 // section, so it needs its own exemption from the "must be on your own role's
 // home section" redirect below, the same way the auth-group exceptions work.
 const SHARED_ROUTES = new Set(["settings", "support"]);
-// Reachable even when a session already exists — a fresh password-reset/invite
+// Reachable even when a session already exists - a fresh password-reset/invite
 // link establishes a session, and the usual "session exists → go to role home"
 // redirect below would otherwise bounce the user away before they can set a
 // password.
@@ -59,7 +59,7 @@ const AUTH_GROUP_EXCEPTIONS = new Set(["set-password"]);
 
 /**
  * Native deep links (password reset, staff invite) land here as a raw URL string
- * via `Linking`, not as a browser URL the Supabase client can auto-parse — so we
+ * via `Linking`, not as a browser URL the Supabase client can auto-parse - so we
  * extract the session tokens by hand. Web doesn't need this: `detectSessionInUrl`
  * (see `lib/supabase.ts`) handles the equivalent case when the app loads directly
  * from the emailed link.
@@ -86,7 +86,7 @@ function useNativeAuthLinks() {
 
 /**
  * Keeps the app icon's badge count equal to the real unread-notifications
- * count, not the OS default of "+1 per push received" — that drifts the
+ * count, not the OS default of "+1 per push received" - that drifts the
  * moment a notification is read in-app rather than tapped from the shade.
  * Shares the same query key as the header bell dots, so this doesn't add a
  * second poll, it's the same cached/polled request.
@@ -95,16 +95,16 @@ function useNativeAuthLinks() {
  * Registering as early as sign-in (rather than waiting for a specific
  * screen) means a resident's device is reachable for an emergency alert
  * from the moment they're part of an estate, not just once they happen to
- * visit some particular tab. estate_id gates it — a token registered
+ * visit some particular tab. estate_id gates it - a token registered
  * before a resident has one would just be unfindable by /alerts/broadcast,
  * which looks up recipients by estate.
  *
  * Two things a one-shot effect misses, handled here: if the resident denies
  * the permission prompt and later grants it from Settings, nothing would
- * otherwise retry — this re-attempts registration every time the app
+ * otherwise retry - this re-attempts registration every time the app
  * returns to the foreground, which is idempotent (an already-registered
  * device just re-upserts the same token). And a token can rotate under a
- * live session (reinstall, restored backup) — subscribeToPushTokenChanges
+ * live session (reinstall, restored backup) - subscribeToPushTokenChanges
  * keeps that in sync for as long as this profile stays signed in.
  */
 function usePushRegistration(profileId: string | undefined, estateId: string | null | undefined) {
@@ -147,7 +147,7 @@ function useBadgeSync(profileId: string | undefined) {
 }
 
 /**
- * Without these, a push sitting in the OS notification shade is a dead end —
+ * Without these, a push sitting in the OS notification shade is a dead end -
  * nothing in the app reacts to it arriving or being tapped. On receipt (app
  * foregrounded), refresh the unread count so the badge/bell dot update
  * immediately instead of waiting for the next 30s poll. On tap, route
@@ -162,7 +162,7 @@ function useNotificationRouting(
     if (Platform.OS === "web") return;
 
     const receivedSub = Notifications.addNotificationReceivedListener((notification) => {
-      // Previously only the unread badge count refreshed here — the actual
+      // Previously only the unread badge count refreshed here - the actual
       // notifications list and every dashboard widget it can affect (open
       // issues, recent announcements, active passes, pending requests...)
       // sat stale until a manual pull-to-refresh, even though the push had
@@ -181,7 +181,7 @@ function useNotificationRouting(
         },
       });
 
-      // A push only reaches this listener while the app is already open —
+      // A push only reaches this listener while the app is already open -
       // backgrounded/killed just gets the OS banner, there's no JS running
       // to react to. This is what makes an emergency interrupt whatever
       // screen the resident is already on, on top of the OS notification
@@ -255,7 +255,7 @@ function RootNavigation() {
 
     if (!profile) return; // session known, profile still loading
 
-    // Unapproved residents are ALWAYS confined to the onboarding wizard — this is
+    // Unapproved residents are ALWAYS confined to the onboarding wizard - this is
     // the actual fix for "signs up and lands in an empty dashboard." It's checked
     // before the normal role-home routing below and overrides it unconditionally,
     // so there's no route (typed in the URL bar, deep-linked, whatever) that gets

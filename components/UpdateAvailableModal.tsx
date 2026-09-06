@@ -13,7 +13,7 @@ interface UpdateAvailableModalProps {
 
 /**
  * A newer version exists but this one still works fine against the current
- * backend — dismissible, shown once per app open rather than every time a
+ * backend - dismissible, shown once per app open rather than every time a
  * query happens to remount this. Unlike UpdateRequiredScreen, this renders
  * as an overlay on top of the normal app, not in place of it.
  */

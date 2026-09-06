@@ -14,7 +14,7 @@ import { Notice } from '../../components/ui/Notice';
 /**
  * First onboarding step: the details that live on the resident regardless of
  * which estate they end up in. Phone is required (it's how a guard or admin
- * reaches a resident about a visitor or issue); the photo is optional — skip
+ * reaches a resident about a visitor or issue); the photo is optional - skip
  * is always available, and initials cover the empty state everywhere an
  * avatar renders.
  */

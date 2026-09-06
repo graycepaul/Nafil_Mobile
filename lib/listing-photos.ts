@@ -8,7 +8,7 @@ import { supabase } from './supabase';
  * unchanged.
  *
  * Content type comes from the picker's own `mimeType` when available, same
- * as `avatar.ts`'s `uploadToPath` — guessing it from the uri's extension
+ * as `avatar.ts`'s `uploadToPath` - guessing it from the uri's extension
  * alone fails for a `blob:`/`content:` uri (no `.ext` to find), which is
  * what the picker returns on web and on some Android pickers.
  *
@@ -16,7 +16,7 @@ import { supabase } from './supabase';
  * upload. @supabase/storage-js's `upload()` ignores the `contentType` option
  * entirely once the body is a Blob (it hands the Blob straight to a
  * `FormData`, whose part gets its content type from the Blob's own `.type`)
- * — so the option here only matters for the request's own headers; the
+ * - so the option here only matters for the request's own headers; the
  * Blob's `.type` is what actually reaches Storage.
  */
 export async function uploadListingPhotos(

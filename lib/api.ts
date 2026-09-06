@@ -5,7 +5,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 export class ApiError extends Error {}
 
 /**
- * Talks to the FastAPI backend (Nafil Backend) — the handful of things that
+ * Talks to the FastAPI backend (Nafil Backend) - the handful of things that
  * need a server in the loop rather than going straight to Supabase (right
  * now: pushing an emergency alert to residents' phones). Authenticates with
  * the same session Supabase already has; the backend verifies it against

@@ -9,11 +9,11 @@ interface SelectOption<T extends string> {
 }
 
 /**
- * Dropdown field — tap to expand the option list as a floating overlay
+ * Dropdown field - tap to expand the option list as a floating overlay
  * directly below it. Positioned `absolute` relative to this component's own
  * wrapper (not Overlay's full-screen `inset-0`, which resolves against the
  * nearest ancestor and would clip to a half-width column in a side-by-side
- * row), so opening it never shifts any field below — it was previously
+ * row), so opening it never shifts any field below - it was previously
  * expanding inline in document flow, pushing every field after it down the
  * screen for as long as it stayed open.
  */
@@ -37,7 +37,7 @@ export function Select<T extends string>({
   className?: string;
   /**
    * Controlled open state, for a group of Selects that must stay mutually
-   * exclusive (e.g. country + state side by side) — without this, each
+   * exclusive (e.g. country + state side by side) - without this, each
    * Select only knows about its own open/closed state, so opening one next
    * to an already-open one leaves both open at once. Omit both props for
    * the normal uncontrolled behavior (its own internal open state).

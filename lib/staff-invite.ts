@@ -15,7 +15,7 @@ interface ValidateInviteRpcResult {
   invite_email: string | null;
 }
 
-/** Checks a code before any account exists — callable while signed out. */
+/** Checks a code before any account exists - callable while signed out. */
 export async function validateStaffInviteCode(code: string): Promise<ValidatedInvite> {
   const { data, error } = await supabase
     .rpc('validate_staff_invite_code', { invite_code: code })
@@ -31,7 +31,7 @@ export async function validateStaffInviteCode(code: string): Promise<ValidatedIn
   };
 }
 
-/** Saves profile details onto the invite row — there's no profile to attach them to yet. */
+/** Saves profile details onto the invite row - there's no profile to attach them to yet. */
 export async function saveStaffInviteProfile(params: {
   code: string;
   firstName: string;
@@ -50,7 +50,7 @@ export async function saveStaffInviteProfile(params: {
 }
 
 /**
- * Called once a real session exists (after the confirmation-email click) —
+ * Called once a real session exists (after the confirmation-email click) -
  * matches by the caller's own verified email, finalizing role/estate/approved
  * and copying over the name/phone/photo saved during the anonymous steps.
  */

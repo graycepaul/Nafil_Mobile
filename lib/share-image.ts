@@ -4,13 +4,13 @@ import { shareText, type ShareOutcome } from './share-text';
 
 /**
  * Shares a local image (a captured PNG's file:// / data: URI, e.g. from
- * `react-native-view-shot`) through the OS share sheet — WhatsApp included —
+ * `react-native-view-shot`) through the OS share sheet - WhatsApp included -
  * rather than just the text fallback. Native uses `expo-sharing`, which is
  * the supported way to hand a file to the share sheet in a managed Expo app
  * (RN's own `Share.share` doesn't reliably attach images on Android).
  *
- * Web tries the Web Share API's file support first — it's the only thing
- * that gets a real "choose an app" picker in a browser — but only on a
+ * Web tries the Web Share API's file support first - it's the only thing
+ * that gets a real "choose an app" picker in a browser - but only on a
  * secure origin (HTTPS, or localhost) and only on browsers that implement
  * `canShare({ files })` at all (patchy: good on recent mobile Safari/Chrome,
  * largely absent on desktop). It's also timing-sensitive: `navigator.share()`
@@ -18,7 +18,7 @@ import { shareText, type ShareOutcome } from './share-text';
  * before this is ever called (capturing the view) can eat that window on
  * strict browsers, making the call silently reject even where the API is
  * otherwise supported. Any of those failure modes fall back to force-
- * downloading the image instead — that always works, and gives the resident
+ * downloading the image instead - that always works, and gives the resident
  * a real file to attach in WhatsApp themselves, which beats a share sheet
  * that mostly doesn't appear or a text-only fallback with no photo.
  */
@@ -34,7 +34,7 @@ export async function shareImage(uri: string, fallbackMessage: string): Promise<
       }
     } catch {
       // Not supported, not a secure origin, or the activation window closed
-      // — fall through to the download below rather than surface an error.
+      // - fall through to the download below rather than surface an error.
     }
 
     try {

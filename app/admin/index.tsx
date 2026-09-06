@@ -19,11 +19,11 @@ import type { Announcement, Estate } from '../../types/database';
 
 /**
  * Three different dashboards under one screen, by role:
- *  - admin: the general estate manager — residents, staff, issues, join
+ *  - admin: the general estate manager - residents, staff, issues, join
  *    requests. No market/finance visibility; that's a separate concern now.
  *  - super_admin: everything admin sees is available via the Residents/
  *    Staff/Issues tabs regardless, so its stat cards focus on what a
- *    cross-estate overseer actually glances at day to day — issues and the
+ *    cross-estate overseer actually glances at day to day - issues and the
  *    money-related queues (also the only role, besides finance, that sees
  *    the Market/Wallet icons).
  *  - finance: market + finance only. No residents/staff/issues concern, so

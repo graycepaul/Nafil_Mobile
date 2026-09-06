@@ -6,14 +6,14 @@ import { StatusBadge } from './StatusBadge';
 interface IDCardViewProps {
   photoUrl?: string | null;
   name: string;
-  /** Second line under the name — unit no. for a resident, relationship for a household member. */
+  /** Second line under the name - unit no. for a resident, relationship for a household member. */
   subtitle?: string | null;
   estateName?: string | null;
   code: string;
   revoked?: boolean;
   /**
    * Drops the outer drop shadow. Used for the instance captured by
-   * `react-native-view-shot` for sharing — on web, its `html2canvas` backend
+   * `react-native-view-shot` for sharing - on web, its `html2canvas` backend
    * renders CSS `box-shadow` as a blocky, unblurred halo rather than a soft
    * shadow, so the exported PNG picked up a tacky white/grey border around
    * the card. A border-only card avoids the shadow entirely and looks clean
@@ -23,12 +23,12 @@ interface IDCardViewProps {
 }
 
 /**
- * The credential shown at the gate — for the resident themselves, or for
+ * The credential shown at the gate - for the resident themselves, or for
  * anyone on their household/frequent-visitor allow list. The photo and name
  * are just for the security guard's own visual check; the QR is what
  * actually matters; it encodes `code`, which security scans and looks up
  * against the estate's live database. A card with a copied photo but a
- * made-up or already-revoked code fails that lookup — the printed card is
+ * made-up or already-revoked code fails that lookup - the printed card is
  * never itself the proof of anything.
  */
 export function IDCardView({

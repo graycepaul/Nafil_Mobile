@@ -173,7 +173,7 @@ export default function IssuesScreen() {
               />
 
               <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">
-                Photos ({photos.length}/{MAX_PHOTOS}) — optional
+                Photos ({photos.length}/{MAX_PHOTOS}) - optional
               </Text>
               <View className="mb-lg flex-row flex-wrap gap-sm">
                 {photos.map((uri) => (

@@ -28,13 +28,13 @@ type Step = 'code' | 'profile' | 'password' | 'sent';
 
 /**
  * Where "I have an invite code" leads. One screen, one internal step machine,
- * rather than separate routes — deliberately. No account exists until the very
+ * rather than separate routes - deliberately. No account exists until the very
  * last step (this project requires email confirmation before a session is
- * issued, confirmed empirically — see migration 0007's notes), so everything
+ * issued, confirmed empirically - see migration 0007's notes), so everything
  * collected before then is local component state with nowhere durable to live
  * except the invite row itself. Keeping it one screen means there's no
  * intermediate route the root layout's redirect logic could ever catch this
- * mid-flow on — nothing to exempt, because nothing here is a route change.
+ * mid-flow on - nothing to exempt, because nothing here is a route change.
  */
 export default function StaffInviteScreen() {
   const router = useRouter();

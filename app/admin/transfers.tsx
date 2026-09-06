@@ -44,7 +44,7 @@ const STATUS_TABS: { value: TransferStatus | 'all'; label: string }[] = [
 ];
 
 /**
- * finance/super_admin's full record of bank transfers — wallet top-ups, dues,
+ * finance/super_admin's full record of bank transfers - wallet top-ups, dues,
  * and marketplace purchases. Defaults to the "Pending" tab (the action queue
  * this screen started as), with Confirmed/Rejected/All alongside it so
  * there's one place to see the full accept/reject history, not just what's

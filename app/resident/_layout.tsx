@@ -54,10 +54,10 @@ export default function ResidentLayout() {
       />
       <Tabs.Screen
         name="notifications"
-        // Reached by tapping the Home header's bell, not a tab of its own —
+        // Reached by tapping the Home header's bell, not a tab of its own -
         // `href: null` registers the route without adding a tab bar button.
         // headerShown: false because the Tabs navigator's default header has
-        // no back button for a pushed href:null screen — each of these
+        // no back button for a pushed href:null screen - each of these
         // builds its own header instead, with a working back button.
         options={{ title: 'Notifications', href: null, headerShown: false }}
       />
@@ -88,7 +88,7 @@ export default function ResidentLayout() {
       />
       <Tabs.Screen
         name="store"
-        // Reached via the Market tab header's store icon — only shown to residents who have listed something.
+        // Reached via the Market tab header's store icon - only shown to residents who have listed something.
         options={{ title: 'My store', href: null, headerShown: false }}
       />
       <Tabs.Screen
@@ -99,7 +99,7 @@ export default function ResidentLayout() {
       <Tabs.Screen
         name="announcements"
         // Off the tab bar on a phone-width bottom bar (reached via the
-        // floating icon on Issues instead) — promoted to a real tab once
+        // floating icon on Issues instead) - promoted to a real tab once
         // there's room for a 6th at tablet width and up.
         options={{
           title: 'Announcements',

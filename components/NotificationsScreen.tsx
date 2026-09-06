@@ -35,7 +35,7 @@ const TYPE_ICON: Record<NotificationType, IoniconsIconName> = {
   due_assigned: 'receipt-outline',
 };
 
-/** Same notifications inbox for every role — the table and its RLS (own rows only) don't distinguish who's looking, so neither does this screen. */
+/** Same notifications inbox for every role - the table and its RLS (own rows only) don't distinguish who's looking, so neither does this screen. */
 export function NotificationsScreen() {
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
