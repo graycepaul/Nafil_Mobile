@@ -120,7 +120,7 @@ export default function AdminAnnouncementsScreen() {
       try {
         const result = await apiPost<{ recipients: number; tickets_sent: number; errors: string[] }>(
           '/alerts/broadcast',
-          { title: title.trim(), body: body.trim(), category, estate_id: targetEstateId }
+          { title: title.trim(), body: body.trim(), category, estate_id: targetEstateId, photo_url: photoUrl }
         );
         // A 200 response only means the backend accepted the request and tried
         // - Expo's API can still reject the whole batch, leaving tickets_sent

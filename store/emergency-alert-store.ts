@@ -3,6 +3,7 @@ import { create } from 'zustand';
 export interface ActiveEmergencyAlert {
   title: string;
   body: string;
+  photoUrl?: string;
 }
 
 interface EmergencyAlertState {

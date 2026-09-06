@@ -186,11 +186,14 @@ function useNotificationRouting(
       // to react to. This is what makes an emergency interrupt whatever
       // screen the resident is already on, on top of the OS notification
       // they also got.
-      const data = notification.request.content.data as { kind?: string } | undefined;
+      const data = notification.request.content.data as
+        | { kind?: string; photo_url?: string }
+        | undefined;
       if (data?.kind === "emergency_alert") {
         useEmergencyAlertStore.getState().show({
           title: notification.request.content.title ?? "Emergency alert",
           body: notification.request.content.body ?? "",
+          photoUrl: data.photo_url,
         });
       }
     });

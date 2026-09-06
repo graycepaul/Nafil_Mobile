@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/auth-store';
 import { useEmergencyAlertStore } from '../store/emergency-alert-store';
 import { Overlay } from './ui/Overlay';
 import { Button } from './ui/Button';
+import { RemoteImage } from './ui/RemoteImage';
 import type { UserRole } from '../types/database';
 
 const ROLE_HOME: Record<UserRole, string> = {
@@ -40,6 +41,10 @@ export function EmergencyAlertModal() {
             Emergency alert
           </Text>
         </View>
+
+        {alert?.photoUrl && (
+          <RemoteImage uri={alert.photoUrl} className="mb-md aspect-video w-full rounded-md" />
+        )}
 
         <Text className="text-lg font-semibold text-paper-900 dark:text-ink-text">
           {alert?.title}
