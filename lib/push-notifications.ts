@@ -16,15 +16,30 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// Registration gets called from several places that can all fire close
+// together — sign-in, the AppState "back to foreground" retry, a fast
+// refresh remounting _layout.tsx during development — and a device stuck
+// mid-registration (or a backend that keeps rejecting it) would otherwise
+// stack up concurrent attempts instead of just sharing the one in flight.
+let registrationInFlight: Promise<string | null> | null = null;
+
 /**
  * Requests permission, registers this device with Expo's push service, and
- * upserts the token against the signed-in profile so the backend's
+ * saves the token against the signed-in profile so the backend's
  * /alerts/broadcast can look it up later. Silently no-ops (returns null)
  * rather than throwing when push isn't set up yet for this build — no EAS
  * project configured, no physical device/simulator support, permission
  * denied — since none of those should block using the rest of the app.
  */
-export async function registerForPushNotifications(profileId: string): Promise<string | null> {
+export function registerForPushNotifications(profileId: string): Promise<string | null> {
+  if (registrationInFlight) return registrationInFlight;
+  registrationInFlight = doRegister(profileId).finally(() => {
+    registrationInFlight = null;
+  });
+  return registrationInFlight;
+}
+
+async function doRegister(profileId: string): Promise<string | null> {
   // Expo's push-token flow (getExpoPushTokenAsync, native permission
   // prompts) is built for iOS/Android device push, not the browser — the
   // equivalent on web is Web Push/VAPID, a different mechanism entirely.
@@ -71,14 +86,24 @@ export async function registerForPushNotifications(profileId: string): Promise<s
     return null;
   }
 
-  const saved = await saveToken(profileId, token);
+  const saved = await saveToken(token);
   return saved ? token : null;
 }
 
-async function saveToken(profileId: string, token: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('push_tokens')
-    .upsert({ profile_id: profileId, token, platform: Platform.OS }, { onConflict: 'token' });
+/**
+ * A push token identifies a device, not a person — the same simulator or a
+ * shared/reused phone can carry a token that already belongs to a different
+ * profile (exactly what testing multiple accounts on one device does). RLS
+ * correctly refuses to let this profile's plain upsert touch a row it
+ * doesn't own, so reassigning it goes through this RPC instead, which
+ * confirms real auth via auth.uid() server-side before doing so — see
+ * 0033_reassignable_push_tokens.sql.
+ */
+async function saveToken(token: string): Promise<boolean> {
+  const { error } = await supabase.rpc('register_push_token', {
+    p_token: token,
+    p_platform: Platform.OS,
+  });
 
   if (error) {
     console.warn('push-notifications: failed to save token.', error.message);
@@ -97,17 +122,28 @@ async function saveToken(profileId: string, token: string): Promise<boolean> {
  * rotation event is to re-derive the Expo token via getExpoPushTokenAsync
  * and re-upsert that, not to save whatever the listener handed us directly.
  */
-export function subscribeToPushTokenChanges(profileId: string) {
+export function subscribeToPushTokenChanges() {
   if (Platform.OS === 'web') return { remove() {} };
 
+  // Guards against the listener somehow re-firing while the previous
+  // refresh is still in flight — re-requesting the same token shouldn't be
+  // able to trigger itself, but there's no documented guarantee either way,
+  // and a tight loop here would be a real problem (flooding the bridge),
+  // not just a wasted request.
+  let refreshing = false;
+
   return Notifications.addPushTokenListener(async () => {
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-    if (!projectId) return;
+    if (refreshing) return;
+    refreshing = true;
     try {
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+      if (!projectId) return;
       const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
-      await saveToken(profileId, token);
+      await saveToken(token);
     } catch (error) {
       console.warn('subscribeToPushTokenChanges: failed to refresh rotated token.', error);
+    } finally {
+      refreshing = false;
     }
   });
 }

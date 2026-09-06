@@ -99,16 +99,20 @@ export function IssueFeedbackThread({ issueId, canPost }: IssueFeedbackThreadPro
       )}
 
       {canPost && (
-        <View className="mt-md flex-row items-end gap-sm">
-          <View className="flex-1">
-            <Input
-              placeholder="Write a message…"
-              value={draft}
-              onChangeText={setDraft}
-              multiline
-            />
-          </View>
-          <Button label="Send" onPress={send} loading={sending} disabled={!draft.trim()} />
+        <View className="mt-md">
+          <Input
+            placeholder="Write a message…"
+            value={draft}
+            onChangeText={setDraft}
+            multiline
+          />
+          <Button
+            label="Send"
+            onPress={send}
+            loading={sending}
+            disabled={!draft.trim()}
+            className="mt-sm"
+          />
         </View>
       )}
     </View>
