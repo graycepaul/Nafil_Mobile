@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { titleCase } from '../../lib/format';
+import { groupByDate } from '../../lib/date-groups';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
@@ -39,15 +40,6 @@ function cutoffFor(filter: DateFilter): Date | null {
   if (filter === '7d') return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   if (filter === '30d') return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   return null;
-}
-
-function dayLabel(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
 }
 
 /**
@@ -84,13 +76,7 @@ export default function VisitorPassHistoryScreen() {
       if (cutoff && new Date(p.created_at) < cutoff) return false;
       return !q || p.visitor_name.toLowerCase().includes(q);
     });
-    const byDay = new Map<string, PassWithLog[]>();
-    for (const pass of filtered) {
-      const key = dayLabel(pass.created_at);
-      if (!byDay.has(key)) byDay.set(key, []);
-      byDay.get(key)!.push(pass);
-    }
-    return Array.from(byDay.entries()).map(([title, data]) => ({ title, data }));
+    return groupByDate(filtered, (p) => p.created_at);
   }, [passes, search, dateFilter]);
 
   return (
@@ -166,7 +152,7 @@ export default function VisitorPassHistoryScreen() {
               />
             }
             renderSectionHeader={({ section }) => (
-              <Text className="mb-sm bg-white py-sm text-sm font-semibold text-paper-500 dark:bg-ink-bg dark:text-ink-textMuted">
+              <Text className="mb-sm bg-white py-sm text-right text-sm font-semibold text-paper-500 dark:bg-ink-bg dark:text-ink-textMuted">
                 {section.title}
               </Text>
             )}
