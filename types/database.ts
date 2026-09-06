@@ -178,7 +178,8 @@ export type NotificationType =
   | 'listing_suspended'
   | 'listing_reinstated'
   | 'transfer_contested'
-  | 'issue_feedback';
+  | 'issue_feedback'
+  | 'due_assigned';
 
 export interface Notification {
   id: string;

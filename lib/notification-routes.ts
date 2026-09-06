@@ -45,6 +45,8 @@ export function notificationRoute(item: Notification, role: UserRole | undefined
       return '/resident/wallet-transactions';
     case 'transfer_contested':
       return '/admin/transfers';
+    case 'due_assigned':
+      return '/resident/wallet';
     case 'listing_suspended':
     case 'listing_reinstated':
       return d.listing_id
