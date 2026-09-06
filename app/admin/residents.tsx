@@ -7,12 +7,12 @@ import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { Avatar } from '../../components/ui/Avatar';
-import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Notice } from '../../components/ui/Notice';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { CardSkeletonList } from '../../components/ui/CardSkeleton';
 import { SearchAndEstateFilter } from '../../components/admin/SearchAndEstateFilter';
+import { PendingRequestCard } from '../../components/admin/PendingRequestCard';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { JoinRequestWithApplicant, Profile } from '../../types/database';
 
@@ -25,6 +25,7 @@ export default function AdminResidentsScreen() {
   const queryClient = useQueryClient();
   const { tab: openOnLoad } = useLocalSearchParams<{ tab?: string }>();
   const [formError, setFormError] = useState<string>();
+  const [actioning, setActioning] = useState<{ id: string; type: 'approve' | 'reject' } | null>(null);
   const [activeTab, setActiveTab] = useState<ResidentsTab>('all');
   const [search, setSearch] = useState('');
   const isSuperAdmin = profile?.role === 'super_admin';
@@ -84,14 +85,18 @@ export default function AdminResidentsScreen() {
 
   async function approve(requestId: string) {
     setFormError(undefined);
+    setActioning({ id: requestId, type: 'approve' });
     const { error } = await supabase.rpc('approve_join_request', { request_id: requestId });
+    setActioning(null);
     if (error) setFormError(friendlyDbError(error));
     else invalidate();
   }
 
   async function reject(requestId: string) {
     setFormError(undefined);
+    setActioning({ id: requestId, type: 'reject' });
     const { error } = await supabase.rpc('reject_join_request', { request_id: requestId });
+    setActioning(null);
     if (error) setFormError(friendlyDbError(error));
     else invalidate();
   }
@@ -186,25 +191,14 @@ export default function AdminResidentsScreen() {
           <EmptyState title="All caught up" message="No join requests waiting on you." />
         }
         renderItem={({ item: req }) => (
-          <Card className="mb-md">
-            <View className="flex-row items-center gap-md">
-              <Avatar uri={req.applicant?.avatar_url} name={req.applicant?.full_name} size={44} />
-              <View className="flex-1">
-                <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
-                  {req.applicant?.full_name ?? 'Unnamed'}
-                </Text>
-                <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
-                  Unit {req.unit_no}
-                  {req.applicant?.phone ? ` · ${req.applicant.phone}` : ''}
-                  {isSuperAdmin && req.estate?.name ? ` · ${req.estate.name}` : ''}
-                </Text>
-              </View>
-            </View>
-            <View className="mt-md flex-row gap-sm">
-              <Button label="Approve" onPress={() => approve(req.id)} className="flex-1" />
-              <Button label="Reject" variant="secondary" onPress={() => reject(req.id)} className="flex-1" />
-            </View>
-          </Card>
+          <PendingRequestCard
+            request={req}
+            estateName={isSuperAdmin ? req.estate?.name : undefined}
+            onApprove={() => approve(req.id)}
+            onReject={() => reject(req.id)}
+            approving={actioning?.id === req.id && actioning.type === 'approve'}
+            rejecting={actioning?.id === req.id && actioning.type === 'reject'}
+          />
         )}
       />
     );

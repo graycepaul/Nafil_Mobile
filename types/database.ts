@@ -31,6 +31,8 @@ export interface Profile {
   created_at: string;
 }
 
+export type ResidentCategory = 'civilian' | 'personnel';
+
 export interface EstateJoinRequest {
   id: string;
   profile_id: string;
@@ -40,6 +42,12 @@ export interface EstateJoinRequest {
   created_at: string;
   reviewed_at: string | null;
   reviewed_by: string | null;
+  /** Null only for requests submitted before this feature existed. */
+  resident_category: ResidentCategory | null;
+  /** Storage path (private bucket), not a URL - resolve to a signed URL before display. */
+  id_document_path: string | null;
+  /** Only set for resident_category: 'personnel'. */
+  service_number: string | null;
 }
 
 /** Shape returned by the admin queue's join-request query, with the resident's name/phone joined in. */
