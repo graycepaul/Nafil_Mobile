@@ -3,6 +3,7 @@ import { Text, Keyboard, Pressable, ScrollView } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { friendlyDbError } from '../../lib/db-errors';
 import { apiPost } from '../../lib/api';
+import { getCurrentPushToken } from '../../lib/push-notifications';
 import { useAuthStore } from '../../store/auth-store';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -44,9 +45,10 @@ export default function SecurityAlertScreen() {
     // in-app, so this is reported as its own (non-fatal) notice rather than
     // rolled back.
     try {
+      const posterToken = await getCurrentPushToken();
       const result = await apiPost<{ recipients: number; tickets_sent: number; errors: string[] }>(
         '/alerts/broadcast',
-        { title: title.trim(), body: body.trim(), category }
+        { title: title.trim(), body: body.trim(), category, poster_token: posterToken }
       );
       // A 200 response only means the backend accepted the request and tried
       // - Expo's API can still reject the whole batch (as it silently did

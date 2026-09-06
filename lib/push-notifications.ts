@@ -113,6 +113,29 @@ async function saveToken(token: string): Promise<boolean> {
 }
 
 /**
+ * This device's own Expo push token, if it has one - used so an emergency
+ * broadcast can tell the backend "don't push back to the device that just
+ * posted this" without silencing the poster's *other* devices too (a plain
+ * per-account exclusion would do that, which is wrong: someone with the app
+ * open on a tablet and a phone should still get the phone's push after
+ * posting from the tablet). Doesn't request permission or register
+ * anything - just reads the token if one's already available, returning
+ * null otherwise (permission not granted, no EAS project, web).
+ */
+export async function getCurrentPushToken(): Promise<string | null> {
+  if (Platform.OS === 'web') return null;
+  const { status } = await Notifications.getPermissionsAsync();
+  if (status !== 'granted') return null;
+  const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+  if (!projectId) return null;
+  try {
+    return (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Expo push tokens can rotate underneath an already-signed-in session (app
  * reinstall, restored backup, credential change) - a token saved once at
  * sign-in and never revisited goes stale, and every future push to it just

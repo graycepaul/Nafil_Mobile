@@ -8,6 +8,7 @@ import { friendlyDbError } from '../../lib/db-errors';
 import { apiPost } from '../../lib/api';
 import { pickPhoto } from '../../lib/pick-photo';
 import { uploadAnnouncementPhoto } from '../../lib/announcement-photo';
+import { getCurrentPushToken } from '../../lib/push-notifications';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { Button } from '../../components/ui/Button';
@@ -118,9 +119,17 @@ export default function AdminAnnouncementsScreen() {
       // phone even if they never open the app. A push failure here doesn't
       // undo the announcement - it's surfaced as its own toast instead.
       try {
+        const posterToken = await getCurrentPushToken();
         const result = await apiPost<{ recipients: number; tickets_sent: number; errors: string[] }>(
           '/alerts/broadcast',
-          { title: title.trim(), body: body.trim(), category, estate_id: targetEstateId, photo_url: photoUrl }
+          {
+            title: title.trim(),
+            body: body.trim(),
+            category,
+            estate_id: targetEstateId,
+            photo_url: photoUrl,
+            poster_token: posterToken,
+          }
         );
         // A 200 response only means the backend accepted the request and tried
         // - Expo's API can still reject the whole batch, leaving tickets_sent
