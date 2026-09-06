@@ -37,12 +37,12 @@ yarn-error.*
 # logs
 *.log
 
-# local env files — everything except the committed example
+# local env files - everything except the committed example
 .env
 .env*
 !.env.example
 
-# Firebase/GCP service account keys — real admin credentials, never commit.
+# Firebase/GCP service account keys - real admin credentials, never commit.
 # google-services.json is NOT in this list on purpose: it's client-side
 # config baked into the APK anyway (restricted by package name), not a secret.
 *firebase-adminsdk*.json

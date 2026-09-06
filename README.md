@@ -1,10 +1,10 @@
-# Nafil Estates — Mobile
+# Nafil Estates - Mobile
 
 Role-based estate management app (React Native / Expo Router + Supabase), built for a single
-client managing multiple communities — residents, security, and admin all share one app,
+client managing multiple communities - residents, security, and admin all share one app,
 routed by role.
 
-Part of the `Nafil Estates` workspace — see [`../Nafil Backend`](../Nafil%20Backend) for the
+Part of the `Nafil Estates` workspace - see [`../Nafil Backend`](../Nafil%20Backend) for the
 Supabase schema/migrations and [`../Nafil Docs`](../Nafil%20Docs) for planning docs.
 
 ## Stack
@@ -12,7 +12,7 @@ Supabase schema/migrations and [`../Nafil Docs`](../Nafil%20Docs) for planning d
 - Expo (SDK 57) + Expo Router (file-based navigation, role-based route groups)
 - Supabase (Postgres + Auth + Row Level Security) as the backend
 - TanStack Query for server state, Zustand for client state
-- NativeWind (Tailwind for React Native) for styling — see "Styling" below
+- NativeWind (Tailwind for React Native) for styling - see "Styling" below
 - `expo-camera` for QR scanning, `react-native-qrcode-svg` for QR generation
 
 > `.npmrc` sets `legacy-peer-deps=true`. expo-router 57 pulls radix/react-dom peers that
@@ -20,12 +20,12 @@ Supabase schema/migrations and [`../Nafil Docs`](../Nafil%20Docs) for planning d
 
 ## Roles
 
-- **resident** — carry an e-ID card, manage a household allow list, create visitor passes,
+- **resident** - carry an e-ID card, manage a household allow list, create visitor passes,
   report issues, read announcements
-- **security** — scan/check in visitors, verify resident and household e-ID codes, track
+- **security** - scan/check in visitors, verify resident and household e-ID codes, track
   who's on-site, send emergency alerts
-- **admin** — approve residents, manage the issue queue, post announcements (estate-scoped)
-- **super_admin** — same as admin, across all estates (multi-community client)
+- **admin** - approve residents, manage the issue queue, post announcements (estate-scoped)
+- **super_admin** - same as admin, across all estates (multi-community client)
 
 Role is stored on `profiles.role` and routing is enforced client-side in
 [`app/_layout.tsx`](app/_layout.tsx); real access control lives in Postgres Row Level Security
@@ -33,11 +33,11 @@ policies (`../Nafil Backend/supabase/migrations/0001_init.sql`), not in the app.
 
 ## Resident onboarding
 
-Signing up does **not** hand a resident an account — it starts a wizard, and the resident
+Signing up does **not** hand a resident an account - it starts a wizard, and the resident
 tabs are unreachable until an admin approves them. This wasn't the original design: the
 first version let a fresh signup straight into the dashboard, which meant an unapproved,
 estate-less resident sat looking at empty Visitors/Issues/Announcements tabs with nothing
-to do — RLS was blocking everything, correctly, but the UI never explained why. The current
+to do - RLS was blocking everything, correctly, but the UI never explained why. The current
 flow closes that gap:
 
 ```
@@ -49,14 +49,14 @@ signup → profile-setup (phone, photo) → join-estate (search + unit no.) → 
 ```
 
 All four screens live under [`app/(onboarding)/`](app/(onboarding)/). `onboarding.tsx` is
-not a screen — it's a router: on every mount it checks what's actually true in the database
+not a screen - it's a router: on every mount it checks what's actually true in the database
 (does this profile have a phone? does it have a join request, and what status?) and redirects
-accordingly. That's what makes the wizard resumable — close the app mid-flow and reopening
+accordingly. That's what makes the wizard resumable - close the app mid-flow and reopening
 lands you back exactly where you left off, not at square one.
 
 The root layout ([`app/_layout.tsx`](app/_layout.tsx)) enforces this **unconditionally**: any
 resident with `approved = false` is confined to `(onboarding)`, full stop, regardless of what
-route they navigate to. That's the actual fix — not just adding the wizard screens, but making
+route they navigate to. That's the actual fix - not just adding the wizard screens, but making
 sure there's no path (typed URL, deep link, stale bookmark) that lands an unapproved resident
 in the resident tabs.
 
@@ -64,25 +64,25 @@ in the resident tabs.
 
 It shows the estate and unit that was actually requested, the submission date, and a
 "Check status" button that re-fetches without needing to sign out and back in. If admin
-rejects instead of approves, the resident sees that explicitly — with a way to correct the
-estate/unit and try again — rather than being left staring at a spinner indefinitely.
+rejects instead of approves, the resident sees that explicitly - with a way to correct the
+estate/unit and try again - rather than being left staring at a spinner indefinitely.
 
 ### Why a join-request table instead of writing straight to `profiles`
 
 `estate_join_requests` is a separate table, not just `estate_id`/`unit_no` columns a resident
-fills in directly, and it has **no UPDATE policy for anyone, including admins** — the only way
+fills in directly, and it has **no UPDATE policy for anyone, including admins** - the only way
 a request's status changes is through `approve_join_request()` / `reject_join_request()`
 (`Nafil Backend/supabase/migrations/0005_estate_join_requests_and_onboarding.sql`), which are
 SECURITY DEFINER functions that check the caller's role internally before touching anything.
 So even a compromised or buggy client can never flip a request's status directly.
 
 This mattered more than it might look, because building this surfaced a real hole in the
-existing schema: `profiles_update`'s `WITH CHECK` only verified `id = auth.uid()` — meaning
+existing schema: `profiles_update`'s `WITH CHECK` only verified `id = auth.uid()` - meaning
 any resident could already self-UPDATE their own `role`, `approved`, or `estate_id` directly
 via the REST API, before this feature existed. Adding self-service profile editing (phone,
 avatar) without closing that first would have been irresponsible, so migration `0005` also
 adds a trigger (`protect_profile_privileged_columns`) that silently preserves those three
-columns on any UPDATE not performed by an admin/super_admin — verified with a rolled-back
+columns on any UPDATE not performed by an admin/super_admin - verified with a rolled-back
 transaction that a resident update setting `approved = true, role = 'admin'` on their own row
 has no effect. Full name, phone, avatar, and unit number remain freely self-editable; those
 were never the risk.
@@ -92,28 +92,28 @@ were never the risk.
 [`components/onboarding/EstatePicker.tsx`](components/onboarding/EstatePicker.tsx) is a
 type-ahead over the actual `estates` table (debounced `ilike` search), not a text field. A
 resident typing "victoria gardns" and an admin having to guess which real estate they meant
-is worse for everyone than picking from an unambiguous row — the join request always
+is worse for everyone than picking from an unambiguous row - the join request always
 references a real `estate_id`. This required relaxing `estates_select` to let any signed-in
-user browse the directory (previously scoped to your own estate only) — not a confidentiality
+user browse the directory (previously scoped to your own estate only) - not a confidentiality
 concern here, since every user of this app belongs to the same client.
 
 ### A second RLS gap this surfaced, found by testing live
 
-The admin approval queue initially rendered every applicant as "Unnamed" — `profiles_select`
+The admin approval queue initially rendered every applicant as "Unnamed" - `profiles_select`
 only let an admin read a profile once `estate_id` matched their own, but `estate_id` is
 exactly what's *pending* for an applicant. Chicken-and-egg. Fixed in migration `0006` by
 adding a clause: an admin may also read a profile that has a pending join request targeting
 their own estate, regardless of that profile's `estate_id`. Re-verified with a rolled-back
-transaction that this doesn't over-grant — an admin at a *different* estate still sees nothing.
+transaction that this doesn't over-grant - an admin at a *different* estate still sees nothing.
 
 ### Avatars
 
 `components/ui/Avatar.tsx` renders the photo if `avatar_url` is set, otherwise initials on a
-tinted background — there's no broken-image or empty-circle state. Upload goes through
+tinted background - there's no broken-image or empty-circle state. Upload goes through
 [`lib/avatar.ts`](lib/avatar.ts) to a public `avatars` Storage bucket at
 `{user_id}/avatar.<ext>`; Storage RLS restricts writes to a user's own folder
 (`avatar_insert_own`/`avatar_update_own`/`avatar_delete_own` in migration `0005`). The photo
-step is skippable — phone is the only required field, since it's the one piece of contact
+step is skippable - phone is the only required field, since it's the one piece of contact
 info a guard or admin might actually need to reach someone about a visitor or issue.
 
 ## Setup
@@ -126,7 +126,7 @@ npm run web       # browser at http://localhost:8081
 npm run start     # QR code for Expo Go on a real phone
 ```
 
-`npm run web` is the quickest way to click through the app — no Xcode or Android Studio
+`npm run web` is the quickest way to click through the app - no Xcode or Android Studio
 needed. Use your browser's device toolbar (⌥⌘M in Chrome) to view it at phone width.
 
 ### What differs on web
@@ -138,7 +138,7 @@ needed. Use your browser's device toolbar (⌥⌘M in Chrome) to view it at phon
 | QR code **scanning** (security) | ➖ manual code entry instead | ✅ camera |
 | Sharing a pass | Web Share API, else copies to clipboard | Native share sheet |
 
-Camera scanning needs a real device, so the security screen shows manual code entry on web —
+Camera scanning needs a real device, so the security screen shows manual code entry on web -
 which is the same fallback a guard uses when a visitor's screen is cracked or too dim.
 Enter `NAF001` or `NAF002` to check a seeded visitor in.
 
@@ -148,62 +148,62 @@ URL and publishable key from the Supabase dashboard.
 ### Auth flow
 
 Six screens under `app/(auth)/`: `login`, `role-select`, `signup`, `staff-access`,
-`forgot-password`, `check-email` — plus the branded splash at
+`forgot-password`, `check-email` - plus the branded splash at
 [`app/index.tsx`](app/index.tsx) (solid navy field, animated lockup) shown while the
 session resolves.
 
 All share [`AuthShell`](components/auth/AuthShell.tsx): white background, centred brand
 lockup, left-aligned heading, then the form, the whole block vertically centred in the
 viewport rather than top-anchored. Fields are white with a soft shadow rather than a grey
-fill — that's what gives the screens their airy feel.
+fill - that's what gives the screens their airy feel.
 
 Placeholders double as labels, matching the agreed design. Every field still passes a real
 `label` through to `accessibilityLabel`, so screen readers announce it even though it isn't
 drawn; `showLabel` renders it visually where a form needs it.
 
 Auth errors render as inline [`Notice`](components/ui/Notice.tsx) banners, **not**
-`Alert.alert` — react-native-web doesn't implement Alert, so alert-based errors are
+`Alert.alert` - react-native-web doesn't implement Alert, so alert-based errors are
 invisible in the browser. Supabase's terse messages are mapped to actionable copy in
 [`lib/auth-errors.ts`](lib/auth-errors.ts).
 
 One deliberate omission: on a failed sign-in we say "that email and password don't match"
 rather than "no account with that email". Supabase doesn't distinguish the two, and neither
-should we — the latter lets anyone enumerate which addresses are registered.
+should we - the latter lets anyone enumerate which addresses are registered.
 
 > **Email flows can't be tested with the seeded accounts.** Supabase refuses to send to
 > `.test` addresses (a reserved, non-deliverable TLD), so signup confirmation and password
-> reset will error with "that email address can't receive mail". Sign-in works fine — it
+> reset will error with "that email address can't receive mail". Sign-in works fine - it
 > sends no mail. To exercise the email flows, sign up with a real address you can access.
 
-### Who can sign up — and who can't
+### Who can sign up - and who can't
 
 `login` → **Sign up** goes to [`role-select`](app/(auth)/role-select.tsx), not straight to a
 form. Only **resident** leads to an actual open signup ([`signup.tsx`](app/(auth)/signup.tsx))
-— **security & staff** leads to [`staff-access.tsx`](app/(auth)/staff-access.tsx), which offers
+- **security & staff** leads to [`staff-access.tsx`](app/(auth)/staff-access.tsx), which offers
 no form of its own, only an entry point into the invite-code flow below.
 
 This is deliberate, not a missing feature. A resident self-declaring where they live is
 low-risk and admin-checkable against the unit register after the fact. A stranger
-self-declaring "I'm security" is not — if an admin approves that claim on trust, they've
+self-declaring "I'm security" is not - if an admin approves that claim on trust, they've
 handed a stranger live gate-verification access before any real vetting happened. So:
 
-- **Resident** — self-signup, pending admin approval (as built).
-- **Security/staff** — provisioned by their employer via an access code, not self-registered
+- **Resident** - self-signup, pending admin approval (as built).
+- **Security/staff** - provisioned by their employer via an access code, not self-registered
   (see "Staff invite flow" below).
-- **Admin** — never self-serve, and not on the role-select screen at all. The first admin is
+- **Admin** - never self-serve, and not on the role-select screen at all. The first admin is
   bootstrapped directly against the database (see "Creating accounts from scratch" below);
   every admin after that is created by an existing admin.
 
 ### Social sign-in
 
-One provider — **Google only**, per product decision; no Facebook/Twitter. The button is
+One provider - **Google only**, per product decision; no Facebook/Twitter. The button is
 built and wired but **disabled by default** (`GOOGLE_OAUTH_ENABLED = false` in
 [`constants/auth-config.ts`](constants/auth-config.ts)). Tapping it shows "Google sign-in
 isn't set up yet" rather than attempting it.
 
 That gate is a declared flag, not a runtime check, and it has to be. `signInWithOAuth` with
 `skipBrowserRedirect` builds the authorize URL **client-side with no server call**, so the
-app genuinely cannot tell an enabled provider from a disabled one — the failure only
+app genuinely cannot tell an enabled provider from a disabled one - the failure only
 surfaces after navigating, as a raw JSON error page with no route back into the app. Ask
 first, navigate second.
 
@@ -217,41 +217,41 @@ To enable it:
 
 ### Password reset landing
 
-[`set-password.tsx`](app/(auth)/set-password.tsx) is where a password-reset link lands —
+[`set-password.tsx`](app/(auth)/set-password.tsx) is where a password-reset link lands -
 Supabase hands the app a valid session, and this screen just asks for a new password. Three
 states: checking the link, the form, or "this link has expired" if no session shows up
 within 3.5 seconds.
 
-(Staff invites do **not** use this screen or a magic link at all — see "Staff invite flow"
+(Staff invites do **not** use this screen or a magic link at all - see "Staff invite flow"
 below for why an access code turned out to be the better fit, and how confirmation gets
 handled without one.)
 
-**Web** relies on `detectSessionInUrl: true` ([`lib/supabase.ts`](lib/supabase.ts)) — the
+**Web** relies on `detectSessionInUrl: true` ([`lib/supabase.ts`](lib/supabase.ts)) - the
 Supabase client auto-parses the token from the URL when the page loads from the emailed
 link. **Native** has no such URL to auto-parse; a tapped email link arrives as a raw string
 via `Linking`, so [`lib/auth-session.ts`](lib/auth-session.ts)'s `establishSessionFromUrl`
-extracts the tokens by hand (same logic Google OAuth already needed on native — factored out
+extracts the tokens by hand (same logic Google OAuth already needed on native - factored out
 of [`lib/oauth.ts`](lib/oauth.ts) rather than duplicated).
 
 The root layout carves out an explicit exception for this one route
 (`AUTH_GROUP_EXCEPTIONS` in [`app/_layout.tsx`](app/_layout.tsx)): normally any session
 inside the `(auth)` group gets redirected straight to the user's role home, which would
-otherwise fire the instant a reset/invite link establishes a session — before they'd had a
+otherwise fire the instant a reset/invite link establishes a session - before they'd had a
 chance to actually set a password.
 
 **Verified end-to-end**, not just rendered: logged in, submitted a real password change
 through the screen, signed out, and logged back in with the *new* password to confirm
-`supabase.auth.updateUser` actually took effect — then reverted the seeded account's
+`supabase.auth.updateUser` actually took effect - then reverted the seeded account's
 password back to `NafilTest123!` afterward so the credentials table above stays accurate.
 What's *not* verified is a real emailed link on either platform, since the seeded accounts'
-`@nafil.test` addresses can't receive mail (see above) — the "ready" and "invalid" states
+`@nafil.test` addresses can't receive mail (see above) - the "ready" and "invalid" states
 were exercised directly (an active session, and no session, respectively) rather than via
 an actual link click.
 
 > ⚠️ **Needs a Supabase dashboard step before it works with a real email.** The redirect
-> URLs this screen relies on —
+> URLs this screen relies on -
 > `https://itfepppqjtodmizbglze.supabase.co` origin paths for web and
-> `nafil-estates://set-password` for native — must be added to
+> `nafil-estates://set-password` for native - must be added to
 > **Authentication → URL Configuration → Redirect URLs** in the dashboard, or Supabase
 > silently falls back to the project's default Site URL instead of `/set-password`. Not
 > something available via this session's tooling; needs doing by hand.
@@ -260,24 +260,24 @@ an actual link click.
 
 An admin taps **+ Invite staff** on the Residents screen
 ([`components/admin/InviteStaffForm.tsx`](components/admin/InviteStaffForm.tsx)), enters an
-email, and gets back an 8-character code good for 7 days — shared through whatever channel
+email, and gets back an 8-character code good for 7 days - shared through whatever channel
 the admin already uses (WhatsApp, SMS, in person), the same way visitor pass codes are shared.
 No email gets sent automatically; that would need a real email provider and a backend
 endpoint, neither of which exist yet. This isn't a stopgap so much as the same cost/complexity
-tradeoff made for visitor passes earlier in the project — manual sharing over automated
+tradeoff made for visitor passes earlier in the project - manual sharing over automated
 messaging.
 
 The staff member enters that code at **Security & Staff → I have an invite code**, which
-opens [`staff-invite.tsx`](app/(auth)/staff-invite.tsx) — one screen, three internal steps
+opens [`staff-invite.tsx`](app/(auth)/staff-invite.tsx) - one screen, three internal steps
 (code → profile → password), not three routes. That's deliberate: **this project requires
-email confirmation before a session exists** (confirmed empirically — `signUp` never returns
+email confirmation before a session exists** (confirmed empirically - `signUp` never returns
 a session immediately), so no account exists until the very last step, and there's nowhere
 for inter-screen navigation state to safely live in the meantime.
 
 That confirmation requirement is also why the profile step (first name, last name, phone,
 photo) happens **before** the account does. There's no user id yet to attach a profile to, so
 those details get saved onto the invite row itself
-(`save_staff_invite_profile`, callable while signed out) — including the photo, which
+(`save_staff_invite_profile`, callable while signed out) - including the photo, which
 uploads to a special `pending/{code}/avatar.<ext>` Storage path scoped to anon by a narrow
 policy checking the code has a live pending invite. Everything gets copied onto the real
 profile only once an actual session exists.
@@ -285,24 +285,24 @@ profile only once an actual session exists.
 That happens automatically, not via a dedicated confirmation-landing screen. The onboarding
 router ([`app/(onboarding)/onboarding.tsx`](app/(onboarding)/onboarding.tsx)) calls
 `accept_staff_invite_by_email()` as the very first thing it does, before any resident-wizard
-logic — matching by the caller's own verified email rather than the code, since the code's
+logic - matching by the caller's own verified email rather than the code, since the code's
 job ended at the profile step and threading it through the confirmation-email redirect
 afterward would be one more fragile hop. It's a harmless no-op for every genuine resident,
 who has no matching invite. Whether that first real session comes from clicking the
 confirmation link directly or from a completely ordinary later login (confirm on one device,
-log in on another — both work identically), the same router call finalizes it: sets
+log in on another - both work identically), the same router call finalizes it: sets
 `role`/`estate_id`/`approved` and copies over the saved name/phone/photo, in one atomic
 server-side step.
 
 Making that self-elevation possible required deliberately punching one hole in the
-self-escalation protection described earlier (under "Why a join-request table") —
+self-escalation protection described earlier (under "Why a join-request table") -
 `accept_staff_invite_by_email()` runs as the
 invitee themselves, whose own role is still `resident` at that moment. A transaction-local
 GUC flag lets that one function announce "this specific update is sanctioned" without
 weakening the trigger for anyone else. **Testing this took two tries**: the first version
 left the flag set for the rest of whatever transaction was open, which a SQL-editor test
 happened to catch because it ran several calls in one shared transaction (PostgREST wouldn't
-have — one transaction per request — but relying on that alone felt like the wrong place to
+have - one transaction per request - but relying on that alone felt like the wrong place to
 stop). The function now turns the flag back off immediately after the one UPDATE it's meant
 to guard, re-verified with a harsher test than any real request could produce: a direct
 self-escalation attempt checked in the *same* transaction as a legitimate accept, right after
@@ -312,19 +312,19 @@ it, and still blocked.
 the admin form, walked the full code → profile → password flow through the actual app,
 confirmed the resulting account's email via SQL (standing in for clicking the real link,
 since the seeded/test addresses used here can't receive mail), then logged in through the
-ordinary login screen and landed directly in the security dashboard — with `role`,
+ordinary login screen and landed directly in the security dashboard - with `role`,
 `estate_id`, `full_name`, and `phone` all correctly populated from what was entered during
 the anonymous steps.
 
 Not yet built: automatic email *delivery* of the invite. The code has to be shared manually
-today (see above) — sending it would need a real email provider and a backend endpoint,
+today (see above) - sending it would need a real email provider and a backend endpoint,
 neither of which exist yet.
 
 ### Theming
 
 `ThemeProvider` ([`context/theme-context.tsx`](context/theme-context.tsx)) resolves tokens;
 the mode itself lives in a persisted zustand store
-([`store/theme-store.ts`](store/theme-store.ts)) and **defaults to `light`**, not `system` —
+([`store/theme-store.ts`](store/theme-store.ts)) and **defaults to `light`**, not `system` -
 the brand is designed light-first, so following the OS would mean the client's first launch
 looks different depending on their phone settings. `system` and `dark` remain selectable via
 `setMode`.
@@ -345,29 +345,29 @@ Test data is **already seeded**. Password for every account: `NafilTest123!`
 | `admin@nafil.test` | admin | Chidinma Eze | Estate residents, issue queue, announcements, **onboarding queue** |
 | `superadmin@nafil.test` | super_admin | Ibrahim Yusuf | **Both** estates |
 | `pending@nafil.test` | resident | Ngozi Okafor | Profile complete, pending request → `pending-approval` |
-| `heights@nafil.test` | resident | Fatima Bello (Estate B) | Only Nafil Heights — proves isolation |
+| `heights@nafil.test` | resident | Fatima Bello (Estate B) | Only Nafil Heights - proves isolation |
 | `newresident@nafil.test` | resident | Blessing Chukwu | No phone, no request → lands on `profile-setup` |
 | `rejected@nafil.test` | resident | Kelechi Uba | Last request declined → `join-estate` with a notice |
 
 Two estates are seeded: **Nafil Gardens** (Lagos) and **Nafil Heights** (Abuja).
 
 Worth trying, since it's what the whole design rests on: sign in as `security@nafil.test`
-and note the Issues tab is empty — security is estate-scoped but *not* issue-scoped. Then
+and note the Issues tab is empty - security is estate-scoped but *not* issue-scoped. Then
 sign in as `heights@nafil.test` and note you see one announcement, not Nafil Gardens' three.
 
 For the onboarding flow specifically: sign in as `newresident@nafil.test` and walk the whole
 wizard start to finish, then sign in as `admin@nafil.test` and approve the request you just
-created — the resident lands in the real dashboard on their very next sign-in, no further
+created - the resident lands in the real dashboard on their very next sign-in, no further
 action needed. `pending@nafil.test` and `rejected@nafil.test` let you check either
 in-progress state without walking the wizard yourself.
 
-To reset or re-seed, re-run [`../Nafil Backend/supabase/seed.sql`](../Nafil%20Backend/supabase/seed.sql) —
+To reset or re-seed, re-run [`../Nafil Backend/supabase/seed.sql`](../Nafil%20Backend/supabase/seed.sql) -
 it cleans up its own rows first, so it's safe to run repeatedly.
 
 ### Creating accounts from scratch
 
 If you drop the seed, bootstrap manually: create an estate, sign up through the app (the
-`handle_new_user` trigger creates the `profiles` row — unapproved, `resident`, no estate),
+`handle_new_user` trigger creates the `profiles` row - unapproved, `resident`, no estate),
 then promote it:
 
 ```sql
@@ -444,7 +444,7 @@ Schema + RLS policies live in `../Nafil Backend/supabase/migrations/`.
 ## Theme
 
 Primary is `#084DA5`. Colors live in `constants/colors.ts`, spacing/radius/typography in
-`constants/theme.ts` — one file each for dark mode or a rebrand to touch.
+`constants/theme.ts` - one file each for dark mode or a rebrand to touch.
 
 Theme mode (`light` / `dark` / `system`) persists via `useThemeStore`, **defaults to
 `system`** (a fresh install should match the device's own setting), and is reachable any
@@ -453,11 +453,11 @@ time from the gear icon in the header (`/settings`).
 ## Styling
 
 Fully migrated from inline `style={{}}` (driven by `useTheme()`) to NativeWind
-(`className`, driven by `tailwind.config.js`) — every screen (`app/**`) and every
+(`className`, driven by `tailwind.config.js`) - every screen (`app/**`) and every
 component. `style` and `className` still compose fine on the same element (NativeWind
-merges them, `style` wins on conflicts) — deliberately kept where `className` genuinely
+merges them, `style` wins on conflicts) - deliberately kept where `className` genuinely
 can't reach: `Animated.Value`-driven styles (`app/index.tsx`'s splash fade/scale),
-runtime-computed dimensions (`Avatar`'s `size` prop — `w-[${size}px]` can't be statically
+runtime-computed dimensions (`Avatar`'s `size` prop - `w-[${size}px]` can't be statically
 extracted, so width/height/radius stay `style`), and native-only component props that
 aren't styles at all (`ActivityIndicator`/icon `color`, `CameraView`/`LinearGradient`).
 Those are the only `style={{}}` left in the app; grep for `style={{` if that ever drifts.
@@ -473,19 +473,19 @@ const { colors, spacing } = useTheme();            {/* old pattern, still fine *
 system:
 
 - `spacing`/`borderRadius` extend Tailwind's defaults with the app's own scale
-  (`xs`/`sm`/`md`/`lg`/`xl`/`2xl`/`3xl`/`4xl`, `sm`/`md`/`lg`/`xl`) — `p-md`, `rounded-lg`
+  (`xs`/`sm`/`md`/`lg`/`xl`/`2xl`/`3xl`/`4xl`, `sm`/`md`/`lg`/`xl`) - `p-md`, `rounded-lg`
   match `spacing.md`, `radius.lg` exactly.
 - Colors are **not** one semantic token that resolves differently per theme (that's not
-  how Tailwind's dark mode works) — they're two named scales you pair with `dark:`:
+  how Tailwind's dark mode works) - they're two named scales you pair with `dark:`:
   `brand` (the blue scale, `primary` = `brand-800`), `paper` (light neutral scale, was
-  `neutral` in `colors.ts`), `ink` (dark neutral scale — `ink.bg`/`surface`/`raised`/
+  `neutral` in `colors.ts`), `ink` (dark neutral scale - `ink.bg`/`surface`/`raised`/
   `border`/`text`/`textMuted`). So `colors.surface` becomes
   `bg-paper-50 dark:bg-ink-surface`, not a single class.
 - `success`/`warning`/`danger`/`info` are flat (same hex in both themes already), each
   with a `-muted`/`-mutedDark` pair for tinted backgrounds
   (`bg-danger-muted dark:bg-danger-mutedDark`).
 
-Dark mode uses `darkMode: 'class'` — NativeWind's `colorScheme.set()` is called from
+Dark mode uses `darkMode: 'class'` - NativeWind's `colorScheme.set()` is called from
 `ThemeProvider` (`context/theme-context.tsx`) whenever the app's own resolved `isDark`
 changes, so `dark:` classes always agree with `useTheme().colors` rather than following
 the OS independently.
@@ -498,7 +498,7 @@ the OS independently.
 | Session + profile | Zustand (`store/auth-store.ts`) |
 | Theme preference | Zustand + AsyncStorage persist |
 
-Don't put server data in Zustand — if it comes from Postgres, it belongs in Query.
+Don't put server data in Zustand - if it comes from Postgres, it belongs in Query.
 
 ## Resident e-ID cards & household allow list
 
@@ -511,32 +511,32 @@ generated for them every day.
 Two standing credentials, both random 6-character codes (same shape as an existing visitor
 pass code):
 
-- `profiles.resident_code` — the resident's own e-ID. Backfilled for every existing profile by
+- `profiles.resident_code` - the resident's own e-ID. Backfilled for every existing profile by
   the migration's column default; new profiles get one the same way. Self-service regenerate
   (`regenerate_resident_code()` RPC, behind a `ConfirmDialog`) lets a resident invalidate a
-  leaked or over-shared code without an admin in the loop — the same self-service spirit as
+  leaked or over-shared code without an admin in the loop - the same self-service spirit as
   revoking a visitor pass.
-- `household_members` — the resident's allow list. Each entry (name, relationship, optional
+- `household_members` - the resident's allow list. Each entry (name, relationship, optional
   phone/photo) gets its own code and card, added via
   [`AddHouseholdMemberForm`](components/resident/AddHouseholdMemberForm.tsx) and revoked (not
-  deleted — kept for the record) the same way a visitor pass is cancelled.
+  deleted - kept for the record) the same way a visitor pass is cancelled.
 
 Both render through the same [`IDCardView`](components/ui/IDCardView.tsx): photo, name, a
 subtitle line (unit no. for the resident, relationship for a household member), the estate
 name, and a QR encoding the code.
 
 **The actual anti-forgery property, and why this isn't just a fancy photo ID:** the printed
-name and photo are for the security guard's own eyes — they are never what's actually
+name and photo are for the security guard's own eyes - they are never what's actually
 checked. What's checked is the code the QR encodes, looked up against the estate's live
-database at the gate. A forged card — a copied photo, a made-up code, or a genuinely revoked
-one — fails that lookup exactly the way a forged or expired visitor pass code already does.
+database at the gate. A forged card - a copied photo, a made-up code, or a genuinely revoked
+one - fails that lookup exactly the way a forged or expired visitor pass code already does.
 The card is a convenience for carrying the code; the database is the source of truth.
 
 ### Security's scan flow now checks three credential types
 
 [`app/security/index.tsx`](app/security/index.tsx)'s `checkInByCode` tries, in order:
 `profiles.resident_code`, then `household_members.code`, then falls back to the existing
-`visitor_passes.code` check-in flow unchanged. The first two are **verify-only** — no
+`visitor_passes.code` check-in flow unchanged. The first two are **verify-only** - no
 `visitor_logs` row gets written. That was a deliberate scope cut, not an oversight: writing
 one would mean every resident coming home shows up in the "Active visitors" screen
 ([`app/security/active.tsx`](app/security/active.tsx)) expecting a checkout action, which
@@ -547,49 +547,49 @@ tracks on-site status as before.
 RLS-wise, `household_members` mirrors the existing `visitor_passes` shape exactly: the
 resident owns their list end-to-end (`household_members_resident_all`), while
 security/admin/super_admin get read-only `SELECT` within their estate
-(`household_members_staff_select`) — enough to verify a code, not to revoke one themselves.
+(`household_members_staff_select`) - enough to verify a code, not to revoke one themselves.
 Verified directly against Postgres (impersonating the security role in a rolled-back
 transaction): the lookup succeeds, and an attempted `UPDATE` from that same role is silently
 blocked by RLS, exactly as intended.
 
 `app/security/index.tsx`'s scan results, and every other error/success message across
-security and admin, render through `Notice` rather than `Alert.alert` (a no-op on web) — see
+security and admin, render through `Notice` rather than `Alert.alert` (a no-op on web) - see
 "Settings, theme, and sign-out" below for the rest of that cleanup.
 
 ## Settings, theme, and sign-out
 
 One shared screen, [`app/settings.tsx`](app/settings.tsx), holds the two things that aren't
 role-specific: theme (System/Light/Dark, via `useThemeStore`) and sign-out. Reached from a
-[`SettingsHeaderButton`](components/ui/SettingsHeaderButton.tsx) gear icon — deliberately
+[`SettingsHeaderButton`](components/ui/SettingsHeaderButton.tsx) gear icon - deliberately
 **not** on every tab, just each role's primary/home tab (and resident's Profile), set per
 `Tabs.Screen` in each role's `_layout.tsx`. Theme defaults to `system`
 (`store/theme-store.ts`) so a fresh install matches the device's own light/dark setting
 instead of forcing light.
 
 This replaced sign-out buttons that used to sit inline on each role's primary tab (resident
-Home, admin Residents, security Scan/Alert) — a leftover from before Settings existed, and an
+Home, admin Residents, security Scan/Alert) - a leftover from before Settings existed, and an
 odd place to bury a destructive-ish account action next to a stats dashboard.
 
 ## Resident dashboard
 
 Four tabs under `app/resident/`: Home, Visitors, Issues, Announcements. Home
-(`app/resident/index.tsx`) is a real dashboard, not a placeholder — avatar/name/unit header,
+(`app/resident/index.tsx`) is a real dashboard, not a placeholder - avatar/name/unit header,
 two stat tiles (active passes, open issues), two quick-action buttons, and the latest
 announcement. All four tabs share a small component library under `components/ui/`:
 `StatusBadge` (colored pill for pass/issue/invite status), `EmptyState` (icon + title +
 message for empty lists), `StatCard` (tappable stat tile), and `icons.tsx` (simple line
-icons — no icon font dependency).
+icons - no icon font dependency).
 
 ### Visitor pass expiry wasn't actually enforced
 
 `visitor_passes.status` only flips to `'expired'` via a scheduled job
 (`expire_stale_visitor_passes`) that was scaffolded in the old FastAPI backend but never
-deployed here — so a pass past its `valid_until` still reads `status = 'pending'` in the
+deployed here - so a pass past its `valid_until` still reads `status = 'pending'` in the
 database. That gap had a real security consequence, not just a cosmetic one:
 [`app/security/index.tsx`](app/security/index.tsx)'s `checkInByCode` originally only checked
 `status !== 'pending'` before letting a visitor in, meaning an expired pass could still be
 scanned and accepted at the gate hours or days after it lapsed. Fixed by adding explicit
-`valid_from`/`valid_until` window checks directly in the check-in flow — the correct
+`valid_from`/`valid_until` window checks directly in the check-in flow - the correct
 enforcement point regardless of whether the cron job ever gets deployed.
 
 The same `status`-alone-isn't-enough gap showed up twice more, both fixed client-side:
@@ -603,14 +603,14 @@ The same `status`-alone-isn't-enough gap showed up twice more, both fixed client
 ### `Alert.alert` is a no-op on web
 
 Discovered while building the "cancel pass" confirmation: `react-native-web`'s `Alert` is
-`class Alert { static alert() {} }` — no `window.confirm` fallback, nothing. Any code path
+`class Alert { static alert() {} }` - no `window.confirm` fallback, nothing. Any code path
 that depends on `Alert.alert` (a confirmation, an error message) is silently unreachable in
 the browser, with no error thrown to hint why.
 
 Fixed with two patterns, both already used elsewhere in the app and now extended here:
 
 - **Destructive confirmations** → [`components/ui/ConfirmDialog.tsx`](components/ui/ConfirmDialog.tsx),
-  built for this. Uses RN's `Modal`, which — unlike `Alert` — actually renders on web (via
+  built for this. Uses RN's `Modal`, which - unlike `Alert` - actually renders on web (via
   `createPortal`). Used by the Visitors tab's "Cancel pass" flow (`pendingRevoke` state holds
   the pass awaiting confirmation).
 - **Error/success messages** → the existing inline [`Notice`](components/ui/Notice.tsx)
@@ -618,7 +618,7 @@ Fixed with two patterns, both already used elsewhere in the app and now extended
   `visitor-pass.tsx` (create/revoke errors) and `issues.tsx` (submit errors).
 
 **Not yet fixed**: `app/admin/index.tsx` and `app/security/index.tsx` still call
-`Alert.alert` for their error/success messages — functional on native, silently broken on
+`Alert.alert` for their error/success messages - functional on native, silently broken on
 web. Flagged as a follow-up, out of scope for the resident-tabs work this covers.
 
 ## What's next (not in this MVP scaffold)
