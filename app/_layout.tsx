@@ -1,6 +1,6 @@
 import "../global.css";
 import { useEffect } from "react";
-import { Platform } from "react-native";
+import { AppState, Platform } from "react-native";
 import { Slot, useRouter, useSegments } from "expo-router";
 import * as Linking from "expo-linking";
 import * as Notifications from "expo-notifications";
@@ -14,7 +14,10 @@ import {
   establishSessionFromUrl,
   urlLooksLikeAuthLink,
 } from "../lib/auth-session";
-import { registerForPushNotifications } from "../lib/push-notifications";
+import {
+  registerForPushNotifications,
+  subscribeToPushTokenChanges,
+} from "../lib/push-notifications";
 import { AppShell } from "../components/ui/AppShell";
 import type { UserRole } from "../types/database";
 
@@ -83,6 +86,40 @@ function useNativeAuthLinks() {
  * Shares the same query key as the header bell dots, so this doesn't add a
  * second poll, it's the same cached/polled request.
  */
+/**
+ * Registering as early as sign-in (rather than waiting for a specific
+ * screen) means a resident's device is reachable for an emergency alert
+ * from the moment they're part of an estate, not just once they happen to
+ * visit some particular tab. estate_id gates it — a token registered
+ * before a resident has one would just be unfindable by /alerts/broadcast,
+ * which looks up recipients by estate.
+ *
+ * Two things a one-shot effect misses, handled here: if the resident denies
+ * the permission prompt and later grants it from Settings, nothing would
+ * otherwise retry — this re-attempts registration every time the app
+ * returns to the foreground, which is idempotent (an already-registered
+ * device just re-upserts the same token). And a token can rotate under a
+ * live session (reinstall, restored backup) — subscribeToPushTokenChanges
+ * keeps that in sync for as long as this profile stays signed in.
+ */
+function usePushRegistration(profileId: string | undefined, estateId: string | null | undefined) {
+  useEffect(() => {
+    if (!profileId || !estateId) return;
+
+    registerForPushNotifications(profileId);
+
+    const appStateSub = AppState.addEventListener("change", (state) => {
+      if (state === "active") registerForPushNotifications(profileId);
+    });
+    const tokenSub = subscribeToPushTokenChanges(profileId);
+
+    return () => {
+      appStateSub.remove();
+      tokenSub.remove();
+    };
+  }, [profileId, estateId]);
+}
+
 function useBadgeSync(profileId: string | undefined) {
   const { data: unreadCount } = useQuery({
     queryKey: ["notifications_unread", profileId],
@@ -157,17 +194,7 @@ function RootNavigation() {
   useBadgeSync(profile?.id);
   useNotificationRouting(profile?.role, router);
 
-  // Registering as early as sign-in (rather than waiting for a specific
-  // screen) means a resident's device is reachable for an emergency alert
-  // from the moment they're part of an estate, not just once they happen to
-  // visit some particular tab. estate_id gates it — a token registered
-  // before a resident has one would just be unfindable by /alerts/broadcast,
-  // which looks up recipients by estate.
-  useEffect(() => {
-    if (profile?.id && profile.estate_id) {
-      registerForPushNotifications(profile.id);
-    }
-  }, [profile?.id, profile?.estate_id]);
+  usePushRegistration(profile?.id, profile?.estate_id);
 
   useEffect(() => {
     if (loading) return;
