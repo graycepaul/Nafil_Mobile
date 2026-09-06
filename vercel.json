@@ -7,8 +7,8 @@
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "env": {
-    "EXPO_PUBLIC_SUPABASE_URL": "https://itfepppqjtodmizbglze.supabase.co",
-    "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_4HCmN6FUnSrMex-s79i1Hw_gJjNL1F3",
+    "EXPO_PUBLIC_SUPABASE_URL": "https://api.nafilestates.com",
+    "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_P-VPY3PjmN-PyR8iIlBms9_LOS4tB7v",
     "EXPO_PUBLIC_API_URL": "https://api.nafilestates.com"
   }
 }
