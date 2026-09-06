@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { Button } from '../../components/ui/Button';
@@ -106,7 +107,7 @@ export default function AssignDuesScreen() {
     );
     setSubmitting(false);
     if (insertError) {
-      setError(insertError.message);
+      setError(friendlyDbError(insertError));
       return;
     }
     queryClient.invalidateQueries({ queryKey: ['dues_admin', profile.estate_id] });

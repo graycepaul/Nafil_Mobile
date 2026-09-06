@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { relativeTime } from '../../lib/format';
@@ -86,7 +87,7 @@ export default function AdminIssueDetailScreen() {
       .eq('id', issue.id);
     setAdvancing(false);
     if (error) {
-      setError(error.message);
+      setError(friendlyDbError(error));
       return;
     }
     queryClient.invalidateQueries({ queryKey: ['issue_admin', id] });
@@ -105,7 +106,7 @@ export default function AdminIssueDetailScreen() {
     setClosing(false);
     setConfirmingClose(false);
     if (error) {
-      setError(error.message);
+      setError(friendlyDbError(error));
       return;
     }
     queryClient.invalidateQueries({ queryKey: ['issue_admin', id] });

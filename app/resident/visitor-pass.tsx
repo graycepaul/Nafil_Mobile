@@ -4,6 +4,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { sharePass, sharePassToWhatsApp } from '../../lib/share-pass';
 import { pickVisitorPhone } from '../../lib/contacts';
 import { useAuthStore } from '../../store/auth-store';
@@ -158,7 +159,7 @@ export default function VisitorPassScreen() {
     });
     setCreating(false);
     if (error) {
-      setFormError(error.message);
+      setFormError(friendlyDbError(error));
       return;
     }
     setVisitorName('');
@@ -172,7 +173,7 @@ export default function VisitorPassScreen() {
     const { error } = await supabase.from('scheduled_visits').update({ status: 'cancelled' }).eq('id', id);
     setCancelingVisitId(null);
     if (error) {
-      setFormError(error.message);
+      setFormError(friendlyDbError(error));
       return;
     }
     refetchScheduled();
@@ -186,7 +187,7 @@ export default function VisitorPassScreen() {
     setRevokingId(null);
     setPendingRevoke(null);
     if (error) {
-      setFormError(error.message);
+      setFormError(friendlyDbError(error));
       return;
     }
     queryClient.invalidateQueries({ queryKey: ['visitor_passes', profile?.id] });

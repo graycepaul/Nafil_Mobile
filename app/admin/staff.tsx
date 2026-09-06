@@ -3,6 +3,7 @@ import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { Avatar } from '../../components/ui/Avatar';
@@ -150,7 +151,7 @@ export default function AdminStaffScreen() {
     const { error } = await supabase.rpc('revoke_staff_invite', { invite_id: inviteId });
     setRevokingId(null);
     if (error) {
-      setError(error.message);
+      setError(friendlyDbError(error));
       return;
     }
     invalidate();

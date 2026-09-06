@@ -3,6 +3,7 @@ import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
 import ViewShot, { type ViewShotRef } from 'react-native-view-shot';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { shareHouseholdCardImage } from '../../lib/share-id-card';
 import { pickAndUploadHouseholdAvatar } from '../../lib/avatar';
 import { useAuthStore } from '../../store/auth-store';
@@ -79,7 +80,7 @@ export default function ProfileScreen() {
     setRegenerating(false);
     setConfirmingRegenerate(false);
     if (error) {
-      setError(error.message);
+      setError(friendlyDbError(error));
       return;
     }
     await refreshProfile();
@@ -100,7 +101,7 @@ export default function ProfileScreen() {
       .update({ avatar_url: result.url })
       .eq('id', member.id);
     if (updateError) {
-      setError(updateError.message);
+      setError(friendlyDbError(updateError));
       return;
     }
     invalidateHousehold();
@@ -130,7 +131,7 @@ export default function ProfileScreen() {
     setRevokingId(null);
     setPendingRevoke(null);
     if (error) {
-      setError(error.message);
+      setError(friendlyDbError(error));
       return;
     }
     invalidateHousehold();
@@ -145,7 +146,7 @@ export default function ProfileScreen() {
     const { error } = await supabase.from('household_members').update({ status: 'active' }).eq('id', member.id);
     setRevokingId(null);
     if (error) {
-      setError(error.message);
+      setError(friendlyDbError(error));
       return;
     }
     setNotice(`${member.full_name}'s card is active again.`);

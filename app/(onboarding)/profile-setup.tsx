@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { pickAndUploadAvatar } from '../../lib/avatar';
 import { useAuthStore } from '../../store/auth-store';
 import { AuthShell } from '../../components/auth/AuthShell';
@@ -57,7 +58,7 @@ export default function ProfileSetupScreen() {
 
     setSaving(false);
     if (error) {
-      setFormError(error.message);
+      setFormError(friendlyDbError(error));
       return;
     }
     await refreshProfile();

@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { formatNaira, relativeTime } from '../../lib/format';
@@ -104,7 +105,7 @@ export default function MarketplaceListingScreen() {
         })
         .select()
         .single();
-      if (orderErr) return setError(orderErr.message);
+      if (orderErr) return setError(friendlyDbError(orderErr));
       const { error: transferErr } = await supabase.from('transfers').insert({
         estate_id: profile!.estate_id,
         profile_id: profile!.id,
@@ -113,7 +114,7 @@ export default function MarketplaceListingScreen() {
         amount: details.total,
         label,
       });
-      if (transferErr) return setError(transferErr.message);
+      if (transferErr) return setError(friendlyDbError(transferErr));
       queryClient.invalidateQueries({ queryKey: ['listing', id] });
       queryClient.invalidateQueries({ queryKey: ['listings'] });
       setNotice("Thanks. We'll notify the seller once your transfer is confirmed.");
@@ -122,7 +123,7 @@ export default function MarketplaceListingScreen() {
 
     if (method === 'wallet') {
       const { error: rpcErr } = await supabase.rpc('adjust_wallet_balance', { delta: -details.total });
-      if (rpcErr) return setError(rpcErr.message);
+      if (rpcErr) return setError(friendlyDbError(rpcErr));
     }
     const { error: txErr } = await supabase.from('wallet_transactions').insert({
       profile_id: profile!.id,
@@ -130,7 +131,7 @@ export default function MarketplaceListingScreen() {
       amount: -details.total,
       status: 'completed',
     });
-    if (txErr) return setError(txErr.message);
+    if (txErr) return setError(friendlyDbError(txErr));
     const { error: orderErr } = await supabase.from('orders').insert({
       estate_id: profile!.estate_id,
       listing_id: listing!.id,
@@ -140,7 +141,7 @@ export default function MarketplaceListingScreen() {
       payment_method: method,
       status: 'paid',
     });
-    if (orderErr) return setError(orderErr.message);
+    if (orderErr) return setError(friendlyDbError(orderErr));
     queryClient.invalidateQueries({ queryKey: ['wallet', profile?.id] });
     queryClient.invalidateQueries({ queryKey: ['wallet_transactions', profile?.id] });
     queryClient.invalidateQueries({ queryKey: ['listing', id] });

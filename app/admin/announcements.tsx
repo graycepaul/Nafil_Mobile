@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { apiPost } from '../../lib/api';
 import { pickPhoto } from '../../lib/pick-photo';
 import { uploadAnnouncementPhoto } from '../../lib/announcement-photo';
@@ -144,7 +145,7 @@ export default function AdminAnnouncementsScreen() {
       } catch (pushError) {
         toast = {
           tone: 'error',
-          message: `Announcement posted, but the push notification failed: ${(pushError as Error).message}`,
+          message: `Announcement posted, but the push notification failed: ${friendlyDbError(pushError)}`,
         };
       }
     }

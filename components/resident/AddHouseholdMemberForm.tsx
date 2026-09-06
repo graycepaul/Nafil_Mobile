@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { supabase } from "../../lib/supabase";
+import { friendlyDbError } from "../../lib/db-errors";
 import { pickHouseholdAvatarPhoto, uploadHouseholdAvatar } from "../../lib/avatar";
 import { validatePhone } from "../../lib/validation";
 import { Button } from "../ui/Button";
@@ -101,7 +102,7 @@ export function AddHouseholdMemberForm({
 
       if (error) {
         setCreating(false);
-        setFormError(error.message);
+        setFormError(friendlyDbError(error));
         return;
       }
       memberId = data.id as string;
