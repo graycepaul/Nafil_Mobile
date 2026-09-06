@@ -308,3 +308,12 @@ export interface PublicProfile {
   unit_no: string | null;
   avatar_url: string | null;
 }
+
+/** Singleton row read on launch to gate/nudge on app version — see 0035_app_config.sql. */
+export interface AppConfig {
+  min_supported_version: string;
+  latest_version: string;
+  update_message: string | null;
+  ios_store_url: string | null;
+  android_store_url: string | null;
+}

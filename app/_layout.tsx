@@ -21,6 +21,9 @@ import {
 import { AppShell } from "../components/ui/AppShell";
 import { EmergencyAlertModal } from "../components/EmergencyAlertModal";
 import { useEmergencyAlertStore } from "../store/emergency-alert-store";
+import { useAppVersionGate } from "../lib/use-app-version-gate";
+import { UpdateRequiredScreen } from "../components/UpdateRequiredScreen";
+import { UpdateAvailableModal } from "../components/UpdateAvailableModal";
 import type { UserRole } from "../types/database";
 
 const queryClient = new QueryClient();
@@ -228,6 +231,8 @@ function RootNavigation() {
 
   usePushRegistration(profile?.id, profile?.estate_id);
 
+  const versionGate = useAppVersionGate();
+
   useEffect(() => {
     if (loading) return;
 
@@ -278,10 +283,29 @@ function RootNavigation() {
     }
   }, [session, profile, loading, segments, router]);
 
+  if (versionGate.state === "blocked") {
+    return (
+      <AppShell>
+        <UpdateRequiredScreen
+          message={versionGate.config.update_message}
+          iosStoreUrl={versionGate.config.ios_store_url}
+          androidStoreUrl={versionGate.config.android_store_url}
+        />
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell>
       <Slot />
       <EmergencyAlertModal />
+      {versionGate.state === "nudge" && (
+        <UpdateAvailableModal
+          message={versionGate.config.update_message}
+          iosStoreUrl={versionGate.config.ios_store_url}
+          androidStoreUrl={versionGate.config.android_store_url}
+        />
+      )}
     </AppShell>
   );
 }
