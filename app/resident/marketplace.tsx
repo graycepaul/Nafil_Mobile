@@ -248,7 +248,7 @@ export default function MarketplaceScreen() {
             </Text>
             <Text
               className="mt-xs text-base font-bold text-paper-900 dark:text-ink-text"
-              numberOfLines={1}
+              numberOfLines={2}
             >
               {formatListingPrice(item)}
             </Text>
