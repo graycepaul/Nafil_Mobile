@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { formatNaira, relativeTime } from '../../lib/format';
@@ -109,7 +110,7 @@ export default function StoreScreen() {
     const { error } = await supabase.from('orders').update({ status: 'completed' }).eq('id', orderId);
     setCompletingId(null);
     if (error) {
-      setError(error.message);
+      setError(friendlyDbError(error));
       return;
     }
     queryClient.invalidateQueries({ queryKey: ['store_orders', profile?.id] });
@@ -121,7 +122,7 @@ export default function StoreScreen() {
     const { error } = await supabase.from('listings').update({ status }).eq('id', listingId);
     setUpdatingListingId(null);
     if (error) {
-      setError(error.message);
+      setError(friendlyDbError(error));
       return;
     }
     queryClient.invalidateQueries({ queryKey: ['store_listings', profile?.id] });

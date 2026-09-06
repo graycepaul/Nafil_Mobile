@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { formatNaira, relativeTime } from '../../lib/format';
@@ -93,7 +94,7 @@ export default function AdminTransfersScreen() {
     });
     setResolvingId(null);
     if (error) {
-      setError(error.message);
+      setError(friendlyDbError(error));
       return;
     }
     queryClient.invalidateQueries({ queryKey: ['transfers_admin', profile?.estate_id] });

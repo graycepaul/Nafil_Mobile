@@ -10,6 +10,7 @@ import { SignOutButton } from '../components/SignOutButton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Notice } from '../components/ui/Notice';
 import { requestDndAccess } from '../lib/push-notifications';
+import { friendlyDbError } from '../lib/db-errors';
 import { apiDelete, ApiError } from '../lib/api';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 
@@ -46,7 +47,7 @@ export default function SettingsScreen() {
       // looking like nothing happened while quietly running on a session
       // for an account that no longer exists; at worst it logs out a user
       // whose account is actually fine, and they just sign back in.
-      setDeleteError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
+      setDeleteError(err instanceof ApiError ? friendlyDbError(err) : 'Something went wrong. Please try again.');
       setConfirmingDelete(false);
       await signOut();
       return;

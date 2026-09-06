@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -46,7 +47,7 @@ export function ScheduledVisitLookup() {
     const { error } = await supabase.rpc('check_in_scheduled_visit', { visit_id: visit.id });
     setCheckingInId(null);
     if (error) {
-      setError(error.message);
+      setError(friendlyDbError(error));
       return;
     }
     setNotice(`${visit.visitor_name} checked in.`);

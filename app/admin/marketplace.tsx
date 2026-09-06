@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
 import { useAdminUiStore } from '../../store/admin-ui-store';
 import { useTheme } from '../../context/theme-context';
@@ -118,7 +119,7 @@ export default function AdminMarketplaceScreen() {
     setUpdating(false);
     setConfirming(null);
     if (error) {
-      setError(error.message);
+      setError(friendlyDbError(error));
       return;
     }
     queryClient.invalidateQueries({ queryKey: ['listings_admin', profile?.estate_id] });

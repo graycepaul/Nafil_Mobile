@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { formatNaira, relativeTime } from '../../lib/format';
@@ -147,7 +148,7 @@ export default function WalletScreen() {
         p_proof_url: proofUrl,
       });
       if (rpcErr) {
-        setError(rpcErr.message);
+        setError(friendlyDbError(rpcErr));
         return;
       }
       setNotice("Resubmitted. We'll let you know once it's reviewed again.");
@@ -170,16 +171,16 @@ export default function WalletScreen() {
         amount,
         label: 'Wallet top-up · Bank transfer',
       });
-      if (err) return setError(err.message);
+      if (err) return setError(friendlyDbError(err));
       setNotice("Thanks. We'll credit your wallet once the transfer is confirmed.");
       invalidateTransfers();
     } else {
       const { error: rpcErr } = await supabase.rpc('adjust_wallet_balance', { delta: amount });
-      if (rpcErr) return setError(rpcErr.message);
+      if (rpcErr) return setError(friendlyDbError(rpcErr));
       const { error: txErr } = await supabase
         .from('wallet_transactions')
         .insert({ profile_id: profile!.id, label: 'Wallet top-up · Card', amount, status: 'completed' });
-      if (txErr) return setError(txErr.message);
+      if (txErr) return setError(friendlyDbError(txErr));
       setNotice('Wallet funded successfully.');
       invalidateWallet();
     }
@@ -202,16 +203,16 @@ export default function WalletScreen() {
           label: `Estate dues · ${item.label}`,
         }))
       );
-      if (err) return setError(err.message);
+      if (err) return setError(friendlyDbError(err));
       setNotice("Thanks. We'll mark your dues as paid once the transfer is confirmed.");
       invalidateTransfers();
     } else {
       if (method === 'wallet') {
         const { error: rpcErr } = await supabase.rpc('adjust_wallet_balance', { delta: -total });
-        if (rpcErr) return setError(rpcErr.message);
+        if (rpcErr) return setError(friendlyDbError(rpcErr));
       }
       const { error: duesErr } = await supabase.from('dues').update({ status: 'paid' }).in('id', selectedIds);
-      if (duesErr) return setError(duesErr.message);
+      if (duesErr) return setError(friendlyDbError(duesErr));
       const { error: txErr } = await supabase.from('wallet_transactions').insert({
         profile_id: profile!.id,
         label:
@@ -221,7 +222,7 @@ export default function WalletScreen() {
         amount: -total,
         status: 'completed',
       });
-      if (txErr) return setError(txErr.message);
+      if (txErr) return setError(friendlyDbError(txErr));
       setNotice('Estate dues paid successfully.');
       invalidateWallet();
     }

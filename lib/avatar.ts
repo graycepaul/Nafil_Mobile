@@ -1,5 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from './supabase';
+import { friendlyDbError } from './db-errors';
 
 interface PickAndUploadResult {
   url?: string;
@@ -43,7 +44,7 @@ async function uploadToPath(uri: string, mimeType: string | null | undefined, pa
     contentType,
     upsert: true,
   });
-  if (error) return { error: error.message } as const;
+  if (error) return { error: friendlyDbError(error) } as const;
 
   const { data } = supabase.storage.from('avatars').getPublicUrl(path);
   // Cache-bust so a re-picked photo replaces the old one immediately in any

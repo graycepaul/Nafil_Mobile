@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { useTheme } from '../../context/theme-context';
 import { formatNaira, relativeTime } from '../../lib/format';
 import { Card } from '../../components/ui/Card';
@@ -66,7 +67,7 @@ export default function AdminMarketplaceListingScreen() {
     setUpdating(false);
     setConfirmingAction(null);
     if (updateError) {
-      setError(updateError.message);
+      setError(friendlyDbError(updateError));
       return;
     }
     queryClient.invalidateQueries({ queryKey: ['listing', id] });

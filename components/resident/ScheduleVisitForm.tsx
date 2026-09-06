@@ -2,6 +2,7 @@ import { createElement, useState } from 'react';
 import { View, Text, Pressable, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { titleCase } from '../../lib/format';
 import { useTheme } from '../../context/theme-context';
 import { Button } from '../ui/Button';
@@ -72,7 +73,7 @@ export function ScheduleVisitForm({
     setCreating(false);
 
     if (error) {
-      setFormError(error.message);
+      setFormError(friendlyDbError(error));
       return;
     }
     onScheduled();

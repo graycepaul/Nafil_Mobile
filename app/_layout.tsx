@@ -111,7 +111,7 @@ function usePushRegistration(profileId: string | undefined, estateId: string | n
     const appStateSub = AppState.addEventListener("change", (state) => {
       if (state === "active") registerForPushNotifications(profileId);
     });
-    const tokenSub = subscribeToPushTokenChanges(profileId);
+    const tokenSub = subscribeToPushTokenChanges();
 
     return () => {
       appStateSub.remove();

@@ -3,6 +3,7 @@ import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { Avatar } from '../../components/ui/Avatar';
@@ -84,14 +85,14 @@ export default function AdminResidentsScreen() {
   async function approve(requestId: string) {
     setFormError(undefined);
     const { error } = await supabase.rpc('approve_join_request', { request_id: requestId });
-    if (error) setFormError(error.message);
+    if (error) setFormError(friendlyDbError(error));
     else invalidate();
   }
 
   async function reject(requestId: string) {
     setFormError(undefined);
     const { error } = await supabase.rpc('reject_join_request', { request_id: requestId });
-    if (error) setFormError(error.message);
+    if (error) setFormError(friendlyDbError(error));
     else invalidate();
   }
 

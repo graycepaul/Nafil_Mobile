@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { View, Text, SectionList, RefreshControl } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { Button } from '../../components/ui/Button';
@@ -78,7 +79,7 @@ export default function ActiveVisitorsScreen() {
       .eq('id', id);
     setCheckingOutId(null);
     if (error) {
-      setError(error.message);
+      setError(friendlyDbError(error));
       return;
     }
     queryClient.invalidateQueries({ queryKey: ['visitor_logs_active', profile?.estate_id] });

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Text, Keyboard, Pressable, ScrollView } from 'react-native';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { apiPost } from '../../lib/api';
 import { useAuthStore } from '../../store/auth-store';
 import { Button } from '../../components/ui/Button';
@@ -33,7 +34,7 @@ export default function SecurityAlertScreen() {
 
     if (error) {
       setSending(false);
-      setNotice({ tone: 'error', message: error.message });
+      setNotice({ tone: 'error', message: friendlyDbError(error) });
       return;
     }
 
@@ -70,7 +71,7 @@ export default function SecurityAlertScreen() {
     } catch (pushError) {
       setNotice({
         tone: 'error',
-        message: `Announcement posted, but the push notification failed: ${(pushError as Error).message}`,
+        message: `Announcement posted, but the push notification failed: ${friendlyDbError(pushError)}`,
       });
     }
 
