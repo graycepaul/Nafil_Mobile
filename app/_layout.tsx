@@ -3,11 +3,13 @@ import { useEffect } from "react";
 import { Platform } from "react-native";
 import { Slot, useRouter, useSegments } from "expo-router";
 import * as Linking from "expo-linking";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import * as Notifications from "expo-notifications";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { ThemeProvider, useTheme } from "../context/theme-context";
 import { useAuthStore } from "../store/auth-store";
+import { supabase } from "../lib/supabase";
 import {
   establishSessionFromUrl,
   urlLooksLikeAuthLink,
@@ -24,6 +26,15 @@ const ROLE_HOME: Record<UserRole, string> = {
   admin: "/admin",
   super_admin: "/admin",
   finance: "/admin",
+};
+
+// Only these roles have a dedicated notifications list today — security
+// falls back to its home screen rather than a route that doesn't exist yet.
+const ROLE_NOTIFICATIONS: Partial<Record<UserRole, string>> = {
+  resident: "/resident/notifications",
+  admin: "/admin/notifications",
+  super_admin: "/admin/notifications",
+  finance: "/admin/notifications",
 };
 
 const AUTH_GROUP = "(auth)";
@@ -65,6 +76,74 @@ function useNativeAuthLinks() {
   }, []);
 }
 
+/**
+ * Keeps the app icon's badge count equal to the real unread-notifications
+ * count, not the OS default of "+1 per push received" — that drifts the
+ * moment a notification is read in-app rather than tapped from the shade.
+ * Shares the same query key as the header bell dots, so this doesn't add a
+ * second poll, it's the same cached/polled request.
+ */
+function useBadgeSync(profileId: string | undefined) {
+  const { data: unreadCount } = useQuery({
+    queryKey: ["notifications_unread", profileId],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .is("read_at", null);
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: !!profileId && Platform.OS !== "web",
+    refetchInterval: 30_000,
+  });
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    Notifications.setBadgeCountAsync(unreadCount ?? 0);
+  }, [unreadCount]);
+}
+
+/**
+ * Without these, a push sitting in the OS notification shade is a dead end —
+ * nothing in the app reacts to it arriving or being tapped. On receipt (app
+ * foregrounded), refresh the unread count so the badge/bell dot update
+ * immediately instead of waiting for the next 30s poll. On tap, route
+ * somewhere useful: an emergency alert to the home screen (where the banner
+ * lives), everything else to that role's notifications list.
+ */
+function useNotificationRouting(
+  role: UserRole | undefined,
+  router: ReturnType<typeof useRouter>
+) {
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+
+    const receivedSub = Notifications.addNotificationReceivedListener(() => {
+      queryClient.invalidateQueries({ queryKey: ["notifications_unread"] });
+    });
+
+    const responseSub = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const data = response.notification.request.content.data as
+          | { kind?: string }
+          | undefined;
+        if (data?.kind === "emergency_alert") {
+          if (role) router.push(ROLE_HOME[role] as never);
+          return;
+        }
+        const notificationsPath = role ? ROLE_NOTIFICATIONS[role] : undefined;
+        if (notificationsPath) router.push(notificationsPath as never);
+      }
+    );
+
+    return () => {
+      receivedSub.remove();
+      responseSub.remove();
+    };
+  }, [role, router]);
+}
+
 function RootNavigation() {
   const session = useAuthStore((s) => s.session);
   const profile = useAuthStore((s) => s.profile);
@@ -75,6 +154,8 @@ function RootNavigation() {
 
   useEffect(() => init(), [init]);
   useNativeAuthLinks();
+  useBadgeSync(profile?.id);
+  useNotificationRouting(profile?.role, router);
 
   // Registering as early as sign-in (rather than waiting for a specific
   // screen) means a resident's device is reachable for an emergency alert

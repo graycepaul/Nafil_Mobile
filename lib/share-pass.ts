@@ -29,5 +29,5 @@ export async function sharePass(pass: VisitorPass, estateName?: string): Promise
 }
 
 export async function sharePassToWhatsApp(pass: VisitorPass, estateName?: string): Promise<ShareOutcome> {
-  return shareTextToWhatsApp(buildPassMessage(pass, estateName));
+  return shareTextToWhatsApp(buildPassMessage(pass, estateName), pass.visitor_phone);
 }

@@ -8,6 +8,10 @@ Notifications.setNotificationHandler({
     shouldShowBanner: true,
     shouldShowList: true,
     shouldPlaySound: true,
+    // Badge is kept in sync with the real unread-notifications count instead
+    // (see useBadgeSync in app/_layout.tsx) — letting the OS auto-increment
+    // per push received would drift from that the moment something gets
+    // marked read in-app rather than tapped from the notification shade.
     shouldSetBadge: false,
   }),
 });
