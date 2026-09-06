@@ -21,7 +21,7 @@ export default function AdminLayout() {
   const showExtraTabs = Platform.OS === 'web' && width >= TAB_PROMOTION_BREAKPOINT;
 
   return (
-    <Tabs screenOptions={themedTabOptions(colors, insets.bottom, width)}>
+    <Tabs backBehavior="history" screenOptions={themedTabOptions(colors, insets.bottom, width)}>
       <Tabs.Screen
         name="index"
         options={{

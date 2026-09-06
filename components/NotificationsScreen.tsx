@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/auth-store';
 import { useTheme } from '../context/theme-context';
 import { relativeTime } from '../lib/format';
+import { notificationRoute } from '../lib/notification-routes';
 import { Card } from './ui/Card';
 import { EmptyState } from './ui/EmptyState';
 import { CardSkeletonList } from './ui/CardSkeleton';
@@ -63,6 +64,12 @@ export function NotificationsScreen() {
     );
     await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', notification.id);
     queryClient.invalidateQueries({ queryKey: ['notifications_unread', profile?.id] });
+  }
+
+  function handlePress(notification: Notification) {
+    markRead(notification);
+    const path = notificationRoute(notification, profile?.role);
+    if (path) router.push(path as never);
   }
 
   async function markAllRead() {
@@ -136,7 +143,7 @@ export function NotificationsScreen() {
         const isEmergency = item.type === 'emergency';
         return (
           <Pressable
-            onPress={() => markRead(item)}
+            onPress={() => handlePress(item)}
             accessibilityRole="button"
             accessibilityLabel={item.title}
           >
