@@ -2,7 +2,7 @@
   "expo": {
     "name": "Nafil Estates",
     "slug": "nafil-estate",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -12,6 +12,9 @@
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "com.apple.developer.usernotifications.time-sensitive": true
       }
     },
     "android": {
@@ -53,6 +56,12 @@
         {
           "photosPermission": "Allow Nafil Estates to access your photos to set a profile picture or add photos to a marketplace listing.",
           "microphonePermission": false
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Allow Nafil Estates to access your contacts so you can pick a visitor's phone number instead of typing it."
         }
       ],
       "expo-sharing",

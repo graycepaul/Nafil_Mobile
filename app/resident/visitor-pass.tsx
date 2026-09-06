@@ -1,10 +1,11 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
+import { View, Text, FlatList, RefreshControl, Pressable, Platform } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { sharePass, sharePassToWhatsApp } from '../../lib/share-pass';
+import { pickVisitorPhone } from '../../lib/contacts';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { expiryLabel, titleCase } from '../../lib/format';
@@ -130,6 +131,19 @@ export default function VisitorPassScreen() {
     enabled: !!profile,
   });
 
+  async function handlePickContact() {
+    setFormError(undefined);
+    const { phone, error } = await pickVisitorPhone();
+    if (error) {
+      setFormError(error);
+      return;
+    }
+    if (phone) {
+      setVisitorPhone(phone);
+      setPhoneError(undefined);
+    }
+  }
+
   async function createPass() {
     const phoneErr = validatePhone(visitorPhone);
     setPhoneError(phoneErr);
@@ -206,18 +220,33 @@ export default function VisitorPassScreen() {
                   value={visitorName}
                   onChangeText={setVisitorName}
                 />
-                <Input
-                  label="Visitor phone"
-                  showLabel
-                  placeholder="e.g. 0803 123 4567"
-                  value={visitorPhone}
-                  onChangeText={(v) => {
-                    setVisitorPhone(v);
-                    if (phoneError) setPhoneError(undefined);
-                  }}
-                  error={phoneError}
-                  keyboardType="phone-pad"
-                />
+                <View className="flex-row items-end gap-sm">
+                  <View className="flex-1">
+                    <Input
+                      label="Visitor phone"
+                      showLabel
+                      placeholder="e.g. 0803 123 4567"
+                      value={visitorPhone}
+                      onChangeText={(v) => {
+                        setVisitorPhone(v);
+                        if (phoneError) setPhoneError(undefined);
+                      }}
+                      error={phoneError}
+                      keyboardType="phone-pad"
+                    />
+                  </View>
+                  {Platform.OS !== 'web' && (
+                    <Pressable
+                      onPress={handlePickContact}
+                      accessibilityRole="button"
+                      accessibilityLabel="Pick from contacts"
+                      hitSlop={8}
+                      className="mb-lg h-[52px] w-[52px] items-center justify-center rounded-md border border-paper-200 bg-white active:opacity-70 dark:border-ink-border dark:bg-ink-surface"
+                    >
+                      <Ionicons name="person-circle-outline" size={22} color={colors.primary} />
+                    </Pressable>
+                  )}
+                </View>
                 <Button
                   label="Generate pass"
                   onPress={createPass}

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, Pressable, Image } from 'react-native';
+import { View, Text, SectionList, RefreshControl, Pressable, Image } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
@@ -16,6 +16,7 @@ import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { RemoteImage } from '../../components/ui/RemoteImage';
 import { CardSkeletonList } from '../../components/ui/CardSkeleton';
+import { groupByDate } from '../../lib/date-groups';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { Issue, IssueStatus } from '../../types/database';
 
@@ -23,12 +24,14 @@ const STATUS_TONE: Record<IssueStatus, BadgeTone> = {
   open: 'warning',
   in_progress: 'info',
   resolved: 'success',
+  closed: 'neutral',
 };
 
 const STATUS_LABEL: Record<IssueStatus, string> = {
   open: 'Open',
   in_progress: 'In progress',
   resolved: 'Resolved',
+  closed: 'Closed',
 };
 
 const MAX_PHOTOS = 4;
@@ -139,11 +142,14 @@ export default function IssuesScreen() {
     );
   }
 
+  const sections = groupByDate(issues ?? [], (item) => item.created_at);
+
   return (
     <View className="flex-1 bg-white dark:bg-ink-bg">
-    <FlatList
+    <SectionList
       className="bg-white dark:bg-ink-bg"
       contentContainerClassName="p-xl"
+      stickySectionHeadersEnabled={false}
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
       ListHeaderComponent={
         <View>
@@ -209,7 +215,7 @@ export default function IssuesScreen() {
           </Text>
         </View>
       }
-      data={issues ?? []}
+      sections={sections}
       keyExtractor={(item) => item.id}
       ListEmptyComponent={
         <EmptyState
@@ -218,6 +224,11 @@ export default function IssuesScreen() {
           message="Anything broken or worth flagging? Tap + up top to report it."
         />
       }
+      renderSectionHeader={({ section }) => (
+        <Text className="mb-sm mt-md text-[13px] font-semibold text-paper-500 dark:text-ink-textMuted">
+          {section.title}
+        </Text>
+      )}
       renderItem={({ item }) => (
         <Pressable onPress={() => router.push(`/resident/issue-detail?id=${item.id}`)}>
           <Card className="flex-row gap-md">

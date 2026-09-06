@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
+import { View, Text, SectionList, RefreshControl, Pressable } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { supabase } from '../lib/supabase';
@@ -13,6 +13,7 @@ import { RemoteImage } from './ui/RemoteImage';
 import { CardSkeletonList } from './ui/CardSkeleton';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { ALERT_CATEGORIES } from './AlertCategoryPicker';
+import { groupByDate } from '../lib/date-groups';
 import type { Announcement } from '../types/database';
 
 export function emergencyLabel(category: Announcement['category']) {
@@ -90,6 +91,10 @@ export function AnnouncementsFeed({
     return true;
   });
   const sorted = sortAnnouncements(filtered, sortBy);
+  // Date-grouped headers only make sense in the feed's natural date order —
+  // sorting by estate or alert type puts same-day items apart, so a single
+  // untitled section (no header rendered) keeps that ordering intact.
+  const sections = sortBy === 'date' ? groupByDate(sorted, (a) => a.created_at) : [{ title: '', data: sorted }];
 
   async function onRefresh() {
     setRefreshing(true);
@@ -106,14 +111,15 @@ export function AnnouncementsFeed({
   }
 
   return (
-    <FlatList
+    <SectionList
       className="bg-white dark:bg-ink-bg"
       contentContainerClassName="p-xl"
+      stickySectionHeadersEnabled={false}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       ListHeaderComponent={ListHeaderComponent}
-      data={sorted}
+      sections={sections}
       keyExtractor={(item) => item.id}
       ListEmptyComponent={
         <EmptyState
@@ -121,6 +127,13 @@ export function AnnouncementsFeed({
           title="No announcements yet"
           message="Estate-wide updates will show up here."
         />
+      }
+      renderSectionHeader={({ section }) =>
+        section.title ? (
+          <Text className="mb-sm mt-md text-[13px] font-semibold text-paper-500 dark:text-ink-textMuted">
+            {section.title}
+          </Text>
+        ) : null
       }
       renderItem={({ item }) => {
         const isEmergency = item.severity === 'emergency';

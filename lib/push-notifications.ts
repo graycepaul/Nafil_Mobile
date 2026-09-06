@@ -8,6 +8,10 @@ Notifications.setNotificationHandler({
     shouldShowBanner: true,
     shouldShowList: true,
     shouldPlaySound: true,
+    // Badge is kept in sync with the real unread-notifications count instead
+    // (see useBadgeSync in app/_layout.tsx) — letting the OS auto-increment
+    // per push received would drift from that the moment something gets
+    // marked read in-app rather than tapped from the notification shade.
     shouldSetBadge: false,
   }),
 });
@@ -67,16 +71,45 @@ export async function registerForPushNotifications(profileId: string): Promise<s
     return null;
   }
 
+  const saved = await saveToken(profileId, token);
+  return saved ? token : null;
+}
+
+async function saveToken(profileId: string, token: string): Promise<boolean> {
   const { error } = await supabase
     .from('push_tokens')
     .upsert({ profile_id: profileId, token, platform: Platform.OS }, { onConflict: 'token' });
 
   if (error) {
-    console.warn('registerForPushNotifications: failed to save token.', error.message);
-    return null;
+    console.warn('push-notifications: failed to save token.', error.message);
+    return false;
   }
+  return true;
+}
 
-  return token;
+/**
+ * Expo push tokens can rotate underneath an already-signed-in session (app
+ * reinstall, restored backup, credential change) — a token saved once at
+ * sign-in and never revisited goes stale, and every future push to it just
+ * silently fails forever. `addPushTokenListener` fires when that happens,
+ * but with the *native* device token (APNs/FCM), not the Expo token this
+ * app actually stores and Expo's push API expects — so the fix on a
+ * rotation event is to re-derive the Expo token via getExpoPushTokenAsync
+ * and re-upsert that, not to save whatever the listener handed us directly.
+ */
+export function subscribeToPushTokenChanges(profileId: string) {
+  if (Platform.OS === 'web') return { remove() {} };
+
+  return Notifications.addPushTokenListener(async () => {
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    if (!projectId) return;
+    try {
+      const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
+      await saveToken(profileId, token);
+    } catch (error) {
+      console.warn('subscribeToPushTokenChanges: failed to refresh rotated token.', error);
+    }
+  });
 }
 
 /**
