@@ -1,4 +1,5 @@
 import "../global.css";
+import "../lib/nativewind-interop";
 import { useEffect } from "react";
 import { AppState, Platform } from "react-native";
 import { Slot, useRouter, useSegments } from "expo-router";
