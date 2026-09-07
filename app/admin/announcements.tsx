@@ -225,18 +225,18 @@ export default function AdminAnnouncementsScreen() {
           <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">
             Photo - optional
           </Text>
-          <View className="mb-lg flex-row gap-sm">
+          <View className="mb-lg">
             {photo ? (
-              <View className="relative">
-                <Image source={{ uri: photo.uri }} className="h-20 w-20 rounded-md" />
+              <View className="relative w-full">
+                <Image source={{ uri: photo.uri }} className="h-40 w-full rounded-md" />
                 <Pressable
                   onPress={() => setPhoto(undefined)}
                   accessibilityRole="button"
                   accessibilityLabel="Remove photo"
                   hitSlop={8}
-                  className="absolute -right-1.5 -top-1.5 h-5 w-5 items-center justify-center rounded-full bg-danger"
+                  className="absolute -right-1.5 -top-1.5 h-6 w-6 items-center justify-center rounded-full bg-danger"
                 >
-                  <Ionicons name="close" size={12} color="#fff" />
+                  <Ionicons name="close" size={14} color="#fff" />
                 </Pressable>
               </View>
             ) : (
@@ -244,9 +244,10 @@ export default function AdminAnnouncementsScreen() {
                 onPress={addPhoto}
                 accessibilityRole="button"
                 accessibilityLabel="Add photo"
-                className="h-20 w-20 items-center justify-center rounded-md border border-dashed border-paper-200 dark:border-ink-border"
+                className="h-40 w-full items-center justify-center gap-xs rounded-md border border-dashed border-paper-200 dark:border-ink-border"
               >
-                <Ionicons name="camera-outline" size={22} color={colors.textMuted} />
+                <Ionicons name="camera-outline" size={26} color={colors.textMuted} />
+                <Text className="text-[13px] text-paper-500 dark:text-ink-textMuted">Tap to add a photo</Text>
               </Pressable>
             )}
           </View>
