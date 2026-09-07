@@ -52,6 +52,13 @@ export function notificationRoute(item: Notification, role: UserRole | undefined
       return d.listing_id
         ? `/${isAdmin ? 'admin' : 'resident'}/marketplace-listing?id=${d.listing_id}`
         : undefined;
+    case 'join_request_submitted':
+      return '/admin/residents?tab=pending';
+    case 'join_request_rejected':
+      // Routes through the onboarding router rather than straight to
+      // join-estate - it re-checks the latest request itself and is what
+      // every other onboarding entry point already goes through.
+      return '/onboarding';
     // 'join_request_approved' has no detail screen of its own - the
     // resident's estate assignment is already visible on Home once approved.
     default:

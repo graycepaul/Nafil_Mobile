@@ -37,6 +37,7 @@ export default function JoinEstateScreen() {
     serviceNumber?: string;
   }>({});
   const [formError, setFormError] = useState<string>();
+  const [rejectionReason, setRejectionReason] = useState<string>();
   const [wasRejected, setWasRejected] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -77,6 +78,7 @@ export default function JoinEstateScreen() {
       .then(({ data }) => {
         const latest = data as EstateJoinRequest | null;
         setWasRejected(latest?.status === 'rejected');
+        setRejectionReason(latest?.rejection_reason ?? undefined);
       });
   }, [profile]);
 
@@ -131,7 +133,11 @@ export default function JoinEstateScreen() {
       {wasRejected && (
         <Notice
           tone="info"
-          message="Your last request wasn’t approved. Double-check the estate and unit number and try again."
+          message={
+            rejectionReason
+              ? `Your last request wasn’t approved: ${rejectionReason}`
+              : 'Your last request wasn’t approved. Double-check the estate and unit number and try again.'
+          }
         />
       )}
       {formError && <Notice message={formError} />}

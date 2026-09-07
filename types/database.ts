@@ -48,6 +48,8 @@ export interface EstateJoinRequest {
   id_document_path: string | null;
   /** Only set for resident_category: 'personnel'. */
   service_number: string | null;
+  /** Only set when status is 'rejected' - required by reject_join_request(). */
+  rejection_reason: string | null;
 }
 
 /** Shape returned by the admin queue's join-request query, with the resident's name/phone joined in. */
@@ -187,7 +189,9 @@ export type NotificationType =
   | 'listing_reinstated'
   | 'transfer_contested'
   | 'issue_feedback'
-  | 'due_assigned';
+  | 'due_assigned'
+  | 'join_request_submitted'
+  | 'join_request_rejected';
 
 export interface Notification {
   id: string;

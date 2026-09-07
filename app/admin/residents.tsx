@@ -13,6 +13,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { CardSkeletonList } from '../../components/ui/CardSkeleton';
 import { SearchAndEstateFilter } from '../../components/admin/SearchAndEstateFilter';
 import { PendingRequestCard } from '../../components/admin/PendingRequestCard';
+import { RejectReasonModal } from '../../components/admin/RejectReasonModal';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { JoinRequestWithApplicant, Profile } from '../../types/database';
 
@@ -26,6 +27,7 @@ export default function AdminResidentsScreen() {
   const { tab: openOnLoad } = useLocalSearchParams<{ tab?: string }>();
   const [formError, setFormError] = useState<string>();
   const [actioning, setActioning] = useState<{ id: string; type: 'approve' | 'reject' } | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ResidentsTab>('all');
   const [search, setSearch] = useState('');
   const isSuperAdmin = profile?.role === 'super_admin';
@@ -92,13 +94,16 @@ export default function AdminResidentsScreen() {
     else invalidate();
   }
 
-  async function reject(requestId: string) {
+  async function reject(requestId: string, reason: string) {
     setFormError(undefined);
     setActioning({ id: requestId, type: 'reject' });
-    const { error } = await supabase.rpc('reject_join_request', { request_id: requestId });
+    const { error } = await supabase.rpc('reject_join_request', { request_id: requestId, reason });
     setActioning(null);
     if (error) setFormError(friendlyDbError(error));
-    else invalidate();
+    else {
+      setRejectTarget(null);
+      invalidate();
+    }
   }
 
   const filteredRequests = useMemo(() => {
@@ -171,36 +176,44 @@ export default function AdminResidentsScreen() {
 
   if (activeTab === 'pending') {
     return (
-      <FlatList
-        className="bg-white dark:bg-ink-bg"
-        contentContainerClassName="px-xl pb-xl"
-        refreshControl={
-          <RefreshControl refreshing={isRefetchingRequests} onRefresh={refetchRequests} tintColor={colors.primary} />
-        }
-        data={filteredRequests}
-        keyExtractor={(item) => item.id}
-        ListHeaderComponent={
-          <View>
-            {searchFilter}
-            {tabs}
-            <View className="h-lg" />
-            {formError && <Notice message={formError} />}
-          </View>
-        }
-        ListEmptyComponent={
-          <EmptyState title="All caught up" message="No join requests waiting on you." />
-        }
-        renderItem={({ item: req }) => (
-          <PendingRequestCard
-            request={req}
-            estateName={isSuperAdmin ? req.estate?.name : undefined}
-            onApprove={() => approve(req.id)}
-            onReject={() => reject(req.id)}
-            approving={actioning?.id === req.id && actioning.type === 'approve'}
-            rejecting={actioning?.id === req.id && actioning.type === 'reject'}
-          />
-        )}
-      />
+      <>
+        <FlatList
+          className="bg-white dark:bg-ink-bg"
+          contentContainerClassName="px-xl pb-xl"
+          refreshControl={
+            <RefreshControl refreshing={isRefetchingRequests} onRefresh={refetchRequests} tintColor={colors.primary} />
+          }
+          data={filteredRequests}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={
+            <View>
+              {searchFilter}
+              {tabs}
+              <View className="h-lg" />
+              {formError && <Notice message={formError} />}
+            </View>
+          }
+          ListEmptyComponent={
+            <EmptyState title="All caught up" message="No join requests waiting on you." />
+          }
+          renderItem={({ item: req }) => (
+            <PendingRequestCard
+              request={req}
+              estateName={isSuperAdmin ? req.estate?.name : undefined}
+              onApprove={() => approve(req.id)}
+              onReject={() => setRejectTarget(req.id)}
+              approving={actioning?.id === req.id && actioning.type === 'approve'}
+              rejecting={actioning?.id === req.id && actioning.type === 'reject'}
+            />
+          )}
+        />
+        <RejectReasonModal
+          visible={!!rejectTarget}
+          onDismiss={() => setRejectTarget(null)}
+          onConfirm={(reason) => rejectTarget && reject(rejectTarget, reason)}
+          submitting={actioning?.type === 'reject' && actioning.id === rejectTarget}
+        />
+      </>
     );
   }
 
