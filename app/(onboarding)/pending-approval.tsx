@@ -7,6 +7,7 @@ import { useAuthStore } from '../../store/auth-store';
 import { AuthShell, AuthLink } from '../../components/auth/AuthShell';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Button } from '../../components/ui/Button';
+import { adviceForRejectionReason } from '../../lib/join-request-rejection';
 import type { Estate, EstateJoinRequest } from '../../types/database';
 
 type RequestWithEstate = EstateJoinRequest & { estate: Estate | null };
@@ -73,8 +74,7 @@ export default function PendingApprovalScreen() {
           </View>
         )}
         <Text className="mb-xl text-base leading-[22px] text-paper-500 dark:text-ink-textMuted">
-          Double-check the estate and unit number, then submit a new request. If you think this
-          is a mistake, contact your estate admin directly.
+          {adviceForRejectionReason(request.rejection_reason)}
         </Text>
         <Button label="Try again" onPress={() => router.replace('/join-estate')} />
       </AuthShell>

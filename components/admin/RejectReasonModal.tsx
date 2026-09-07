@@ -6,14 +6,9 @@ import { Overlay } from '../ui/Overlay';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { REJECTION_PRESETS } from '../../lib/join-request-rejection';
 
-const PRESET_REASONS = [
-  'Unit not found in our records',
-  "Name doesn't match the unit allocation",
-  'ID document is unclear or unreadable',
-  'Utility bill is older than 3 months',
-  'Service number could not be verified',
-];
+const PRESET_REASONS = REJECTION_PRESETS.map((p) => p.label);
 
 const OTHER = 'Other';
 
