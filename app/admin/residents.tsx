@@ -58,6 +58,15 @@ export default function AdminResidentsScreen() {
       return data as WithEstateName<JoinRequestWithApplicant>[];
     },
     enabled: !!profile,
+    // A resident submitting a new request while an admin already has this
+    // tab open used to just sit invisible until the admin happened to
+    // pull-to-refresh or navigate away and back - nothing pushed the
+    // update to them. Polling only while the pending tab is actually the
+    // one showing (not 'all residents') keeps this from running forever
+    // in the background; React Query's own default of pausing while the
+    // window/app isn't focused (refetchIntervalInBackground: false) covers
+    // the rest.
+    refetchInterval: activeTab === 'pending' ? 15_000 : false,
   });
 
   const {
