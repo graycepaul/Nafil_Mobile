@@ -97,7 +97,10 @@ export default function CreateCommunityScreen() {
     });
     setLoading(false);
 
-    if (error) {
+    // Same anti-enumeration treatment as signup.tsx: "already registered"
+    // routes to check-email like a success instead of confirming the
+    // account exists.
+    if (error && !/already been registered|already registered/i.test(error.message)) {
       setFormError(authErrorMessage(error));
       return;
     }
