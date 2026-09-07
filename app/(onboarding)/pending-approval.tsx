@@ -64,6 +64,14 @@ export default function PendingApprovalScreen() {
         }
         footer={<AuthLink label="Sign out" onPress={signOut} />}
       >
+        {request.rejection_reason && (
+          <View className="mb-lg rounded-lg border-l-[3px] border-danger bg-danger-muted p-lg dark:bg-danger-mutedDark">
+            <Text className="text-[13px] font-medium text-danger">Reason given</Text>
+            <Text className="mt-xs text-[14px] leading-[20px] text-paper-900 dark:text-ink-text">
+              {request.rejection_reason}
+            </Text>
+          </View>
+        )}
         <Text className="mb-xl text-base leading-[22px] text-paper-500 dark:text-ink-textMuted">
           Double-check the estate and unit number, then submit a new request. If you think this
           is a mistake, contact your estate admin directly.
