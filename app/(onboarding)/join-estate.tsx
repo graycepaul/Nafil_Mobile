@@ -14,9 +14,9 @@ import { Input } from '../../components/ui/Input';
 import { Notice } from '../../components/ui/Notice';
 import type { Estate, EstateJoinRequest, ResidentCategory } from '../../types/database';
 
-const CATEGORY_OPTIONS: { value: ResidentCategory; label: string; hint: string }[] = [
-  { value: 'civilian', label: 'Civilian', hint: 'Utility bill or NIN card' },
-  { value: 'personnel', label: 'Personnel', hint: 'Service ID card + service number' },
+const CATEGORY_OPTIONS: { value: ResidentCategory; label: string }[] = [
+  { value: 'civilian', label: 'Civilian' },
+  { value: 'personnel', label: 'Personnel' },
 ];
 
 export default function JoinEstateScreen() {
@@ -39,6 +39,13 @@ export default function JoinEstateScreen() {
   const [formError, setFormError] = useState<string>();
   const [wasRejected, setWasRejected] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const canSubmit =
+    !!estate &&
+    unitNo.trim().length > 0 &&
+    !!category &&
+    !!idPhoto &&
+    (category !== 'personnel' || serviceNumber.trim().length > 0);
 
   function handleCategoryChange(next: ResidentCategory) {
     setCategory(next);
@@ -150,10 +157,10 @@ export default function JoinEstateScreen() {
         error={errors.unitNo}
       />
 
-      <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">
+      <Text className="mb-md text-sm font-medium text-paper-900 dark:text-ink-text">
         Which best describes you?
       </Text>
-      <View className="mb-lg flex-row gap-sm">
+      <View className="mb-xl flex-row gap-xl">
         {CATEGORY_OPTIONS.map((option) => {
           const active = category === option.value;
           return (
@@ -162,31 +169,24 @@ export default function JoinEstateScreen() {
               onPress={() => handleCategoryChange(option.value)}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: active }}
-              className={`flex-1 rounded-md border p-md ${
-                active
-                  ? 'border-brand-800 bg-paper-50 dark:border-brand-300 dark:bg-ink-surface'
-                  : 'border-paper-200 bg-white dark:border-ink-border dark:bg-ink-surface'
-              }`}
+              className="flex-row items-center gap-sm py-xs"
             >
-              <View className="flex-row items-center gap-sm">
-                <View
-                  className={`h-5 w-5 items-center justify-center rounded border-[1.5px] ${
-                    active ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300' : 'border-paper-200 dark:border-ink-border'
-                  }`}
-                >
-                  {active && <Ionicons name="checkmark" size={13} color={colors.onButtonFill} />}
-                </View>
-                <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
-                  {option.label}
-                </Text>
+              <View
+                className={`h-5 w-5 items-center justify-center rounded border-[1.5px] ${
+                  active ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300' : 'border-paper-200 dark:border-ink-border'
+                }`}
+              >
+                {active && <Ionicons name="checkmark" size={13} color={colors.onButtonFill} />}
               </View>
-              <Text className="mt-xs text-[12px] text-paper-500 dark:text-ink-textMuted">{option.hint}</Text>
+              <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
+                {option.label}
+              </Text>
             </Pressable>
           );
         })}
       </View>
       {errors.category && (
-        <Text className="-mt-md mb-lg text-[13px] text-danger">{errors.category}</Text>
+        <Text className="-mt-lg mb-xl text-[13px] text-danger">{errors.category}</Text>
       )}
 
       {category === 'personnel' && (
@@ -209,16 +209,16 @@ export default function JoinEstateScreen() {
             {category === 'personnel' ? 'Service ID card' : 'Utility bill or NIN card'}
           </Text>
           {idPhoto ? (
-            <View className="relative self-start">
-              <Image source={{ uri: idPhoto.uri }} className="h-28 w-28 rounded-md" />
+            <View className="relative w-full">
+              <Image source={{ uri: idPhoto.uri }} className="h-40 w-full rounded-md" />
               <Pressable
                 onPress={() => setIdPhoto(undefined)}
                 accessibilityRole="button"
                 accessibilityLabel="Remove photo"
                 hitSlop={8}
-                className="absolute -right-1.5 -top-1.5 h-5 w-5 items-center justify-center rounded-full bg-danger"
+                className="absolute -right-1.5 -top-1.5 h-6 w-6 items-center justify-center rounded-full bg-danger"
               >
-                <Ionicons name="close" size={12} color="#fff" />
+                <Ionicons name="close" size={14} color="#fff" />
               </Pressable>
             </View>
           ) : (
@@ -226,21 +226,29 @@ export default function JoinEstateScreen() {
               onPress={addIdPhoto}
               accessibilityRole="button"
               accessibilityLabel="Add photo"
-              className={`h-28 w-28 items-center justify-center rounded-md border border-dashed ${
+              className={`h-40 w-full items-center justify-center gap-xs rounded-md border border-dashed ${
                 errors.idPhoto ? 'border-danger' : 'border-paper-200 dark:border-ink-border'
               }`}
             >
-              <Ionicons name="camera-outline" size={24} color={colors.textMuted} />
+              <Ionicons name="camera-outline" size={26} color={colors.textMuted} />
+              <Text className="text-[13px] text-paper-500 dark:text-ink-textMuted">Tap to add a photo</Text>
             </Pressable>
           )}
           {errors.idPhoto && <Text className="mt-xs text-[13px] text-danger">{errors.idPhoto}</Text>}
           <Text className="mt-sm text-[12px] text-paper-500 dark:text-ink-textMuted">
-            Only your estate admin can view this - it’s used to confirm your identity before approval.
+            {category === 'personnel'
+              ? 'Upload your service ID card for identification. Only your estate admin can view this.'
+              : 'Upload a recent utility bill (not older than 3 months) or your NIN card for identification. Only your estate admin can view this.'}
           </Text>
         </View>
       )}
 
-      <Button label="Request approval" onPress={handleSubmit} loading={submitting} />
+      <Button
+        label="Request approval"
+        onPress={handleSubmit}
+        loading={submitting}
+        disabled={!canSubmit}
+      />
     </AuthShell>
   );
 }
