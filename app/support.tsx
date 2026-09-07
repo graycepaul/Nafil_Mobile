@@ -1,18 +1,20 @@
 import { View, Text, Pressable, ScrollView, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/theme-context';
 import { useAuthStore } from '../store/auth-store';
 import { Card } from '../components/ui/Card';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 
 /**
- * Shared across every role, same reasoning as /settings — nothing here is
+ * Shared across every role, same reasoning as /settings - nothing here is
  * role-specific. There's no support-ticket system yet, so this is a direct
  * line to the estate's own admin/management contact rather than a fake
  * "submit a ticket" flow that goes nowhere.
  */
 export default function SupportScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
 
@@ -20,7 +22,11 @@ export default function SupportScreen() {
 
   return (
     <View className="flex-1 bg-white dark:bg-ink-bg">
-      <View className="flex-row items-center gap-md border-b border-paper-200 px-lg pb-lg pt-2xl dark:border-ink-border">
+      <View
+        className="flex-row items-center gap-md border-b border-paper-200 px-lg pb-lg dark:border-ink-border"
+        style={{ paddingTop: insets.top + 16 }}
+      >
+
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"

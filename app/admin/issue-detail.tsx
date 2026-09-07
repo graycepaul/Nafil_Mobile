@@ -227,7 +227,7 @@ export default function AdminIssueDetailScreen() {
       <ConfirmDialog
         visible={confirmingClose}
         title="Close this issue?"
-        message="The feedback thread ends once this is closed — the resident won't be able to add more messages, and this can't be reopened."
+        message="The feedback thread ends once this is closed - the resident won't be able to add more messages, and this can't be reopened."
         confirmLabel="Close issue"
         cancelLabel="Keep open"
         destructive

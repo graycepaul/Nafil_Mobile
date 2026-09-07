@@ -116,14 +116,14 @@ export default function MarketplaceScreen() {
   }, [allListings, query, category, typeFilter]);
 
   // More columns as the viewport widens (2 on a phone up to 5 on a wide
-  // desktop) — fixed at 2 regardless of width, these aspect-square cards blew
+  // desktop) - fixed at 2 regardless of width, these aspect-square cards blew
   // up to nearly half the screen each on a laptop. Matches AppShell/tab-options'
   // breakpoints loosely rather than exactly; this just needs to feel right.
   const numColumns = width >= 1280 ? 5 : width >= 1024 ? 4 : width >= 640 ? 3 : 2;
 
   // An incomplete last row otherwise stretches its items to fill the row
   // (and, since their height is aspect-square, grows just as tall as it is
-  // wide) — these fillers keep the row's real items pinned to a normal
+  // wide) - these fillers keep the row's real items pinned to a normal
   // column width instead.
   const remainder = listings.length % numColumns;
   const fillerCount = remainder === 0 ? 0 : numColumns - remainder;
@@ -248,7 +248,7 @@ export default function MarketplaceScreen() {
             </Text>
             <Text
               className="mt-xs text-base font-bold text-paper-900 dark:text-ink-text"
-              numberOfLines={1}
+              numberOfLines={2}
             >
               {formatListingPrice(item)}
             </Text>

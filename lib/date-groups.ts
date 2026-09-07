@@ -4,7 +4,7 @@ export type DateGroup<T> = { title: string; data: T[] };
  * Buckets already newest-first-sorted items into "Today" / "Yesterday" /
  * weekday (rest of this week) / month+day (older, current year) / full date
  * (older, past years) groups, consecutive same-label items merged into one
- * section — for SectionList's `sections` prop.
+ * section - for SectionList's `sections` prop.
  */
 export function groupByDate<T>(items: T[], getDate: (item: T) => string): DateGroup<T>[] {
   const groups: DateGroup<T>[] = [];

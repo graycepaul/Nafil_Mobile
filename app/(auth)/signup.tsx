@@ -54,7 +54,14 @@ export default function SignupScreen() {
     });
     setLoading(false);
 
-    if (error) {
+    // "already registered" is deliberately treated like success, not an
+    // error - routing to check-email either way (same as
+    // forgot-password.tsx's reset flow) means an attacker probing emails
+    // gets an identical response whether or not the account exists.
+    // Someone who already has an account just lands on a screen telling
+    // them to check an inbox that won't get a new mail - a minor dead end
+    // for them, not a leak for everyone else.
+    if (error && !/already been registered|already registered/i.test(error.message)) {
       setFormError(authErrorMessage(error));
       return;
     }

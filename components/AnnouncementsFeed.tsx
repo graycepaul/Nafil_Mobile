@@ -55,7 +55,7 @@ export function AnnouncementsFeed({
   estateFilter,
 }: {
   ListHeaderComponent?: React.ReactElement;
-  /** super_admin only — the feed is cross-estate for them, so each card needs to say which estate it's from. */
+  /** super_admin only - the feed is cross-estate for them, so each card needs to say which estate it's from. */
   showEstate?: boolean;
   sortBy?: AnnouncementSort;
   search?: string;
@@ -65,7 +65,7 @@ export function AnnouncementsFeed({
   const router = useRouter();
   const role = useAuthStore((s) => s.profile?.role);
   // Only residents and admin-family roles (admin/super_admin/finance) ever
-  // render this feed — security has no announcements screen at all — so
+  // render this feed - security has no announcements screen at all - so
   // this binary covers every real caller without needing a route prop
   // threaded through both call sites.
   const detailBase = role === 'resident' ? '/resident/announcement-detail' : '/admin/announcement-detail';
@@ -91,7 +91,7 @@ export function AnnouncementsFeed({
     return true;
   });
   const sorted = sortAnnouncements(filtered, sortBy);
-  // Date-grouped headers only make sense in the feed's natural date order —
+  // Date-grouped headers only make sense in the feed's natural date order -
   // sorting by estate or alert type puts same-day items apart, so a single
   // untitled section (no header rendered) keeps that ordering intact.
   const sections = sortBy === 'date' ? groupByDate(sorted, (a) => a.created_at) : [{ title: '', data: sorted }];

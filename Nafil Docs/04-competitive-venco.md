@@ -1,4 +1,4 @@
-# Venco — Feature Audit
+# Venco - Feature Audit
 
 Reference for what the incumbent does, so we build deliberately rather than by imitation.
 
@@ -32,7 +32,7 @@ gated estates, streets, apartment blocks, and commercial complexes.
 - Marketplace (separate product line)
 
 ### Security
-- Real-time caller verification — matches an incoming caller's number against registered
+- Real-time caller verification - matches an incoming caller's number against registered
   residents/visitors, shows a time-sensitive verification prompt
 - Access control: single-use codes, NFC ID cards, RFID car stickers, QR scanning
 - Integration with boom barriers and turnstiles
@@ -59,7 +59,7 @@ gated estates, streets, apartment blocks, and commercial complexes.
 | Customization | Configuration within their product | Whatever the client asks for |
 
 **The one-app decision** is the main structural divergence. It costs us some role-specific
-polish — a gate-only device shows tabs a guard never uses — but it means one release
+polish - a gate-only device shows tabs a guard never uses - but it means one release
 pipeline, one design system, and staff holding multiple roles (a facility manager who also
 lives on the estate) don't juggle installs.
 
@@ -68,7 +68,7 @@ lives on the estate) don't juggle installs.
 - **Caller verification.** Clever: the visitor calls the gate from the number on their pass,
   and the guard gets an instant match. Solves the "visitor arrives, guard is mid-shift-change"
   gap without hardware. Cheap to build once passes store a phone number.
-- **Revenue assurance framing.** Not a feature so much as a posture — the admin product is
+- **Revenue assurance framing.** Not a feature so much as a posture - the admin product is
   sold on *collections*, not on convenience. Worth mirroring in how Phase 2 is scoped.
 - **Domestic staff as a distinct pass type.** Recurring, long-validity, screened once. We
   have it in the Phase 1 backlog for this reason.

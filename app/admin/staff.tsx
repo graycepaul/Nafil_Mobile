@@ -38,34 +38,30 @@ export default function AdminStaffScreen() {
   }, [openOnLoad]);
 
   useLayoutEffect(() => {
+    // The form itself already has its own Cancel button (InviteStaffForm's
+    // "Cancel"/"Done", both wired to the same onClose) - showing this one
+    // too while the form is open was a redundant second way to do the exact
+    // same thing. Only rendered to *open* the form now; closing it is the
+    // form's job alone.
     navigation.setOptions({
-      headerRight: () => (
-        <Pressable
-          onPress={() => setInviting((v) => !v)}
-          accessibilityRole="button"
-          accessibilityLabel={inviting ? 'Cancel invite' : 'Invite staff'}
-          hitSlop={8}
-          className={`mr-lg flex-row items-center gap-xs rounded-full px-md py-sm ${
-            inviting ? 'border border-paper-200 dark:border-ink-border' : 'bg-brand-800 dark:bg-brand-500'
-          }`}
-        >
-          <Ionicons
-            name={inviting ? 'close' : 'person-add-outline'}
-            color={inviting ? colors.onHeaderBg : colors.onButtonFill}
-            size={16}
-          />
-          <Text
-            className={`text-[13px] font-semibold ${
-              inviting ? 'text-paper-900 dark:text-ink-text' : ''
-            }`}
-            style={inviting ? undefined : { color: colors.onButtonFill }}
-          >
-            {inviting ? 'Cancel' : 'Invite staff'}
-          </Text>
-        </Pressable>
-      ),
+      headerRight: inviting
+        ? undefined
+        : () => (
+            <Pressable
+              onPress={() => setInviting(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Invite staff"
+              hitSlop={8}
+              className="mr-lg flex-row items-center gap-xs rounded-full bg-brand-800 px-md py-sm dark:bg-brand-500"
+            >
+              <Ionicons name="person-add-outline" color={colors.onButtonFill} size={16} />
+              <Text className="text-[13px] font-semibold" style={{ color: colors.onButtonFill }}>
+                Invite staff
+              </Text>
+            </Pressable>
+          ),
     });
-  }, [navigation, inviting, colors.onHeaderBg, colors.onButtonFill]);
+  }, [navigation, inviting, colors.onButtonFill]);
 
   const { data: estate } = useQuery({
     queryKey: ['my_estate', profile?.estate_id],

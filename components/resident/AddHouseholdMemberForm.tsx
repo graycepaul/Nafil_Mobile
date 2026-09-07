@@ -20,11 +20,11 @@ const REVIEW_OPTIONS: { key: HouseholdReviewFrequency; label: string }[] = [
 ];
 
 /**
- * Adds a standing allow-list entry — a family member, a nanny, a regular
- * driver — someone who shouldn't need a fresh visitor pass every time they
+ * Adds a standing allow-list entry - a family member, a nanny, a regular
+ * driver - someone who shouldn't need a fresh visitor pass every time they
  * come. The photo is picked up front, in the form itself, rather than as a
  * second step after creation: that two-step shape (create the row, then
- * separately prompt for a photo) was the source of a real bug — abandoning
+ * separately prompt for a photo) was the source of a real bug - abandoning
  * or failing partway through the second step left a member with no photo in
  * a state this form had no way back into, despite a photo being required for
  * gate identification. Picking first means "Add" either succeeds with a
@@ -111,7 +111,7 @@ export function AddHouseholdMemberForm({
 
     const uploadResult = await uploadHouseholdAvatar(residentId, memberId, photo);
     if ("error" in uploadResult && uploadResult.error) {
-      // The record already exists (memberId/pendingId is set) — only the
+      // The record already exists (memberId/pendingId is set) - only the
       // photo failed, so retrying "Add" now skips straight to re-uploading
       // instead of inserting a duplicate row.
       setCreating(false);

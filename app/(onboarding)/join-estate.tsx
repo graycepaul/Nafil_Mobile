@@ -1,24 +1,70 @@
 import { useEffect, useState } from 'react';
+import { View, Text, Pressable, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
+import { useTheme } from '../../context/theme-context';
+import { pickPhoto } from '../../lib/pick-photo';
+import { uploadIdDocument } from '../../lib/id-document';
 import { AuthShell } from '../../components/auth/AuthShell';
 import { EstatePicker } from '../../components/onboarding/EstatePicker';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Notice } from '../../components/ui/Notice';
-import type { Estate, EstateJoinRequest } from '../../types/database';
+import type { Estate, EstateJoinRequest, ResidentCategory } from '../../types/database';
+
+const CATEGORY_OPTIONS: { value: ResidentCategory; label: string }[] = [
+  { value: 'civilian', label: 'Civilian' },
+  { value: 'personnel', label: 'Personnel' },
+];
 
 export default function JoinEstateScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const profile = useAuthStore((s) => s.profile);
 
   const [estate, setEstate] = useState<Estate | null>(null);
   const [unitNo, setUnitNo] = useState('');
-  const [errors, setErrors] = useState<{ estate?: string; unitNo?: string }>({});
+  const [category, setCategory] = useState<ResidentCategory | null>(null);
+  const [serviceNumber, setServiceNumber] = useState('');
+  const [idPhoto, setIdPhoto] = useState<{ uri: string; mimeType: string | null }>();
+  const [errors, setErrors] = useState<{
+    estate?: string;
+    unitNo?: string;
+    category?: string;
+    idPhoto?: string;
+    serviceNumber?: string;
+  }>({});
   const [formError, setFormError] = useState<string>();
+  const [rejectionReason, setRejectionReason] = useState<string>();
   const [wasRejected, setWasRejected] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const canSubmit =
+    !!estate &&
+    unitNo.trim().length > 0 &&
+    !!category &&
+    !!idPhoto &&
+    (category !== 'personnel' || serviceNumber.trim().length > 0);
+
+  function handleCategoryChange(next: ResidentCategory) {
+    setCategory(next);
+    if (errors.category) setErrors((e) => ({ ...e, category: undefined }));
+    if (next === 'civilian' && errors.serviceNumber) {
+      setErrors((e) => ({ ...e, serviceNumber: undefined }));
+    }
+  }
+
+  async function addIdPhoto() {
+    const result = await pickPhoto();
+    if ('uri' in result) {
+      setIdPhoto({ uri: result.uri, mimeType: result.mimeType });
+      if (errors.idPhoto) setErrors((e) => ({ ...e, idPhoto: undefined }));
+    } else if ('error' in result) {
+      setFormError(result.error);
+    }
+  }
 
   useEffect(() => {
     if (!profile) return;
@@ -32,6 +78,7 @@ export default function JoinEstateScreen() {
       .then(({ data }) => {
         const latest = data as EstateJoinRequest | null;
         setWasRejected(latest?.status === 'rejected');
+        setRejectionReason(latest?.rejection_reason ?? undefined);
       });
   }, [profile]);
 
@@ -40,28 +87,42 @@ export default function JoinEstateScreen() {
     const nextErrors = {
       estate: estate ? undefined : 'Search for and select your estate.',
       unitNo: unitNo.trim() ? undefined : 'Enter your unit or house number.',
+      category: category ? undefined : 'Select whether you’re a civilian or personnel resident.',
+      idPhoto: idPhoto
+        ? undefined
+        : category === 'personnel'
+          ? 'Add a photo of your service ID card.'
+          : 'Add a photo of a utility bill or your NIN card.',
+      serviceNumber:
+        category === 'personnel' && !serviceNumber.trim() ? 'Enter your service number.' : undefined,
     };
     setErrors(nextErrors);
     setFormError(undefined);
-    if (nextErrors.estate || nextErrors.unitNo) return;
+    if (Object.values(nextErrors).some(Boolean)) return;
 
     setSubmitting(true);
-    const { error } = await supabase.from('estate_join_requests').insert({
-      profile_id: profile.id,
-      estate_id: estate!.id,
-      unit_no: unitNo.trim(),
-    });
-    setSubmitting(false);
-
-    if (error) {
+    try {
+      const idDocumentPath = await uploadIdDocument(profile.id, idPhoto!);
+      const { error } = await supabase.from('estate_join_requests').insert({
+        profile_id: profile.id,
+        estate_id: estate!.id,
+        unit_no: unitNo.trim(),
+        resident_category: category,
+        id_document_path: idDocumentPath,
+        service_number: category === 'personnel' ? serviceNumber.trim() : null,
+      });
+      if (error) throw error;
+      router.replace('/onboarding');
+    } catch (err) {
+      const dbError = err as { code?: string; message?: string };
       setFormError(
-        error.code === '23505'
+        dbError.code === '23505'
           ? 'You already have a request in review. No need to submit another.'
-          : error.message
+          : (dbError.message ?? 'Could not submit your request. Please try again.')
       );
-      return;
+    } finally {
+      setSubmitting(false);
     }
-    router.replace('/onboarding');
   }
 
   return (
@@ -72,7 +133,11 @@ export default function JoinEstateScreen() {
       {wasRejected && (
         <Notice
           tone="info"
-          message="Your last request wasn’t approved. Double-check the estate and unit number and try again."
+          message={
+            rejectionReason
+              ? `Your last request wasn’t approved: ${rejectionReason}`
+              : 'Your last request wasn’t approved. Double-check the estate and unit number and try again.'
+          }
         />
       )}
       {formError && <Notice message={formError} />}
@@ -98,7 +163,98 @@ export default function JoinEstateScreen() {
         error={errors.unitNo}
       />
 
-      <Button label="Request approval" onPress={handleSubmit} loading={submitting} />
+      <Text className="mb-md text-sm font-medium text-paper-900 dark:text-ink-text">
+        Which best describes you?
+      </Text>
+      <View className="mb-xl flex-row gap-xl">
+        {CATEGORY_OPTIONS.map((option) => {
+          const active = category === option.value;
+          return (
+            <Pressable
+              key={option.value}
+              onPress={() => handleCategoryChange(option.value)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: active }}
+              className="flex-row items-center gap-sm py-xs"
+            >
+              <View
+                className={`h-5 w-5 items-center justify-center rounded border-[1.5px] ${
+                  active ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300' : 'border-paper-200 dark:border-ink-border'
+                }`}
+              >
+                {active && <Ionicons name="checkmark" size={13} color={colors.onButtonFill} />}
+              </View>
+              <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
+                {option.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      {errors.category && (
+        <Text className="-mt-lg mb-xl text-[13px] text-danger">{errors.category}</Text>
+      )}
+
+      {category === 'personnel' && (
+        <Input
+          label="Service number"
+          placeholder="e.g. NA/12345"
+          autoCapitalize="characters"
+          value={serviceNumber}
+          onChangeText={(v) => {
+            setServiceNumber(v);
+            if (errors.serviceNumber) setErrors((e) => ({ ...e, serviceNumber: undefined }));
+          }}
+          error={errors.serviceNumber}
+        />
+      )}
+
+      {category && (
+        <View className="mb-lg">
+          <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">
+            {category === 'personnel' ? 'Service ID card' : 'Utility bill or NIN card'}
+          </Text>
+          {idPhoto ? (
+            <View className="relative w-full">
+              <Image source={{ uri: idPhoto.uri }} className="h-40 w-full rounded-md" />
+              <Pressable
+                onPress={() => setIdPhoto(undefined)}
+                accessibilityRole="button"
+                accessibilityLabel="Remove photo"
+                hitSlop={8}
+                className="absolute -right-1.5 -top-1.5 h-6 w-6 items-center justify-center rounded-full bg-danger"
+              >
+                <Ionicons name="close" size={14} color="#fff" />
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              onPress={addIdPhoto}
+              accessibilityRole="button"
+              accessibilityLabel="Add photo"
+              className={`h-40 w-full items-center justify-center gap-xs rounded-md border border-dashed ${
+                errors.idPhoto ? 'border-danger' : 'border-paper-200 dark:border-ink-border'
+              }`}
+            >
+              <Ionicons name="camera-outline" size={26} color={colors.textMuted} />
+              <Text className="text-[13px] text-paper-500 dark:text-ink-textMuted">Tap to add a photo</Text>
+            </Pressable>
+          )}
+          {errors.idPhoto && <Text className="mt-xs text-[13px] text-danger">{errors.idPhoto}</Text>}
+          <Text className="mt-sm text-[12px] text-paper-500 dark:text-ink-textMuted">
+            {category === 'personnel'
+              ? 'Upload your service ID card for identification. Only your estate admin can view this.'
+              : 'Upload a recent utility bill (not older than 3 months) or your NIN card for identification. Only your estate admin can view this.'}
+          </Text>
+        </View>
+      )}
+
+      <Button
+        label="Request approval"
+        onPress={handleSubmit}
+        loading={submitting}
+        disabled={!canSubmit}
+      />
     </AuthShell>
   );
 }

@@ -21,7 +21,7 @@ const THEME_OPTIONS: { mode: ThemeMode; label: string }[] = [
 ];
 
 /**
- * Shared across every role — there's nothing resident/security/admin-specific
+ * Shared across every role - there's nothing resident/security/admin-specific
  * about theme or signing out, so this lives outside the role-scoped tab
  * groups rather than being duplicated three times. Reached via the gear icon
  * in each role's tab header.
@@ -42,7 +42,7 @@ export default function SettingsScreen() {
       await apiDelete('/account');
     } catch (err) {
       // The account may already be gone even though this specific request
-      // failed — e.g. a prior attempt's response never reached the client.
+      // failed - e.g. a prior attempt's response never reached the client.
       // Signing out regardless means a real deletion never leaves the app
       // looking like nothing happened while quietly running on a session
       // for an account that no longer exists; at worst it logs out a user

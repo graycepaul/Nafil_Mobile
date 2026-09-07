@@ -16,14 +16,14 @@ const BASE_ROLES: { value: StaffInvite['role']; label: string }[] = [
   { value: 'admin', label: 'Admin' },
 ];
 
-// Finance sees only market listings and money matters (transfers, dues) —
+// Finance sees only market listings and money matters (transfers, dues) -
 // a narrower role than admin, so only super_admin can hand it out (the
 // server enforces this too: staff_invites_insert rejects a finance-role
 // invite from anyone but super_admin).
 const FINANCE_ROLE = { value: 'finance' as const, label: 'Finance' };
 
 /**
- * Creates a staff invite and hands the admin a code to share — through
+ * Creates a staff invite and hands the admin a code to share - through
  * whatever channel they'd already use to reach a new hire (WhatsApp, SMS,
  * in person), the same way visitor pass codes are shared. No email gets sent
  * automatically; that would need server-side infrastructure (an email
@@ -53,7 +53,7 @@ export function InviteStaffForm({
   const [created, setCreated] = useState<StaffInvite | null>(null);
 
   // Every role (including super_admin, now scoped to their own estate) can
-  // only ever invite into their own estate — staff_invites_insert's RLS
+  // only ever invite into their own estate - staff_invites_insert's RLS
   // check enforces the same thing server-side.
   const targetEstateId = profile?.estate_id;
   const targetEstateName = estateName;

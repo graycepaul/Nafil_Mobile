@@ -25,7 +25,7 @@ const METHOD_ICON: Record<PaymentMethod, string> = {
  * Shared "how do you want to pay" sheet, used for funding the wallet, paying
  * estate dues, and marketplace checkout. `onConfirm` does the real work
  * (adjusting the wallet balance, logging a transaction, or recording a
- * pending transfer) — this component just presents the choice.
+ * pending transfer) - this component just presents the choice.
  *
  * 'card' has no real payment gateway behind it yet, so no call site
  * currently offers it in `methods`; it's kept here, unused, for whenever

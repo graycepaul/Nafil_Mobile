@@ -15,15 +15,15 @@ interface OAuthResult {
  * We pass `skipBrowserRedirect` on BOTH platforms, which matters more on web than it
  * looks: left to itself, the web client navigates straight to Supabase's authorize
  * endpoint, so a misconfigured provider dumps the user on a raw JSON error page with
- * no route back into the app — our error handling never gets to run. Asking for the
+ * no route back into the app - our error handling never gets to run. Asking for the
  * URL instead lets us surface failures inline and redirect only on success.
  *
  * Google must be enabled in Supabase (Authentication → Providers) with an OAuth
- * client ID/secret before this works — see `GOOGLE_OAUTH_ENABLED` in auth-config.ts.
+ * client ID/secret before this works - see `GOOGLE_OAUTH_ENABLED` in auth-config.ts.
  */
 export async function signInWithGoogle(): Promise<OAuthResult> {
   const isWeb = Platform.OS === 'web';
-  // Web has no dedicated callback screen — it lands on `/`, which already redirects
+  // Web has no dedicated callback screen - it lands on `/`, which already redirects
   // by role once the session resolves. Native's `WebBrowser.openAuthSessionAsync`
   // intercepts this URL directly without ever routing the app there, so the path
   // just needs to match what Supabase was told to redirect to; it doesn't need to
@@ -55,13 +55,13 @@ export async function signInWithGoogle(): Promise<OAuthResult> {
 
 /**
  * Starts Sign in with Apple using the device's native Apple Authentication Services
- * (iOS only — `AppleAuthButton` in `SocialAuthRow.tsx` only renders on iOS). Unlike
+ * (iOS only - `AppleAuthButton` in `SocialAuthRow.tsx` only renders on iOS). Unlike
  * Google, this never opens a browser: `signInAsync` shows Apple's own system sheet
  * and hands back a signed identity token directly, which we exchange with Supabase
  * via `signInWithIdToken`.
  *
  * Apple only includes the user's name in `credential.fullName` on the *first*
- * authorization ever granted to this app — every sign-in after that returns null
+ * authorization ever granted to this app - every sign-in after that returns null
  * for it, so we save it to user metadata right away while we still have it.
  */
 export async function signInWithApple(): Promise<OAuthResult> {

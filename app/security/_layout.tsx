@@ -12,7 +12,7 @@ export default function SecurityLayout() {
   const { width } = useWindowDimensions();
 
   return (
-    <Tabs screenOptions={themedTabOptions(colors, insets.bottom, width)}>
+    <Tabs backBehavior="history" screenOptions={themedTabOptions(colors, insets.bottom, width)}>
       <Tabs.Screen
         name="index"
         options={{

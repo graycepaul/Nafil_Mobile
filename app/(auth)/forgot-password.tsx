@@ -28,7 +28,7 @@ export default function ForgotPasswordScreen() {
     });
     setLoading(false);
 
-    // Deliberately route to the confirmation screen even on most failures below —
+    // Deliberately route to the confirmation screen even on most failures below -
     // see the note in check-email.tsx about not leaking which emails are registered.
     if (resetError) {
       setFormError(authErrorMessage(resetError));

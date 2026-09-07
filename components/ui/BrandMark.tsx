@@ -2,7 +2,7 @@ import { Image, View, Text } from 'react-native';
 
 /**
  * Nafil Estates mark: the Nigerian Air Force Properties Limited crest.
- * Raster (not SVG) since it's a detailed circular seal, not a simple glyph —
+ * Raster (not SVG) since it's a detailed circular seal, not a simple glyph -
  * the source has its own fixed colors, so unlike the old placeholder shield
  * this can't be recolored per surface via `color`/`accent` props.
  */
@@ -16,7 +16,7 @@ interface LockupProps {
   size?: 'sm' | 'md' | 'lg';
   /** Renders the wordmark in white, for use on the navy splash. */
   inverted?: boolean;
-  /** 'row' puts the mark beside the wordmark — compact enough for a screen header. */
+  /** 'row' puts the mark beside the wordmark - compact enough for a screen header. */
   direction?: 'row' | 'column';
 }
 

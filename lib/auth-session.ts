@@ -5,7 +5,7 @@ import { supabase } from './supabase';
 
 /**
  * Builds the redirect URL Supabase sends a user back to after clicking an email
- * link (password reset, invite, magic link) — a real route in this app, not a
+ * link (password reset, invite, magic link) - a real route in this app, not a
  * generic "return to the app" URL, so the link lands exactly on `set-password`
  * rather than the splash.
  *
@@ -35,7 +35,7 @@ interface UrlSessionResult {
  *   - Implicit grant: `#access_token=...&refresh_token=...&type=recovery`
  *   - PKCE/OTP confirm: `?token_hash=...&type=recovery`
  *
- * This is the native counterpart to `detectSessionInUrl` on web — native deep
+ * This is the native counterpart to `detectSessionInUrl` on web - native deep
  * links land in `Linking`'s event/getInitialURL APIs as a raw string, not a
  * browser URL the Supabase client can auto-parse, so we do it by hand. Also used
  * to consolidate the token-parsing that Google sign-in already needed on native

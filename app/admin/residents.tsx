@@ -7,12 +7,13 @@ import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { Avatar } from '../../components/ui/Avatar';
-import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Notice } from '../../components/ui/Notice';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { CardSkeletonList } from '../../components/ui/CardSkeleton';
 import { SearchAndEstateFilter } from '../../components/admin/SearchAndEstateFilter';
+import { PendingRequestCard } from '../../components/admin/PendingRequestCard';
+import { RejectReasonModal } from '../../components/admin/RejectReasonModal';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { JoinRequestWithApplicant, Profile } from '../../types/database';
 
@@ -25,6 +26,8 @@ export default function AdminResidentsScreen() {
   const queryClient = useQueryClient();
   const { tab: openOnLoad } = useLocalSearchParams<{ tab?: string }>();
   const [formError, setFormError] = useState<string>();
+  const [actioning, setActioning] = useState<{ id: string; type: 'approve' | 'reject' } | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ResidentsTab>('all');
   const [search, setSearch] = useState('');
   const isSuperAdmin = profile?.role === 'super_admin';
@@ -55,6 +58,15 @@ export default function AdminResidentsScreen() {
       return data as WithEstateName<JoinRequestWithApplicant>[];
     },
     enabled: !!profile,
+    // A resident submitting a new request while an admin already has this
+    // tab open used to just sit invisible until the admin happened to
+    // pull-to-refresh or navigate away and back - nothing pushed the
+    // update to them. Polling only while the pending tab is actually the
+    // one showing (not 'all residents') keeps this from running forever
+    // in the background; React Query's own default of pausing while the
+    // window/app isn't focused (refetchIntervalInBackground: false) covers
+    // the rest.
+    refetchInterval: activeTab === 'pending' ? 15_000 : false,
   });
 
   const {
@@ -84,16 +96,23 @@ export default function AdminResidentsScreen() {
 
   async function approve(requestId: string) {
     setFormError(undefined);
+    setActioning({ id: requestId, type: 'approve' });
     const { error } = await supabase.rpc('approve_join_request', { request_id: requestId });
+    setActioning(null);
     if (error) setFormError(friendlyDbError(error));
     else invalidate();
   }
 
-  async function reject(requestId: string) {
+  async function reject(requestId: string, reason: string) {
     setFormError(undefined);
-    const { error } = await supabase.rpc('reject_join_request', { request_id: requestId });
+    setActioning({ id: requestId, type: 'reject' });
+    const { error } = await supabase.rpc('reject_join_request', { request_id: requestId, reason });
+    setActioning(null);
     if (error) setFormError(friendlyDbError(error));
-    else invalidate();
+    else {
+      setRejectTarget(null);
+      invalidate();
+    }
   }
 
   const filteredRequests = useMemo(() => {
@@ -166,47 +185,44 @@ export default function AdminResidentsScreen() {
 
   if (activeTab === 'pending') {
     return (
-      <FlatList
-        className="bg-white dark:bg-ink-bg"
-        contentContainerClassName="px-xl pb-xl"
-        refreshControl={
-          <RefreshControl refreshing={isRefetchingRequests} onRefresh={refetchRequests} tintColor={colors.primary} />
-        }
-        data={filteredRequests}
-        keyExtractor={(item) => item.id}
-        ListHeaderComponent={
-          <View>
-            {searchFilter}
-            {tabs}
-            <View className="h-lg" />
-            {formError && <Notice message={formError} />}
-          </View>
-        }
-        ListEmptyComponent={
-          <EmptyState title="All caught up" message="No join requests waiting on you." />
-        }
-        renderItem={({ item: req }) => (
-          <Card className="mb-md">
-            <View className="flex-row items-center gap-md">
-              <Avatar uri={req.applicant?.avatar_url} name={req.applicant?.full_name} size={44} />
-              <View className="flex-1">
-                <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
-                  {req.applicant?.full_name ?? 'Unnamed'}
-                </Text>
-                <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
-                  Unit {req.unit_no}
-                  {req.applicant?.phone ? ` · ${req.applicant.phone}` : ''}
-                  {isSuperAdmin && req.estate?.name ? ` · ${req.estate.name}` : ''}
-                </Text>
-              </View>
+      <>
+        <FlatList
+          className="bg-white dark:bg-ink-bg"
+          contentContainerClassName="px-xl pb-xl"
+          refreshControl={
+            <RefreshControl refreshing={isRefetchingRequests} onRefresh={refetchRequests} tintColor={colors.primary} />
+          }
+          data={filteredRequests}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={
+            <View>
+              {searchFilter}
+              {tabs}
+              <View className="h-lg" />
+              {formError && <Notice message={formError} />}
             </View>
-            <View className="mt-md flex-row gap-sm">
-              <Button label="Approve" onPress={() => approve(req.id)} className="flex-1" />
-              <Button label="Reject" variant="secondary" onPress={() => reject(req.id)} className="flex-1" />
-            </View>
-          </Card>
-        )}
-      />
+          }
+          ListEmptyComponent={
+            <EmptyState title="All caught up" message="No join requests waiting on you." />
+          }
+          renderItem={({ item: req }) => (
+            <PendingRequestCard
+              request={req}
+              estateName={isSuperAdmin ? req.estate?.name : undefined}
+              onApprove={() => approve(req.id)}
+              onReject={() => setRejectTarget(req.id)}
+              approving={actioning?.id === req.id && actioning.type === 'approve'}
+              rejecting={actioning?.id === req.id && actioning.type === 'reject'}
+            />
+          )}
+        />
+        <RejectReasonModal
+          visible={!!rejectTarget}
+          onDismiss={() => setRejectTarget(null)}
+          onConfirm={(reason) => rejectTarget && reject(rejectTarget, reason)}
+          submitting={actioning?.type === 'reject' && actioning.id === rejectTarget}
+        />
+      </>
     );
   }
 

@@ -12,7 +12,7 @@ import type { IssueComment } from '../../types/database';
 
 interface IssueFeedbackThreadProps {
   issueId: string;
-  /** Only true while the issue is 'resolved' — RLS enforces this too, this just keeps the compose box from appearing where it'd be rejected. */
+  /** Only true while the issue is 'resolved' - RLS enforces this too, this just keeps the compose box from appearing where it'd be rejected. */
   canPost: boolean;
 }
 
@@ -20,7 +20,7 @@ type CommentWithAuthor = IssueComment & { author: { full_name: string | null } |
 
 /**
  * The back-and-forth that opens once an issue is marked resolved and closes
- * the moment it's actually closed — same component on both the resident and
+ * the moment it's actually closed - same component on both the resident and
  * admin issue-detail screens, since the thread itself doesn't differ by role,
  * only who's allowed to close the issue does.
  */

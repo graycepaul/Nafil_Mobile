@@ -1,4 +1,4 @@
-# Nafil Estates — Docs
+# Nafil Estates - Docs
 
 Planning and reference docs for the Nafil Estates platform.
 
@@ -16,4 +16,4 @@ Planning and reference docs for the Nafil Estates platform.
 - **Stack:** Expo/React Native · Supabase (Postgres + Auth + RLS) · FastAPI
 - **Roles:** `resident` · `security` · `admin` · `super_admin`
 - **Supabase:** project "Nafil DB", ref `itfepppqjtodmizbglze`, region eu-west-1,
-  Postgres 17.6 — schema deployed, RLS verified
+  Postgres 17.6 - schema deployed, RLS verified

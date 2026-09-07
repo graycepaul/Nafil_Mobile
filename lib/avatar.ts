@@ -20,7 +20,7 @@ async function pickImage() {
     aspect: [1, 1],
     quality: 0.7,
     // Without this, iOS can hand back the original HEIC file for a photo
-    // taken on an iPhone — Supabase Storage's allowed_mime_types rejects it
+    // taken on an iPhone - Supabase Storage's allowed_mime_types rejects it
     // outright, and HEIC doesn't render reliably outside Apple's own stack
     // anyway. "Compatible" has the system hand back a JPEG instead.
     preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
@@ -34,8 +34,8 @@ async function uploadToPath(uri: string, mimeType: string | null | undefined, pa
   const ext = (uri.split('.').pop() || 'jpg').toLowerCase().split('?')[0];
   const contentType = mimeType ?? `image/${ext === 'jpg' ? 'jpeg' : ext}`;
   // @supabase/storage-js ignores the `contentType` option once the body is a
-  // Blob — it hands the Blob straight to a FormData, whose part gets its
-  // content type from the Blob's own `.type`, not the option — so it has to
+  // Blob - it hands the Blob straight to a FormData, whose part gets its
+  // content type from the Blob's own `.type`, not the option - so it has to
   // be re-wrapped here rather than relying on the option below.
   const rawBlob = await fetch(uri).then((r) => r.blob());
   const blob = new Blob([rawBlob], { type: contentType });
@@ -64,13 +64,13 @@ export async function pickAndUploadAvatar(userId: string): Promise<PickAndUpload
 }
 
 /**
- * Same idea, for a staff invite still being accepted — there's no user id yet
+ * Same idea, for a staff invite still being accepted - there's no user id yet
  * (no account exists until the confirmation-email step completes), so the
  * upload path is keyed by the invite code instead: `pending/{code}/avatar.<ext>`.
  * A narrow storage policy allows this specific path shape for `anon`, scoped to
  * codes with a live pending invite (see migration 0007). The file stays under
  * that path rather than being moved to the user's own folder once the account
- * exists — the bucket is public either way, so the URL keeps working; it's a
+ * exists - the bucket is public either way, so the URL keeps working; it's a
  * minor storage-hygiene tradeoff against not needing a "move file" step.
  */
 export async function pickAndUploadPendingInviteAvatar(code: string): Promise<PickAndUploadResult> {
@@ -84,13 +84,13 @@ export async function pickAndUploadPendingInviteAvatar(code: string): Promise<Pi
  * A household member has no auth.users row of their own, so there's no
  * `{userId}/avatar.<ext>` to key off. Nesting under the resident's own folder
  * (`{residentId}/household/{memberId}.<ext>`) keeps this within the existing
- * `avatar_insert_own` storage policy — it only checks the top-level folder
+ * `avatar_insert_own` storage policy - it only checks the top-level folder
  * matches the caller's uid, so no new storage migration is needed.
  *
  * Used for changing an *existing* member's photo (profile.tsx), where a
  * memberId already exists and pick-then-immediately-upload is the right
- * shape. Adding a *new* member picks first and uploads separately — see
- * `pickHouseholdAvatarPhoto`/`uploadHouseholdAvatar` below — since there's no
+ * shape. Adding a *new* member picks first and uploads separately - see
+ * `pickHouseholdAvatarPhoto`/`uploadHouseholdAvatar` below - since there's no
  * memberId to key the upload path on until the record is created.
  */
 export async function pickAndUploadHouseholdAvatar(
@@ -105,7 +105,7 @@ export async function pickAndUploadHouseholdAvatar(
 
 /**
  * Picks (with the same square-crop UX as every other avatar picker here)
- * without uploading anywhere — for the "add a household member" form, which
+ * without uploading anywhere - for the "add a household member" form, which
  * needs the photo chosen up front, in the form itself, before a memberId
  * exists to key an upload path on. Pair with `uploadHouseholdAvatar` once
  * the record's been created.

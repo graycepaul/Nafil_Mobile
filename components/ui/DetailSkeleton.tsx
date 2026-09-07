@@ -2,8 +2,8 @@ import { View } from 'react-native';
 import { Skeleton } from './Skeleton';
 
 /**
- * Placeholder for the issue/announcement detail screens' shared shape — a
- * full-width hero photo followed by a title and a few lines of body text —
+ * Placeholder for the issue/announcement detail screens' shared shape - a
+ * full-width hero photo followed by a title and a few lines of body text -
  * shown while that record is still loading.
  */
 export function DetailSkeleton({ heroHeight }: { heroHeight: number }) {

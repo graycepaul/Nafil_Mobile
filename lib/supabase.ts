@@ -18,7 +18,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     // Web: a password-reset/invite link lands the browser on our app with the
-    // session token in the URL — let the client auto-detect and consume it.
+    // session token in the URL - let the client auto-detect and consume it.
     // Native has no such URL to parse; deep links land via `Linking` instead and
     // are handled by hand in `lib/auth-session.ts` (`establishSessionFromUrl`).
     detectSessionInUrl: Platform.OS === 'web',

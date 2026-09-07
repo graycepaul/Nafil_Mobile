@@ -4,7 +4,7 @@
  * This has to be a declared flag rather than something detected at runtime.
  * `signInWithOAuth` with `skipBrowserRedirect` builds the authorize URL client-side
  * and makes no server call, so the app genuinely cannot tell an enabled provider
- * from a disabled one — the failure only surfaces *after* navigating, as a raw JSON
+ * from a disabled one - the failure only surfaces *after* navigating, as a raw JSON
  * error page with no route back into the app.
  *
  * So the button checks this first and explains itself instead of navigating.
@@ -22,11 +22,11 @@ export const GOOGLE_OAUTH_ENABLED = false;
  * Whether to show the "Or sign in/up with" social row at all (Apple + Google).
  *
  * Off for the App Store resubmission: Guideline 4.8 only applies when the app
- * offers a third-party login in the first place — email/password alone isn't
+ * offers a third-party login in the first place - email/password alone isn't
  * subject to it. Turning this off removes the whole obligation rather than
  * requiring a working Sign in with Apple, which is still failing on-device
  * with a generic `ASAuthorizationError.canceled` we haven't root-caused yet
- * (see `lib/oauth.ts` — `signInWithApple`).
+ * (see `lib/oauth.ts` - `signInWithApple`).
  *
  * Flip back to true once that's fixed; the implementation itself is untouched.
  */

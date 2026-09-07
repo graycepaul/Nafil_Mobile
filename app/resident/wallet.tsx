@@ -31,7 +31,7 @@ const MORE_SERVICES: { icon: string; label: string; category: DueCategory }[] = 
 ];
 
 /**
- * Wallet funding is transfer-only for now — "Debit/credit card" used to be
+ * Wallet funding is transfer-only for now - "Debit/credit card" used to be
  * offered here too, but it just adjusted the balance directly with no real
  * gateway behind it, so it's hidden until one is actually wired up. Paying
  * dues from the wallet still settles immediately via `adjust_wallet_balance`
@@ -364,7 +364,7 @@ export default function WalletScreen() {
                     </Text>
                   </View>
                   <Button
-                    label="Contest — upload proof of payment"
+                    label="Contest - upload proof of payment"
                     variant="secondary"
                     onPress={() => setContestingTransfer(t)}
                     className="mt-md"

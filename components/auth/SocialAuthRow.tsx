@@ -18,7 +18,7 @@ export function OrDivider({ label }: { label: string }) {
 }
 
 /**
- * Full-width native Sign in with Apple button — iOS only, since Apple's SDK has
+ * Full-width native Sign in with Apple button - iOS only, since Apple's SDK has
  * no Android/web counterpart. Required alongside Google per App Store guideline
  * 4.8 (an app offering third-party login must also offer Sign in with Apple).
  */

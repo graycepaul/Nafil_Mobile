@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/auth-store';
 import { useTheme } from '../context/theme-context';
 import { relativeTime } from '../lib/format';
+import { notificationRoute } from '../lib/notification-routes';
 import { Card } from './ui/Card';
 import { EmptyState } from './ui/EmptyState';
 import { CardSkeletonList } from './ui/CardSkeleton';
@@ -29,9 +30,14 @@ const TYPE_ICON: Record<NotificationType, IoniconsIconName> = {
   transfer_rejected: 'close-circle-outline',
   listing_suspended: 'ban-outline',
   listing_reinstated: 'checkmark-circle-outline',
+  transfer_contested: 'refresh-circle-outline',
+  issue_feedback: 'chatbubble-ellipses-outline',
+  due_assigned: 'receipt-outline',
+  join_request_submitted: 'person-add-outline',
+  join_request_rejected: 'close-circle-outline',
 };
 
-/** Same notifications inbox for every role — the table and its RLS (own rows only) don't distinguish who's looking, so neither does this screen. */
+/** Same notifications inbox for every role - the table and its RLS (own rows only) don't distinguish who's looking, so neither does this screen. */
 export function NotificationsScreen() {
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
@@ -63,6 +69,12 @@ export function NotificationsScreen() {
     );
     await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', notification.id);
     queryClient.invalidateQueries({ queryKey: ['notifications_unread', profile?.id] });
+  }
+
+  function handlePress(notification: Notification) {
+    markRead(notification);
+    const path = notificationRoute(notification, profile?.role);
+    if (path) router.push(path as never);
   }
 
   async function markAllRead() {
@@ -136,7 +148,7 @@ export function NotificationsScreen() {
         const isEmergency = item.type === 'emergency';
         return (
           <Pressable
-            onPress={() => markRead(item)}
+            onPress={() => handlePress(item)}
             accessibilityRole="button"
             accessibilityLabel={item.title}
           >

@@ -5,10 +5,10 @@ import type { AuthError } from '@supabase/supabase-js';
  * This maps the ones users actually hit onto copy that says what to do next.
  *
  * Note on "Invalid login credentials": Supabase deliberately does not reveal
- * whether it was the email or the password that was wrong, so neither do we —
+ * whether it was the email or the password that was wrong, so neither do we -
  * saying "no account with that email" would let anyone enumerate registered users.
  */
-const MESSAGES: Array<{ match: RegExp; message: string }> = [
+const MESSAGES: { match: RegExp; message: string }[] = [
   {
     match: /invalid login credentials/i,
     message: 'That email and password don’t match. Check both and try again.',

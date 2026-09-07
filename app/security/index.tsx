@@ -25,7 +25,7 @@ export default function SecurityScanScreen() {
   const [result, setResult] = useState<ScanResult | null>(null);
   // CameraView can fire onBarcodeScanned several times for the same code
   // before React re-renders with the prop that would disable it (`scanning`
-  // flipping to false only takes effect next render) — a ref is checked and
+  // flipping to false only takes effect next render) - a ref is checked and
   // set synchronously, so it blocks every scan after the first one even
   // within the same frame, unlike the `processing` state check below.
   const scanLockRef = useRef(false);
@@ -47,11 +47,11 @@ export default function SecurityScanScreen() {
     const code = rawCode.trim().toUpperCase();
 
     // Resident e-ID and household/frequent-visitor codes are standing
-    // credentials, not single-use passes — there's nothing to "use up" and no
+    // credentials, not single-use passes - there's nothing to "use up" and no
     // gate log entry to write, just an identity check against the estate's
     // own database. That's the actual anti-forgery property: the card's photo
     // and name are for the guard's own eyes, but only a match against this
-    // live lookup — not the printed card itself — means anything.
+    // live lookup - not the printed card itself - means anything.
     const { data: residentMatch } = await supabase
       .from('profiles')
       .select('*')
@@ -117,7 +117,7 @@ export default function SecurityScanScreen() {
         // only actually fires once something awaits or .then()s them, so
         // this has to be awaited even though the result itself is ignored.
         // Only records the scan timestamp (a DB trigger turns that into a
-        // notification to the resident) — not part of the access decision
+        // notification to the resident) - not part of the access decision
         // itself, so a failure here doesn't block or contradict the
         // "Verified" message the guard already sees.
         await supabase.rpc('record_household_member_scan', { member_id: householdMatch.id });
@@ -176,7 +176,7 @@ export default function SecurityScanScreen() {
       return;
     }
 
-    // status='pending' only means "not yet used or revoked" — it does NOT mean
+    // status='pending' only means "not yet used or revoked" - it does NOT mean
     // "still within its validity window." Nothing flips status to 'expired'
     // automatically (that's a scheduled job that isn't deployed), so this check
     // is the actual enforcement, not a redundant one. Without it, a pass whose

@@ -3,7 +3,7 @@ import { supabase } from './supabase';
 /**
  * Uploads a single locally-picked photo (from `pickPhoto`) to the
  * `announcement-photos` bucket and returns its public URL. Path is scoped
- * by estate, not uploader — RLS on this bucket checks `(storage.foldername
+ * by estate, not uploader - RLS on this bucket checks `(storage.foldername
  * (name))[1] = auth_estate_id()`, since any staff role for an estate can
  * post announcements for it.
  */

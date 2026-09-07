@@ -1,4 +1,4 @@
-# Nafil Estates — Infrastructure Cost Model
+# Nafil Estates - Infrastructure Cost Model
 
 Running cost at 1,000 / 10,000 / 100,000 / 1,000,000 users.
 
@@ -6,14 +6,14 @@ Running cost at 1,000 / 10,000 / 100,000 / 1,000,000 users.
 Re-check before contract signature.
 
 > **No SMS.** Visitor codes are generated in-app and shared by the resident through the OS
-> share sheet (WhatsApp, SMS, email — whatever they pick). We send no messages ourselves.
-> This removes what would otherwise be the single largest cost at scale — see §6.
+> share sheet (WhatsApp, SMS, email - whatever they pick). We send no messages ourselves.
+> This removes what would otherwise be the single largest cost at scale - see §6.
 
 ---
 
 ## 1. What "user" means here
 
-A user is a **resident account**. Security and admin staff are a rounding error — a
+A user is a **resident account**. Security and admin staff are a rounding error - a
 1,000-unit estate has maybe 15 staff.
 
 Scale in context:
@@ -47,8 +47,8 @@ Derived from the schema in `Nafil Backend/supabase/migrations/`:
 | QR codes | Rendered on-device from the pass code | **0** |
 | Pass delivery | Resident's own WhatsApp/SMS via share sheet | **0** |
 
-**Deliberately conservative on photos.** If issue reporting is more popular than assumed —
-or residents attach video — storage and egress climb fast. Cap upload size and compress
+**Deliberately conservative on photos.** If issue reporting is more popular than assumed -
+or residents attach video - storage and egress climb fast. Cap upload size and compress
 client-side; it's the cheapest lever available and near-impossible to retrofit once users
 have habits.
 
@@ -69,7 +69,7 @@ Overages (Pro and Team): **$0.00325**/MAU · **$0.125**/GB database · **$0.0213
 
 Compute add-ons: Micro $10 · Small $15 · Medium $60 · Large $110 · XL $210 · 2XL $410 ·
 4XL $960 · 8XL $1,870. **Pro and Team include $10/mo compute credit**, covering one Micro
-instance — net compute cost is `price − $10`.
+instance - net compute cost is `price − $10`.
 
 Push notifications (Expo / FCM / APNs): **free**.
 
@@ -79,58 +79,58 @@ Push notifications (Expo / FCM / APNs): **free**.
 
 USD/month.
 
-### 1,000 users — *≈ $44/mo*
+### 1,000 users - *≈ $44/mo*
 
 | Item | Cost |
 |---|---|
 | Supabase Pro | $25 |
 | Compute (Micro, covered by credit) | $0 |
 | FastAPI host (Render/Railway starter) | $19 |
-| Storage 30 MB, egress 3 GB — within quota | $0 |
+| Storage 30 MB, egress 3 GB - within quota | $0 |
 | Push notifications | $0 |
 | **Total** | **≈ $44** |
 
 Everything fits inside base tiers. You're paying for *existing*, not for usage.
 
-### 10,000 users — *≈ $70/mo*
+### 10,000 users - *≈ $70/mo*
 
 | Item | Cost |
 |---|---|
 | Supabase Pro | $25 |
 | Compute (Small $15 − $10 credit) | $5 |
 | FastAPI host | $40 |
-| DB 420 MB/yr, storage 3.6 GB/yr, egress 30 GB/mo — within quota | $0 |
+| DB 420 MB/yr, storage 3.6 GB/yr, egress 30 GB/mo - within quota | $0 |
 | **Total** | **≈ $70** |
 
-Comfortably inside Pro quotas. **Best cost-per-user in the model — $0.007/user.**
+Comfortably inside Pro quotas. **Best cost-per-user in the model - $0.007/user.**
 
-### 100,000 users — *≈ $740/mo*
+### 100,000 users - *≈ $740/mo*
 
 | Item | Cost |
 |---|---|
 | Supabase Pro | $25 |
 | Compute (XL $210 − $10 credit) | $200 |
 | Read replica | $210 |
-| Egress overage — 300 GB vs 250 included | $5 |
-| FastAPI — 2–3 instances + load balancer | $250 |
+| Egress overage - 300 GB vs 250 included | $5 |
+| FastAPI - 2–3 instances + load balancer | $250 |
 | Monitoring / error tracking | $50 |
-| DB 4.2 GB/yr, storage 36 GB/yr — within quota | $0 |
+| DB 4.2 GB/yr, storage 36 GB/yr - within quota | $0 |
 | **Total** | **≈ $740** |
 
 MAU sits **exactly at the Pro ceiling** (100,000). One user over and MAU overage begins.
 Database growth (4.2 GB/yr) also starts pressing the 8 GB included limit in year two.
 
-### 1,000,000 users — *≈ $11,100/mo*
+### 1,000,000 users - *≈ $11,100/mo*
 
 | Item | Cost |
 |---|---|
 | Supabase Team | $599 |
-| **MAU overage — 900k over included** | **$2,925** |
+| **MAU overage - 900k over included** | **$2,925** |
 | **Compute (8XL $1,870 − $10 credit)** | **$1,860** |
 | **Read replicas (×2)** | **$3,740** |
-| Egress overage — 3 TB/mo | $248 |
-| Database overage — ~85 GB | $10 |
-| Storage overage — ~360 GB/yr | $6 |
+| Egress overage - 3 TB/mo | $248 |
+| Database overage - ~85 GB | $10 |
+| Storage overage - ~360 GB/yr | $6 |
 | FastAPI cluster | $1,500 |
 | CDN, monitoring, logging | $200 |
 | **Total** | **≈ $11,088** |
@@ -154,9 +154,9 @@ MAU overage kicks in. **The curve is now dominated by infrastructure, which amor
 
 Where the money goes at 1M:
 
-- **Compute + read replicas: $5,600 — 50%**
-- MAU overage: $2,925 — 26%
-- FastAPI cluster: $1,500 — 14%
+- **Compute + read replicas: $5,600 - 50%**
+- MAU overage: $2,925 - 26%
+- FastAPI cluster: $1,500 - 14%
 - Everything else: 10%
 
 ---
@@ -173,7 +173,7 @@ transactional rate) and one message per user per month:
 | 100,000 | +$1,070 | 59% |
 | 1,000,000 | **+$10,700** | **49%** |
 
-At 1M users that's **roughly a 2× total bill** — SMS alone would have cost more than all
+At 1M users that's **roughly a 2× total bill** - SMS alone would have cost more than all
 infrastructure combined. Generating codes in-app and letting the resident share them is the
 single highest-leverage cost decision in this project, and it also happens to be the better
 product: the resident picks the channel their visitor actually uses.
@@ -189,7 +189,7 @@ cost line above. Automatic delivery and free delivery are mutually exclusive her
 
 **MAU is billed on *active* users, not registered ones.** A resident who doesn't open the app
 in a given month doesn't count. Don't send engagement pushes that exist only to re-activate
-dormant accounts — you'd be paying $0.00325 a head for the privilege.
+dormant accounts - you'd be paying $0.00325 a head for the privilege.
 
 **Read replicas double compute.** They're $3,740 of the 1M bill. Add one when you can
 demonstrate read contention, not preemptively.
@@ -203,20 +203,20 @@ when you need four columns. Cheap habits early, expensive to retrofit.
 
 ## 8. Not included
 
-- **Development** — build cost, not run cost
+- **Development** - build cost, not run cost
 - **Apple Developer** $99/yr · **Google Play** $25 one-time
-- **Payment gateway fees** — Paystack/Flutterwave ~1.5% + ₦100, capped. Passed to residents
+- **Payment gateway fees** - Paystack/Flutterwave ~1.5% + ₦100, capped. Passed to residents
   or absorbed; a business decision, and at scale it dwarfs everything on this page
-- **Utility vending margins** — Phase 3, commercial terms unknown
-- **Support staff** — the real cost at 100k+ users
-- **Domain, email, SSL** — trivial
+- **Utility vending margins** - Phase 3, commercial terms unknown
+- **Support staff** - the real cost at 100k+ users
+- **Domain, email, SSL** - trivial
 
 ### Sources
 
-- [Supabase pricing](https://supabase.com/pricing) — tiers, quotas, overages, compute add-ons
-- [Nigeria SMS pricing overview](https://www.sent.dm/en/resources/sms-pricing/nigeria-sms-pricing) — ₦6.00 operator rate (for the §6 comparison)
-- [Termii pricing](https://zoftwarehub.com/products/termii/pricing) — transactional rate $0.0107/msg
-- [USD/NGN 2026 history](https://www.exchange-rates.org/exchange-rate-history/usd-ngn-2026) — ₦1,375 average
+- [Supabase pricing](https://supabase.com/pricing) - tiers, quotas, overages, compute add-ons
+- [Nigeria SMS pricing overview](https://www.sent.dm/en/resources/sms-pricing/nigeria-sms-pricing) - ₦6.00 operator rate (for the §6 comparison)
+- [Termii pricing](https://zoftwarehub.com/products/termii/pricing) - transactional rate $0.0107/msg
+- [USD/NGN 2026 history](https://www.exchange-rates.org/exchange-rate-history/usd-ngn-2026) - ₦1,375 average
 
 ---
 
@@ -230,5 +230,5 @@ Worth doing now:
 
 1. **Compress and size-cap image uploads.** Storage and egress both, and unfixable later.
 2. **Track MAU from day one.** It's the metric that triggers every tier change.
-3. **Settle the auth method** (see `02-roadmap.md`) — with SMS off the table, the choice is
+3. **Settle the auth method** (see `02-roadmap.md`) - with SMS off the table, the choice is
    email-based, and it should be made before residents start registering.

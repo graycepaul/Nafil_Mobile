@@ -1,4 +1,4 @@
-/** African countries only, for now — this platform's initial market. Alphabetical, matches common English names. */
+/** African countries only, for now - this platform's initial market. Alphabetical, matches common English names. */
 export const AFRICAN_COUNTRIES = [
   'Algeria',
   'Angola',

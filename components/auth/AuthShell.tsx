@@ -22,13 +22,13 @@ interface AuthShellProps {
 
 /**
  * Shared frame for the auth screens: centred brand mark, left-aligned heading,
- * then the form. Deliberately light and airy — no gradient hero — so the form
+ * then the form. Deliberately light and airy - no gradient hero - so the form
  * itself is the focus.
  *
  * The whole block is vertically centred in the viewport (`justifyContent: 'center'`
  * on a `flexGrow` scroll container) rather than top-anchored with the footer pinned
  * to the bottom edge. Top-anchoring reads fine on a tall form but leaves a dead gap
- * in the middle of short ones (login, forgot-password) — centring keeps whitespace
+ * in the middle of short ones (login, forgot-password) - centring keeps whitespace
  * even above and below regardless of how much content is on screen, and still
  * scrolls normally once content exceeds the viewport (role-select, signup).
  */

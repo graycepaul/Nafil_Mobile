@@ -10,12 +10,12 @@ function initials(name?: string | null) {
 }
 
 /**
- * Circular avatar — the photo if set, initials if a name is known, otherwise
+ * Circular avatar - the photo if set, initials if a name is known, otherwise
  * a generic person glyph. A bare "?" read as an error state rather than "no
  * name yet", which is misleading while a profile is still loading.
  *
  * `size` is a runtime number (callers pass 36/44/56/88…), so width/height/
- * radius stay as `style` — Tailwind's className extraction is static and
+ * radius stay as `style` - Tailwind's className extraction is static and
  * can't resolve a template-interpolated arbitrary value like `w-[${size}px]`.
  * Everything that IS static (colors, layout) is className.
  */

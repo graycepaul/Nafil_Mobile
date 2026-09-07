@@ -27,7 +27,7 @@ const neutral = {
 };
 
 /**
- * A true, warm-neutral gray scale for dark mode — deliberately separate from
+ * A true, warm-neutral gray scale for dark mode - deliberately separate from
  * `neutral`, whose 800/900 steps carry a faint blue cast that (combined with
  * a solid blue header) read as harsh/cheap rather than premium. This scale
  * is closer to iOS's system dark grays: no color cast, just tonal steps, so
@@ -59,7 +59,7 @@ export const lightColors = {
    * Filled-button surface. Kept separate from `primary` because the two have
    * different jobs: `primary` must be legible as *text* on the page background,
    * while `buttonFill` must look like a saturated, tappable action. In dark mode
-   * they diverge — a light blue that reads well as a link looks washed out as a
+   * they diverge - a light blue that reads well as a link looks washed out as a
    * button fill.
    */
   buttonFill: airForceBlue[800],
@@ -72,7 +72,7 @@ export const lightColors = {
   /** Full-bleed brand field: splash screen, and any inverted surface. */
   brandField: airForceBlue[800],
   /**
-   * Tab/nav header — matches the page background rather than a solid brand
+   * Tab/nav header - matches the page background rather than a solid brand
    * fill. Most modern apps don't drop a colored bar across the top; blue
    * stays reserved for buttons, links, and active states instead.
    */
@@ -82,16 +82,16 @@ export const lightColors = {
   borderStrong: neutral[300],
   text: neutral[900],
   textMuted: neutral[500],
-  /** Input placeholders specifically — lighter than `textMuted`, which is legible body copy (hints, timestamps) and reads too strong for a field that's still empty. */
+  /** Input placeholders specifically - lighter than `textMuted`, which is legible body copy (hints, timestamps) and reads too strong for a field that's still empty. */
   placeholder: neutral[400],
   focusRing: airForceBlue[400],
   dangerMuted: "#FDECEA",
   successMuted: "#E6F4EE",
   warningMuted: "#FBF0DD",
-  /** Text/mark colour on `brandField` — the splash screen's solid navy. */
+  /** Text/mark colour on `brandField` - the splash screen's solid navy. */
   onHero: neutral[0],
   onHeroMuted: airForceBlue[100],
-  /** Frosted-glass surface (light mode only) — a translucent fill over a BlurView. */
+  /** Frosted-glass surface (light mode only) - a translucent fill over a BlurView. */
   glassFill: "rgba(255, 255, 255, 0.55)",
   glassBorder: "rgba(255, 255, 255, 0.65)",
   ...semantic,
@@ -112,7 +112,7 @@ export const darkColors = {
   inputBg: darkNeutral.surface,
   brandField: airForceBlue[900],
   // Blue stays an accent (buttons, active tab, links) rather than a big
-  // field — the header matches the page's own neutral tone instead of
+  // field - the header matches the page's own neutral tone instead of
   // dropping a saturated blue bar onto a near-black background.
   headerBg: darkNeutral.bg,
   onHeaderBg: darkNeutral.text,

@@ -20,7 +20,7 @@ export async function pickPhoto(): Promise<PickPhotoResult> {
     mediaTypes: ['images'],
     quality: 0.7,
     // Without this, iOS can hand back the original HEIC file for a photo
-    // taken on an iPhone — Supabase Storage's allowed_mime_types rejects it
+    // taken on an iPhone - Supabase Storage's allowed_mime_types rejects it
     // outright ("mime type image/heic is not supported"), and even if it
     // didn't, HEIC doesn't render reliably outside Apple's own stack (not in
     // most browsers, not in every Android decoder). "Compatible" has the

@@ -11,7 +11,7 @@ const FILL: StyleProp<ViewStyle> = { position: 'absolute', top: 0, left: 0, righ
  * a pulsing skeleton while the image loads and a placeholder glyph if it
  * fails, instead of a blank box flashing straight to the photo (or staying
  * blank forever on a broken URL). `style`/`className` size and round the
- * outer container exactly as they would the `Image` itself — the image and
+ * outer container exactly as they would the `Image` itself - the image and
  * its loading/error states fill that container.
  */
 export function RemoteImage({

@@ -8,7 +8,7 @@ import { Button } from '../../components/ui/Button';
 /**
  * Reached when someone picks "Security & Staff" on the role-select screen.
  *
- * Deliberately not a form — staff accounts are provisioned by an estate admin
+ * Deliberately not a form - staff accounts are provisioned by an estate admin
  * (the person's actual employer), not self-registered. The admin creates an
  * invite and shares an access code with the new hire through whatever channel
  * they'd already use (WhatsApp, SMS, in person); this screen's job is to

@@ -28,7 +28,7 @@ export default function MarketplaceListingScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { width: windowWidth } = useWindowDimensions();
-  const heroHeight = windowWidth; // full-bleed, square-ish hero — more surface area for the photo
+  const heroHeight = windowWidth; // full-bleed, square-ish hero - more surface area for the photo
   const profile = useAuthStore((s) => s.profile);
   const queryClient = useQueryClient();
   const [buying, setBuying] = useState(false);

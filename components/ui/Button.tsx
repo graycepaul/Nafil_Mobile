@@ -9,7 +9,7 @@ interface ButtonProps {
   variant?: Variant;
   loading?: boolean;
   disabled?: boolean;
-  /** Still accepted for one-off layout overrides (e.g. `{ flex: 1 }`) — merges with className, doesn't replace it. */
+  /** Still accepted for one-off layout overrides (e.g. `{ flex: 1 }`) - merges with className, doesn't replace it. */
   style?: ViewStyle;
   className?: string;
 }
@@ -38,7 +38,7 @@ export function Button({
   className,
 }: ButtonProps) {
   const isInactive = disabled || loading;
-  // ActivityIndicator's `color` is a native prop, not a style — className
+  // ActivityIndicator's `color` is a native prop, not a style - className
   // can't reach it, so this is the one spot that still needs theme-context.
   const { colors } = useTheme();
   const spinnerColor = {

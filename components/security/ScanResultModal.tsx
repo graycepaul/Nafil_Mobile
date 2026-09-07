@@ -13,7 +13,7 @@ export type ScanResult = {
   title: string;
   message?: string;
   rows?: { label: string; value: string }[];
-  /** The resident/household member's own photo, when the scan matched one — lets the guard actually check the face against the person in front of them, not just a name on screen. Omitted for a visitor pass (no photo on file) or a system-level result (code not recognized). */
+  /** The resident/household member's own photo, when the scan matched one - lets the guard actually check the face against the person in front of them, not just a name on screen. Omitted for a visitor pass (no photo on file) or a system-level result (code not recognized). */
   photoUrl?: string | null;
   photoName?: string | null;
 };
@@ -21,7 +21,7 @@ export type ScanResult = {
 /**
  * Replaces the old inline Notice banner for scan feedback. That banner sat
  * above a camera that never stopped scanning, so a QR code still in frame
- * re-triggered the same check-in seconds later — a second DB write and a
+ * re-triggered the same check-in seconds later - a second DB write and a
  * flickering banner. This blocks the camera (scanning only resumes once the
  * guard dismisses it) and gives the guard the actual person's details, not
  * just a pass/fail line.
@@ -33,7 +33,7 @@ export function ScanResultModal({ result, onClose }: { result: ScanResult | null
   const [viewingPhoto, setViewingPhoto] = useState(false);
   // Capped well under the viewport height (not just full-width-square) so it
   // never needs to touch the screen edges on a short window (a landscape
-  // phone, a small desktop test window) — the close button itself is
+  // phone, a small desktop test window) - the close button itself is
   // positioned independently below, not relative to this.
   const maxPhotoSize = Math.min(360, windowHeight * 0.6);
 
@@ -123,9 +123,9 @@ export function ScanResultModal({ result, onClose }: { result: ScanResult | null
         )}
       </Overlay>
 
-      {/* Positioned independently of Overlay's centered content wrapper —
+      {/* Positioned independently of Overlay's centered content wrapper -
           pinned to the true screen corner via safe-area insets, same
-          technique as Toast — so it's always reachable regardless of how
+          technique as Toast - so it's always reachable regardless of how
           tall the photo above ends up being. */}
       {viewingPhoto && !!result?.photoUrl && (
         <Pressable

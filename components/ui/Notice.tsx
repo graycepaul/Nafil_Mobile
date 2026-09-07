@@ -19,7 +19,7 @@ const TONE_CLASSES: Record<Tone, { box: string; text: string }> = {
 
 /**
  * Inline form-level feedback. Replaces Alert.alert for auth, which matters
- * because react-native-web doesn't implement Alert — errors raised that way are
+ * because react-native-web doesn't implement Alert - errors raised that way are
  * invisible in the browser.
  */
 export function Notice({ tone = 'error', message }: { tone?: Tone; message: string }) {

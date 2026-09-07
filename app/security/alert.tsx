@@ -3,6 +3,7 @@ import { Text, Keyboard, Pressable, ScrollView } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { friendlyDbError } from '../../lib/db-errors';
 import { apiPost } from '../../lib/api';
+import { getCurrentPushToken } from '../../lib/push-notifications';
 import { useAuthStore } from '../../store/auth-store';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -39,17 +40,18 @@ export default function SecurityAlertScreen() {
     }
 
     // The announcement above is what residents see if they open the app;
-    // this is the part that reaches them even if they don't — a push
+    // this is the part that reaches them even if they don't - a push
     // straight to their phone. If it fails, the alert has still gone out
     // in-app, so this is reported as its own (non-fatal) notice rather than
     // rolled back.
     try {
+      const posterToken = await getCurrentPushToken();
       const result = await apiPost<{ recipients: number; tickets_sent: number; errors: string[] }>(
         '/alerts/broadcast',
-        { title: title.trim(), body: body.trim(), category }
+        { title: title.trim(), body: body.trim(), category, poster_token: posterToken }
       );
       // A 200 response only means the backend accepted the request and tried
-      // — Expo's API can still reject the whole batch (as it silently did
+      // - Expo's API can still reject the whole batch (as it silently did
       // until a payload bug was fixed here), leaving tickets_sent at 0 with
       // no thrown error. `recipients` alone can't tell success from that.
       if (result.tickets_sent === 0 && result.recipients > 0) {
@@ -81,7 +83,7 @@ export default function SecurityAlertScreen() {
   }
 
   return (
-    // Tapping anywhere outside the inputs dismisses the keyboard — without
+    // Tapping anywhere outside the inputs dismisses the keyboard - without
     // this, the keyboard had no dismiss route on this screen (multiline body
     // text swallows the return key, and there's no "Done" bar), which could
     // leave the tab bar hidden behind it with no way back except sending.

@@ -31,6 +31,8 @@ export interface Profile {
   created_at: string;
 }
 
+export type ResidentCategory = 'civilian' | 'personnel';
+
 export interface EstateJoinRequest {
   id: string;
   profile_id: string;
@@ -40,6 +42,14 @@ export interface EstateJoinRequest {
   created_at: string;
   reviewed_at: string | null;
   reviewed_by: string | null;
+  /** Null only for requests submitted before this feature existed. */
+  resident_category: ResidentCategory | null;
+  /** Storage path (private bucket), not a URL - resolve to a signed URL before display. */
+  id_document_path: string | null;
+  /** Only set for resident_category: 'personnel'. */
+  service_number: string | null;
+  /** Only set when status is 'rejected' - required by reject_join_request(). */
+  rejection_reason: string | null;
 }
 
 /** Shape returned by the admin queue's join-request query, with the resident's name/phone joined in. */
@@ -176,7 +186,12 @@ export type NotificationType =
   | 'transfer_confirmed'
   | 'transfer_rejected'
   | 'listing_suspended'
-  | 'listing_reinstated';
+  | 'listing_reinstated'
+  | 'transfer_contested'
+  | 'issue_feedback'
+  | 'due_assigned'
+  | 'join_request_submitted'
+  | 'join_request_rejected';
 
 export interface Notification {
   id: string;
@@ -298,7 +313,7 @@ export interface TransferWithSubmitter extends Transfer {
 }
 
 /**
- * Shape returned by the get_public_profiles RPC — the only way a plain
+ * Shape returned by the get_public_profiles RPC - the only way a plain
  * resident can look up another resident's display info (profiles_select
  * doesn't allow it directly, since that row also holds resident_code).
  */
@@ -307,4 +322,13 @@ export interface PublicProfile {
   full_name: string | null;
   unit_no: string | null;
   avatar_url: string | null;
+}
+
+/** Singleton row read on launch to gate/nudge on app version - see 0035_app_config.sql. */
+export interface AppConfig {
+  min_supported_version: string;
+  latest_version: string;
+  update_message: string | null;
+  ios_store_url: string | null;
+  android_store_url: string | null;
 }

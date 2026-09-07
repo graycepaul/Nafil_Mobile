@@ -4,11 +4,11 @@ import * as Clipboard from 'expo-clipboard';
 export type ShareOutcome = 'shared' | 'copied' | 'downloaded' | 'dismissed';
 
 /**
- * Native: the OS share sheet (WhatsApp, SMS, email — anything installed).
+ * Native: the OS share sheet (WhatsApp, SMS, email - anything installed).
  * Web: the Web Share API where available (mobile browsers), otherwise the
  * clipboard, since desktop browsers largely don't implement navigator.share.
  *
- * Either way this is free — the sender's own device sends the message. It is
+ * Either way this is free - the sender's own device sends the message. It is
  * NOT any provider's business messaging API, which bills per conversation and
  * would only be needed to send automatically rather than letting the sender
  * pick a recipient.
@@ -55,7 +55,7 @@ export function normalizePhoneForWhatsApp(phone: string): string | undefined {
  * pre-filled, via WhatsApp's own `wa.me` link (works the same on native and
  * web). Passing `phone` opens that contact's chat directly; omitting it
  * falls back to WhatsApp's chat picker with the message pre-filled. Same
- * "the sender's own device sends it" shape as `shareText` — this is a
+ * "the sender's own device sends it" shape as `shareText` - this is a
  * convenience shortcut to one specific app from `shareText`'s full list,
  * not a messaging API call.
  */
@@ -69,7 +69,7 @@ export async function shareTextToWhatsApp(
     await Linking.openURL(url);
     return 'shared';
   } catch {
-    // WhatsApp isn't installed/reachable — fall back to the OS share sheet
+    // WhatsApp isn't installed/reachable - fall back to the OS share sheet
     // (or clipboard on web) rather than leaving the resident stuck.
     return shareText(message);
   }

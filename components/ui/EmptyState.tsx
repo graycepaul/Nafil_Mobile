@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { View, Text } from 'react-native';
 
-/** Consistent "nothing here yet" treatment — an icon, a line, an optional nudge. */
+/** Consistent "nothing here yet" treatment - an icon, a line, an optional nudge. */
 export function EmptyState({
   icon,
   title,

@@ -3,7 +3,7 @@ import { supabase } from './supabase';
 /**
  * Uploads locally-picked photos (from `pickPhoto`) to the `issue-photos`
  * bucket and returns their public URLs, in order. Same path convention and
- * content-type handling as `uploadListingPhotos` — see that file's comment
+ * content-type handling as `uploadListingPhotos` - see that file's comment
  * for why the Blob gets re-wrapped before upload.
  */
 export async function uploadIssuePhotos(

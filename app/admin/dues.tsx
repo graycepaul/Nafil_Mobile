@@ -38,7 +38,7 @@ const CATEGORY_FILTERS: { value: DueCategory | undefined; label: string }[] = [
 
 type DueWithResident = Due & { resident: Pick<Profile, 'full_name' | 'unit_no'> | null };
 
-/** finance/super_admin only — dues_insert's RLS check does the same role and estate scoping server-side. */
+/** finance/super_admin only - dues_insert's RLS check does the same role and estate scoping server-side. */
 export default function AdminDuesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -46,7 +46,7 @@ export default function AdminDuesScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   // Must match the exact condition admin/_layout.tsx promotes this tab
-  // under — finance still reaches this screen by pushing onto the stack
+  // under - finance still reaches this screen by pushing onto the stack
   // (from the Dashboard's stat card / Marketplace's Finance menu) even at
   // this width, since only super_admin gets it as a tab.
   const isPromotedTab = Platform.OS === 'web' && width >= TAB_PROMOTION_BREAKPOINT && profile?.role === 'super_admin';

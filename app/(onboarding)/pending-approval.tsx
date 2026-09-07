@@ -7,13 +7,14 @@ import { useAuthStore } from '../../store/auth-store';
 import { AuthShell, AuthLink } from '../../components/auth/AuthShell';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Button } from '../../components/ui/Button';
+import { adviceForRejectionReason } from '../../lib/join-request-rejection';
 import type { Estate, EstateJoinRequest } from '../../types/database';
 
 type RequestWithEstate = EstateJoinRequest & { estate: Estate | null };
 
 /**
  * What a resident sees between submitting a join request and being approved.
- * Deliberately not a bare "pending" label on an empty tab bar — that reads as
+ * Deliberately not a bare "pending" label on an empty tab bar - that reads as
  * broken, not as "working as intended." Shows exactly what was submitted and
  * when, so there's no doubt the request went through, plus a way to check
  * again without needing to sign out and back in.
@@ -64,9 +65,16 @@ export default function PendingApprovalScreen() {
         }
         footer={<AuthLink label="Sign out" onPress={signOut} />}
       >
+        {request.rejection_reason && (
+          <View className="mb-lg rounded-lg border-l-[3px] border-danger bg-danger-muted p-lg dark:bg-danger-mutedDark">
+            <Text className="text-[13px] font-medium text-danger">Reason given</Text>
+            <Text className="mt-xs text-[14px] leading-[20px] text-paper-900 dark:text-ink-text">
+              {request.rejection_reason}
+            </Text>
+          </View>
+        )}
         <Text className="mb-xl text-base leading-[22px] text-paper-500 dark:text-ink-textMuted">
-          Double-check the estate and unit number, then submit a new request. If you think this
-          is a mistake, contact your estate admin directly.
+          {adviceForRejectionReason(request.rejection_reason)}
         </Text>
         <Button label="Try again" onPress={() => router.replace('/join-estate')} />
       </AuthShell>

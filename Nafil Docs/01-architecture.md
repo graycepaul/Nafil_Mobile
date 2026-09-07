@@ -1,4 +1,4 @@
-# Nafil Estates — Architecture
+# Nafil Estates - Architecture
 
 ## Overview
 
@@ -29,7 +29,7 @@ hold multiple roles (a facility manager who also lives on the estate) don't jugg
 
 ## Why two backends?
 
-Not two backends — **one database, two access paths**.
+Not two backends - **one database, two access paths**.
 
 **Supabase direct** (from the app) handles auth and ordinary CRUD. Row Level Security
 enforces access in Postgres, so there's no value in proxying these calls through our own
@@ -53,13 +53,13 @@ it needs a secret, a schedule, or a document, it goes through FastAPI.
 
 Two layers, and they are not redundant:
 
-1. **Client-side routing** (`app/_layout.tsx`) — decides *which UI* a role sees. This is UX,
+1. **Client-side routing** (`app/_layout.tsx`) - decides *which UI* a role sees. This is UX,
    not security. A determined user can bypass it.
-2. **Row Level Security** (Postgres policies) — decides *what data* a role can touch. This is
+2. **Row Level Security** (Postgres policies) - decides *what data* a role can touch. This is
    the actual boundary, and it holds regardless of what the client does.
 
 FastAPI verifies the same Supabase-issued JWT (`app/core/security.py`) rather than issuing
-its own tokens — one identity system, one user table, no sync problem.
+its own tokens - one identity system, one user table, no sync problem.
 
 ### Roles
 
@@ -79,7 +79,7 @@ One client, many estates. Every domain row carries `estate_id`, and RLS policies
 against the caller's own `estate_id` (via the `auth_estate_id()` helper). `super_admin`
 bypasses the estate check but still goes through RLS.
 
-This is single-tenant at the *client* level and multi-tenant at the *estate* level — enough
+This is single-tenant at the *client* level and multi-tenant at the *estate* level - enough
 isolation for the current client without the overhead of true SaaS multi-tenancy. If the app
 is later resold to other property companies, add a `clients` table above `estates` and extend
 the policies; the estate-scoping work is already done.
@@ -88,7 +88,7 @@ the policies; the estate-scoping work is already done.
 
 | Concern | Tool | Why |
 |---|---|---|
-| Server data | TanStack Query | Caching, refetch, invalidation — data that lives in Postgres |
+| Server data | TanStack Query | Caching, refetch, invalidation - data that lives in Postgres |
 | Session/profile | Zustand (`store/auth-store.ts`) | Global, synchronous reads, no provider nesting |
 | Theme preference | Zustand + AsyncStorage persist | Survives restarts |
 | Derived theme values | React Context (`context/theme-context.tsx`) | Resolves system/light/dark into a token set |
@@ -99,19 +99,19 @@ Don't put server data in Zustand. If it comes from Postgres, it belongs in Query
 
 Primary: `#084DA5`. Tokens in `constants/colors.ts` (light + dark sets), spacing/radius/
 typography/elevation in `constants/theme.ts`, consumed via `useTheme()`. Default mode is
-`light`, not `system` — the brand is designed light-first.
+`light`, not `system` - the brand is designed light-first.
 
 Components read tokens from the hook rather than hardcoding hex values, so dark mode and any
 future rebrand are a single-file change.
 
 ## Known gaps
 
-- **Scheduler and horizontal scaling** — APScheduler runs in-process. Multiple uvicorn
+- **Scheduler and horizontal scaling** - APScheduler runs in-process. Multiple uvicorn
   workers would double-fire jobs. Needs a single scheduler instance or an advisory lock
   before scaling out.
-- **`super_admin` UI** — currently reuses the admin screens with no estate switcher.
-- **Offline gatehouse** — security scanning assumes connectivity. A gate with poor signal
+- **`super_admin` UI** - currently reuses the admin screens with no estate switcher.
+- **Offline gatehouse** - security scanning assumes connectivity. A gate with poor signal
   needs a local queue; see roadmap Phase 2.
-- **Unused dependencies** — `playwright`, `passlib`, `python-multipart` came with the Arbinx
-  stack and aren't used yet. Drop them if nothing needs them (Playwright especially — it's a
+- **Unused dependencies** - `playwright`, `passlib`, `python-multipart` came with the Arbinx
+  stack and aren't used yet. Drop them if nothing needs them (Playwright especially - it's a
   heavy install).

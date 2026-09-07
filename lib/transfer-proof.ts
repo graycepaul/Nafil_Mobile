@@ -4,7 +4,7 @@ import { supabase } from './supabase';
  * Uploads a single locally-picked photo (from `pickPhoto`) to the
  * `transfer-proofs` bucket and returns its public URL. Same path convention
  * and content-type handling as `uploadListingPhotos` in `listing-photos.ts`
- * — see that file's comment for why the Blob gets re-wrapped before upload.
+ * - see that file's comment for why the Blob gets re-wrapped before upload.
  */
 export async function uploadTransferProof(
   userId: string,
