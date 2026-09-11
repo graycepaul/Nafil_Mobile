@@ -7,7 +7,7 @@ import { RoleCard } from '../../components/auth/RoleCard';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Button } from '../../components/ui/Button';
 
-type SignupRole = 'resident' | 'staff' | 'community';
+type SignupRole = 'resident' | 'staff';
 
 /**
  * "Sign up as" - the fork between the ways a person gets into Nafil Estates.
@@ -19,12 +19,15 @@ type SignupRole = 'resident' | 'staff' | 'community';
  * path here to becoming an admin *of an existing estate* - every admin after
  * the first is created by that estate's own admin, never self-serve.
  *
- * "Register a new community" is a different thing entirely: it doesn't grant
- * admin over an estate that already exists, it creates the estate itself and
- * makes the signing-up person its first admin - there's no one else to
- * approve them against, since they ARE the estate's founding account. This is
- * the self-serve onboarding path for a brand-new estate that isn't on the
- * platform yet.
+ * There used to be a third option here ("Register a new community" ->
+ * /create-community) for self-serve onboarding of a brand-new estate. This
+ * was never actually a multi-tenant SaaS in practice - one client, one
+ * estate - so that path is gone: removed here, and the route itself deleted
+ * (not just unlinked) since a stray deep link would otherwise still reach
+ * it. The signup metadata shape it used to send is also rejected at the
+ * database trigger that would have created the new estate
+ * (0048_block_new_community_signup.sql), so even a direct API call can't
+ * revive it - this isn't just a hidden button.
  */
 export default function RoleSelectScreen() {
   const { colors } = useTheme();
@@ -34,7 +37,6 @@ export default function RoleSelectScreen() {
   function handleContinue() {
     if (role === 'resident') router.push('/signup');
     if (role === 'staff') router.push('/staff-access');
-    if (role === 'community') router.push('/create-community');
   }
 
   return (
@@ -44,13 +46,6 @@ export default function RoleSelectScreen() {
       onBack={() => router.back()}
     >
       <View className="gap-md" accessibilityRole="radiogroup">
-        <RoleCard
-          icon={<Ionicons name="business-outline" size={22} color={role === 'community' ? colors.onButtonFill : colors.textMuted} />}
-          title="Register a new community"
-          description="Onboard your estate onto Nafil Estates and become its first admin."
-          selected={role === 'community'}
-          onPress={() => setRole('community')}
-        />
         <RoleCard
           icon={<Ionicons name="shield-checkmark-outline" size={22} color={role === 'staff' ? colors.onButtonFill : colors.textMuted} />}
           title="Security & Staff"
