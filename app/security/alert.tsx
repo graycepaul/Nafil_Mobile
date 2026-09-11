@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { Text, Keyboard, Pressable, ScrollView } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { friendlyDbError } from '../../lib/db-errors';
-import { apiPost } from '../../lib/api';
-import { getCurrentPushToken } from '../../lib/push-notifications';
 import { useAuthStore } from '../../store/auth-store';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -24,60 +22,27 @@ export default function SecurityAlertScreen() {
     setSending(true);
     setNotice(undefined);
 
-    const { error } = await supabase.from('announcements').insert({
+    // Goes to security_alerts, not announcements - reaches the estate's
+    // admin/super_admin only (see 0044_security_alerts_to_admin.sql's
+    // notify_security_alert_reported), never a direct resident-facing
+    // broadcast. Admin reviews it and decides whether it's worth posting a
+    // real announcement - that's their call, not security's, every time.
+    const { error } = await supabase.from('security_alerts').insert({
       estate_id: profile.estate_id,
       author_id: profile.id,
       title: title.trim(),
       body: body.trim(),
-      severity: 'emergency',
       category,
     });
 
+    setSending(false);
+
     if (error) {
-      setSending(false);
       setNotice({ tone: 'error', message: friendlyDbError(error) });
       return;
     }
 
-    // The announcement above is what residents see if they open the app;
-    // this is the part that reaches them even if they don't - a push
-    // straight to their phone. If it fails, the alert has still gone out
-    // in-app, so this is reported as its own (non-fatal) notice rather than
-    // rolled back.
-    try {
-      const posterToken = await getCurrentPushToken();
-      const result = await apiPost<{ recipients: number; tickets_sent: number; errors: string[] }>(
-        '/alerts/broadcast',
-        { title: title.trim(), body: body.trim(), category, poster_token: posterToken }
-      );
-      // A 200 response only means the backend accepted the request and tried
-      // - Expo's API can still reject the whole batch (as it silently did
-      // until a payload bug was fixed here), leaving tickets_sent at 0 with
-      // no thrown error. `recipients` alone can't tell success from that.
-      if (result.tickets_sent === 0 && result.recipients > 0) {
-        setNotice({
-          tone: 'error',
-          message: `Announcement posted, but the push notification didn't send to any of the ${result.recipients} device${result.recipients === 1 ? '' : 's'} found.${result.errors[0] ? ` (${result.errors[0]})` : ''}`,
-        });
-      } else if (result.tickets_sent < result.recipients) {
-        setNotice({
-          tone: 'success',
-          message: `Alert sent: ${result.tickets_sent} of ${result.recipients} device${result.recipients === 1 ? '' : 's'} notified, plus the in-app announcement.`,
-        });
-      } else {
-        setNotice({
-          tone: 'success',
-          message: `Alert sent: ${result.recipients} device${result.recipients === 1 ? '' : 's'} notified, plus the in-app announcement.`,
-        });
-      }
-    } catch (pushError) {
-      setNotice({
-        tone: 'error',
-        message: `Announcement posted, but the push notification failed: ${friendlyDbError(pushError)}`,
-      });
-    }
-
-    setSending(false);
+    setNotice({ tone: 'success', message: 'Sent to admin.' });
     setTitle('');
     setBody('');
   }
@@ -90,8 +55,8 @@ export default function SecurityAlertScreen() {
     <Pressable onPress={() => Keyboard.dismiss()} className="flex-1 bg-white dark:bg-ink-bg" accessible={false}>
       <ScrollView contentContainerClassName="p-xl" keyboardShouldPersistTaps="handled">
         <Text className="mb-lg text-[13px] text-paper-500 dark:text-ink-textMuted">
-          Sends an emergency push notification to every resident&apos;s phone in your estate, and
-          posts it as an in-app announcement.
+          Sends this straight to your estate&apos;s admin - not to residents. Admin will follow
+          up directly, or post an announcement if residents need to know.
         </Text>
 
         {notice && <Notice tone={notice.tone} message={notice.message} />}
@@ -110,7 +75,7 @@ export default function SecurityAlertScreen() {
         <Input
           label="Details"
           showLabel
-          placeholder="What's happening, and what should residents do?"
+          placeholder="What's happening, and what should admin know?"
           value={body}
           onChangeText={setBody}
           multiline
@@ -118,7 +83,7 @@ export default function SecurityAlertScreen() {
         />
 
         <Button
-          label="Send emergency alert"
+          label="Send to admin"
           variant="danger"
           onPress={sendAlert}
           loading={sending}

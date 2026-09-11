@@ -15,5 +15,6 @@ Planning and reference docs for the Nafil Estates platform.
 - **Repos:** [`Nafil_Backend`](https://github.com/graycepaul/Nafil_Backend)
 - **Stack:** Expo/React Native · Supabase (Postgres + Auth + RLS) · FastAPI
 - **Roles:** `resident` · `security` · `admin` · `super_admin`
-- **Supabase:** project "Nafil DB", ref `itfepppqjtodmizbglze`, region eu-west-1,
-  Postgres 17.6 - schema deployed, RLS verified
+- **Supabase:** self-hosted on the production VPS at `https://api.nafilestates.com`,
+  Postgres 17 - schema deployed, RLS verified. The old Supabase Cloud project ("Nafil
+  DB", ref `itfepppqjtodmizbglze`) is deprecated and paused.

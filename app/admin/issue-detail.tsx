@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, Pressable, RefreshControl, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -16,6 +16,7 @@ import { RemoteImage } from '../../components/ui/RemoteImage';
 import { DetailSkeleton } from '../../components/ui/DetailSkeleton';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { IssueFeedbackThread } from '../../components/issues/IssueFeedbackThread';
+import { IssueActivityLog } from '../../components/issues/IssueActivityLog';
 import type { Issue, IssueStatus } from '../../types/database';
 
 const STATUS_TONE: Record<IssueStatus, BadgeTone> = {
@@ -58,7 +59,12 @@ export default function AdminIssueDetailScreen() {
   const [confirmingClose, setConfirmingClose] = useState(false);
   const [closing, setClosing] = useState(false);
 
-  const { data: issue, isLoading } = useQuery({
+  const {
+    data: issue,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useQuery({
     queryKey: ['issue_admin', id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -70,7 +76,21 @@ export default function AdminIssueDetailScreen() {
       return data as IssueWithContext;
     },
     enabled: !!id,
+    // Another admin/super_admin can act on this same issue at the same
+    // time - without this, whoever's already sitting on this screen keeps
+    // seeing the status as it was when they opened it, not as it actually
+    // is, until they happen to navigate away and back. Pull-to-refresh
+    // below is the immediate/manual fallback to this same automatic sync.
+    refetchInterval: 15_000,
   });
+
+  function pullToRefresh() {
+    refetch();
+    // IssueActivityLog owns its own query - invalidating by key here rather
+    // than lifting its state up, since the query key is already the shared
+    // contract between this screen and that component.
+    queryClient.invalidateQueries({ queryKey: ['issue_activity', id] });
+  }
 
   async function advance() {
     if (!issue) return;
@@ -93,6 +113,9 @@ export default function AdminIssueDetailScreen() {
     queryClient.invalidateQueries({ queryKey: ['issue_admin', id] });
     queryClient.invalidateQueries({ queryKey: ['issues_admin', profile?.estate_id] });
     queryClient.invalidateQueries({ queryKey: ['dashboard_open_issues'] });
+    // Without this, even the admin who just made the change doesn't see
+    // their own new activity-log entry until the next 15s poll.
+    queryClient.invalidateQueries({ queryKey: ['issue_activity', id] });
   }
 
   async function closeIssue() {
@@ -111,6 +134,7 @@ export default function AdminIssueDetailScreen() {
     }
     queryClient.invalidateQueries({ queryKey: ['issue_admin', id] });
     queryClient.invalidateQueries({ queryKey: ['issues_admin', profile?.estate_id] });
+    queryClient.invalidateQueries({ queryKey: ['issue_activity', id] });
   }
 
   const heroHeight = width * 0.75;
@@ -134,7 +158,12 @@ export default function AdminIssueDetailScreen() {
 
   return (
     <View className="flex-1 bg-white dark:bg-ink-bg">
-      <ScrollView contentContainerClassName="pb-xl" bounces={false}>
+      <ScrollView
+        contentContainerClassName="pb-xl"
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={pullToRefresh} tintColor={colors.primary} />
+        }
+      >
         <View>
           {issue.photo_urls.length > 0 ? (
             <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
@@ -217,6 +246,8 @@ export default function AdminIssueDetailScreen() {
               className="mt-md"
             />
           )}
+
+          <IssueActivityLog issueId={issue.id} />
 
           {(issue.status === 'resolved' || issue.status === 'closed') && (
             <IssueFeedbackThread issueId={issue.id} canPost={issue.status === 'resolved'} />

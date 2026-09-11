@@ -58,6 +58,14 @@ export function normalizePhoneForWhatsApp(phone: string): string | undefined {
  * "the sender's own device sends it" shape as `shareText` - this is a
  * convenience shortcut to one specific app from `shareText`'s full list,
  * not a messaging API call.
+ *
+ * Text-only, unavoidably: a `wa.me` link can only pre-fill text, never
+ * attach a file, so this can never carry the QR image - that's a WhatsApp
+ * platform limit, not something fixable here. The visitor pass screen keeps
+ * this alongside its image-based share specifically because the client
+ * needs a direct-to-WhatsApp shortcut regardless; the plain code shown in
+ * this message still works at the gate (security can enter it manually,
+ * not only scan it), it just isn't a scannable QR through this specific path.
  */
 export async function shareTextToWhatsApp(
   message: string,

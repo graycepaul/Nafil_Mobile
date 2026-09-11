@@ -54,6 +54,8 @@ export function notificationRoute(item: Notification, role: UserRole | undefined
         : undefined;
     case 'join_request_submitted':
       return '/admin/residents?tab=pending';
+    case 'security_alert_reported':
+      return '/admin/announcements?tab=alerts';
     case 'join_request_rejected':
       // Routes through the onboarding router rather than straight to
       // join-estate - it re-checks the latest request itself and is what

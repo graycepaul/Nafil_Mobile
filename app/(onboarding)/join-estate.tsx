@@ -91,8 +91,8 @@ export default function JoinEstateScreen() {
       idPhoto: idPhoto
         ? undefined
         : category === 'personnel'
-          ? 'Add a photo of your service ID card.'
-          : 'Add a photo of a utility bill or your NIN card.',
+          ? 'Add a photo of your Service ID or Accommodation Publication.'
+          : 'Add a photo of your Receipt of Service Charge or HAFVERA dues.',
       serviceNumber:
         category === 'personnel' && !serviceNumber.trim() ? 'Enter your service number.' : undefined,
     };
@@ -212,7 +212,7 @@ export default function JoinEstateScreen() {
       {category && (
         <View className="mb-lg">
           <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">
-            {category === 'personnel' ? 'Service ID card' : 'Utility bill or NIN card'}
+            {category === 'personnel' ? 'Service ID or Accommodation Publication' : 'Receipt of Service Charge or HAFVERA Dues'}
           </Text>
           {idPhoto ? (
             <View className="relative w-full">
@@ -243,8 +243,8 @@ export default function JoinEstateScreen() {
           {errors.idPhoto && <Text className="mt-xs text-[13px] text-danger">{errors.idPhoto}</Text>}
           <Text className="mt-sm text-[12px] text-paper-500 dark:text-ink-textMuted">
             {category === 'personnel'
-              ? 'Upload your service ID card for identification. Only your estate admin can view this.'
-              : 'Upload a recent utility bill (not older than 3 months) or your NIN card for identification. Only your estate admin can view this.'}
+              ? 'Upload your Service ID or Accommodation Publication for identification. Only your estate admin can view this.'
+              : 'Upload a recent Receipt of Service Charge or HAFVERA dues (not older than 3 months) for identification. Only your estate admin can view this.'}
           </Text>
         </View>
       )}

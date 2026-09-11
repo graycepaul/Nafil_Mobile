@@ -1,7 +1,7 @@
-import { View, Text } from 'react-native';
-import QRCode from 'react-native-qrcode-svg';
-import { Avatar } from './Avatar';
-import { StatusBadge } from './StatusBadge';
+import { View, Text } from "react-native";
+import QRCode from "react-native-qrcode-svg";
+import { Avatar } from "./Avatar";
+import { StatusBadge } from "./StatusBadge";
 
 interface IDCardViewProps {
   photoUrl?: string | null;
@@ -11,6 +11,11 @@ interface IDCardViewProps {
   estateName?: string | null;
   code: string;
   revoked?: boolean;
+  /** True for a visitor pass (one scan and it's spent) - false/omitted for a
+   * standing credential (a resident's own e-ID, a household/frequent-visitor
+   * card) that works every time until revoked. Changes the badge and footer
+   * copy so it's never ambiguous which kind of code someone's looking at. */
+  singleUse?: boolean;
   /**
    * Drops the outer drop shadow. Used for the instance captured by
    * `react-native-view-shot` for sharing - on web, its `html2canvas` backend
@@ -38,11 +43,12 @@ export function IDCardView({
   estateName,
   code,
   revoked,
+  singleUse,
   elevated = true,
 }: IDCardViewProps) {
   return (
     <View
-      className={`overflow-hidden rounded-lg border border-paper-200 bg-white dark:border-ink-border dark:bg-ink-raised ${elevated ? 'shadow-lg' : ''}`}
+      className={`overflow-hidden rounded-lg border border-paper-200 bg-white dark:border-ink-border dark:bg-ink-raised ${elevated ? "shadow-lg" : ""}`}
     >
       <View className="flex-row items-center justify-between bg-brand-800 px-lg py-md dark:bg-brand-900">
         <Text
@@ -69,25 +75,41 @@ export function IDCardView({
 
       <View className="items-center p-xl">
         <Avatar uri={photoUrl} name={name} size={72} />
-        <Text className="mt-md text-lg font-semibold text-paper-900 dark:text-ink-text">{name}</Text>
+        <Text className="mt-md text-lg font-semibold text-paper-900 dark:text-ink-text">
+          {name}
+        </Text>
         {subtitle && (
-          <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">{subtitle}</Text>
+          <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
+            {subtitle}
+          </Text>
         )}
 
-        {revoked && (
+        {revoked ? (
           <View className="mt-sm">
             <StatusBadge label="Revoked" tone="danger" />
           </View>
+        ) : (
+          singleUse && (
+            <View className="mt-sm">
+              <StatusBadge label="Single use" tone="warning" />
+            </View>
+          )
         )}
 
-        <View className={`mt-xl rounded-md bg-white p-md ${revoked ? 'opacity-35' : ''}`}>
+        <View
+          className={`mt-xl rounded-md bg-white p-md ${revoked ? "opacity-35" : ""}`}
+        >
           <QRCode value={code} size={140} />
         </View>
         <Text className="mt-md text-base font-semibold tracking-[2px] text-paper-900 dark:text-ink-text">
           {code}
         </Text>
         <Text className="mt-xs text-center text-[13px] text-paper-500 dark:text-ink-textMuted">
-          {revoked ? 'This code no longer works.' : 'Show this to security at the gate.'}
+          {revoked
+            ? "This code no longer works."
+            : singleUse
+              ? "This is a one time pass and cannot be reused once it has been scanned by the security officer at the gate."
+              : "Show this to security at the gate."}
         </Text>
       </View>
     </View>

@@ -1,7 +1,7 @@
-import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, Pressable, RefreshControl, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
 import { useTheme } from '../../context/theme-context';
@@ -10,6 +10,7 @@ import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { RemoteImage } from '../../components/ui/RemoteImage';
 import { DetailSkeleton } from '../../components/ui/DetailSkeleton';
 import { IssueFeedbackThread } from '../../components/issues/IssueFeedbackThread';
+import { IssueActivityLog } from '../../components/issues/IssueActivityLog';
 import type { Issue, IssueStatus } from '../../types/database';
 
 const STATUS_TONE: Record<IssueStatus, BadgeTone> = {
@@ -32,8 +33,14 @@ export default function IssueDetailScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
+  const queryClient = useQueryClient();
 
-  const { data: issue, isLoading } = useQuery({
+  const {
+    data: issue,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useQuery({
     queryKey: ['issue', id],
     queryFn: async () => {
       const { data, error } = await supabase.from('issues').select('*').eq('id', id).single();
@@ -42,6 +49,14 @@ export default function IssueDetailScreen() {
     },
     enabled: !!id,
   });
+
+  function pullToRefresh() {
+    refetch();
+    // IssueActivityLog owns its own query - invalidating by key here rather
+    // than lifting its state up, since the query key is already the shared
+    // contract between this screen and that component.
+    queryClient.invalidateQueries({ queryKey: ['issue_activity', id] });
+  }
 
   const heroHeight = width * 0.75;
 
@@ -63,7 +78,12 @@ export default function IssueDetailScreen() {
 
   return (
     <View className="flex-1 bg-white dark:bg-ink-bg">
-      <ScrollView contentContainerClassName="pb-xl" bounces={false}>
+      <ScrollView
+        contentContainerClassName="pb-xl"
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={pullToRefresh} tintColor={colors.primary} />
+        }
+      >
         <View>
           {issue.photo_urls.length > 0 ? (
             <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
@@ -122,6 +142,8 @@ export default function IssueDetailScreen() {
               </View>
             </>
           )}
+
+          <IssueActivityLog issueId={issue.id} />
 
           {(issue.status === 'resolved' || issue.status === 'closed') && (
             <IssueFeedbackThread issueId={issue.id} canPost={issue.status === 'resolved'} />

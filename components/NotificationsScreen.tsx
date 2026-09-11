@@ -35,6 +35,7 @@ const TYPE_ICON: Record<NotificationType, IoniconsIconName> = {
   due_assigned: 'receipt-outline',
   join_request_submitted: 'person-add-outline',
   join_request_rejected: 'close-circle-outline',
+  security_alert_reported: 'shield-outline',
 };
 
 /** Same notifications inbox for every role - the table and its RLS (own rows only) don't distinguish who's looking, so neither does this screen. */

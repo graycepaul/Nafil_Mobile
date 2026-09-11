@@ -150,6 +150,19 @@ export interface IssueComment {
   created_at: string;
 }
 
+/** System-generated, one row per status change - written only by a DB
+ * trigger (see 0047_issue_status_activity_log.sql), never inserted by the
+ * client. Distinct from IssueComment: this is the audit trail, not the
+ * resident/admin feedback conversation. */
+export interface IssueActivity {
+  id: string;
+  issue_id: string;
+  actor_id: string;
+  from_status: IssueStatus;
+  to_status: IssueStatus;
+  created_at: string;
+}
+
 export type AlertCategory = 'missing_child' | 'security_breach' | 'epidemic' | 'other';
 
 export interface Announcement {
@@ -161,6 +174,22 @@ export interface Announcement {
   severity: AnnouncementSeverity;
   category: AlertCategory | null;
   photo_url: string | null;
+  created_at: string;
+}
+
+export type SecurityAlertStatus = 'open' | 'addressed';
+
+/** Reported by security, visible to admin/super_admin only - never a
+ * resident-facing announcement. Admin decides separately whether it's
+ * worth posting one, see app/admin/announcements.tsx. */
+export interface SecurityAlert {
+  id: string;
+  estate_id: string;
+  author_id: string;
+  category: AlertCategory;
+  title: string;
+  body: string;
+  status: SecurityAlertStatus;
   created_at: string;
 }
 
@@ -191,7 +220,8 @@ export type NotificationType =
   | 'issue_feedback'
   | 'due_assigned'
   | 'join_request_submitted'
-  | 'join_request_rejected';
+  | 'join_request_rejected'
+  | 'security_alert_reported';
 
 export interface Notification {
   id: string;

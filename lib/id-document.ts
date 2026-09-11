@@ -3,8 +3,9 @@ import { supabase } from './supabase';
 const BUCKET = 'resident-id-documents';
 
 /**
- * Uploads a resident's identity document (utility bill, NIN card, or
- * service ID card) to the private id-verification bucket and returns its
+ * Uploads a resident's identity document (a civilian's Receipt of Service
+ * Charge or HAFVERA dues, or personnel's Service ID/Accommodation
+ * Publication) to the private id-verification bucket and returns its
  * storage path - not a public URL, this bucket has none. Path is scoped by
  * uploader (not estate): RLS on this bucket checks
  * `(storage.foldername(name))[1] = auth.uid()`, and a resident's estate

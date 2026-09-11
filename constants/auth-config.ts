@@ -12,7 +12,7 @@
  * To turn it on:
  *   1. Supabase dashboard → Authentication → Providers → Google → enable, add the
  *      OAuth client ID/secret from Google Cloud Console.
- *   2. Add https://itfepppqjtodmizbglze.supabase.co/auth/v1/callback as an
+ *   2. Add https://api.nafilestates.com/auth/v1/callback as an
  *      authorised redirect URI in the Google Cloud OAuth client.
  *   3. Flip this to true.
  */
