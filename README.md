@@ -118,8 +118,11 @@ info a guard or admin might actually need to reach someone about a visitor or is
 
 ## Setup
 
-The Supabase project (**"Nafil DB"**, ref `itfepppqjtodmizbglze`, eu-west-1) is already
-provisioned, migrations applied, and test data seeded. `.env` is populated and gitignored.
+Production runs on a self-hosted Supabase stack at `https://api.nafilestates.com` (see
+`Nafil Backend/deploy/self-hosted/`), migrations applied through the latest in
+`supabase/migrations/`. The old Supabase Cloud project ("Nafil DB", ref
+`itfepppqjtodmizbglze`) is deprecated and paused - nothing should point at it. `.env` is
+populated and gitignored.
 
 ```bash
 npm run web       # browser at http://localhost:8081
@@ -211,7 +214,7 @@ To enable it:
 
 1. Supabase dashboard → Authentication → Providers → Google → enable, paste the OAuth
    client ID/secret from Google Cloud Console.
-2. Add `https://itfepppqjtodmizbglze.supabase.co/auth/v1/callback` as an authorised redirect
+2. Add `https://api.nafilestates.com/auth/v1/callback` as an authorised redirect
    URI in the Google Cloud OAuth client.
 3. Flip `GOOGLE_OAUTH_ENABLED` to `true`.
 
@@ -248,13 +251,13 @@ What's *not* verified is a real emailed link on either platform, since the seede
 were exercised directly (an active session, and no session, respectively) rather than via
 an actual link click.
 
-> ⚠️ **Needs a Supabase dashboard step before it works with a real email.** The redirect
-> URLs this screen relies on -
-> `https://itfepppqjtodmizbglze.supabase.co` origin paths for web and
-> `nafil-estates://set-password` for native - must be added to
-> **Authentication → URL Configuration → Redirect URLs** in the dashboard, or Supabase
-> silently falls back to the project's default Site URL instead of `/set-password`. Not
-> something available via this session's tooling; needs doing by hand.
+> **Redirect URLs are locked down on the self-hosted stack**: `SITE_URL` and
+> `ADDITIONAL_REDIRECT_URLS` in the VPS's Supabase `.env` (not this repo) are set to only
+> `https://app.nafilestates.com/**` and `nafil-estates://**`. Anything else Supabase gets
+> asked to redirect to (a stray localhost from local dev testing, for instance) gets
+> rejected and falls back to `SITE_URL` instead - this was the actual cause of a real
+> incident where signup confirmation emails linked to `localhost:3000` for real users.
+> Restart the VPS's `auth` container after ever changing either value.
 
 ### Staff invite flow
 
