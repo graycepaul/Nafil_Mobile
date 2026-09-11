@@ -11,16 +11,19 @@ import { Select } from '../ui/Select';
 import { validateEmail } from '../../lib/validation';
 import type { StaffInvite } from '../../types/database';
 
-const BASE_ROLES: { value: StaffInvite['role']; label: string }[] = [
+// An admin can only ever invite security - handing out admin or finance
+// access is an estate-owner decision, only super_admin's to make (the
+// server enforces this too: staff_invites_insert rejects anything but a
+// security-role invite from an admin).
+const SECURITY_ONLY: { value: StaffInvite['role']; label: string }[] = [
   { value: 'security', label: 'Security' },
-  { value: 'admin', label: 'Admin' },
 ];
 
-// Finance sees only market listings and money matters (transfers, dues) -
-// a narrower role than admin, so only super_admin can hand it out (the
-// server enforces this too: staff_invites_insert rejects a finance-role
-// invite from anyone but super_admin).
-const FINANCE_ROLE = { value: 'finance' as const, label: 'Finance' };
+const SUPER_ADMIN_ROLES: { value: StaffInvite['role']; label: string }[] = [
+  { value: 'security', label: 'Security' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'finance', label: 'Finance' },
+];
 
 /**
  * Creates a staff invite and hands the admin a code to share - through
@@ -43,10 +46,10 @@ export function InviteStaffForm({
 }) {
   const profile = useAuthStore((s) => s.profile);
   const isSuperAdmin = profile?.role === 'super_admin';
-  const ROLES = isSuperAdmin ? [...BASE_ROLES, FINANCE_ROLE] : BASE_ROLES;
+  const ROLES = isSuperAdmin ? SUPER_ADMIN_ROLES : SECURITY_ONLY;
 
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<StaffInvite['role']>('security');
+  const [role, setRole] = useState<StaffInvite['role']>(ROLES[0].value);
   const [error, setError] = useState<string>();
   const [formError, setFormError] = useState<string>();
   const [creating, setCreating] = useState(false);
