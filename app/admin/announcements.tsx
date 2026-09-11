@@ -1,7 +1,7 @@
-import { useLayoutEffect, useState } from 'react';
-import { View, Text, Image, Pressable, Keyboard } from 'react-native';
-import { useQueryClient } from '@tanstack/react-query';
-import { useNavigation, useRouter } from 'expo-router';
+import { useEffect, useLayoutEffect, useState } from 'react';
+import { View, Text, Image, Pressable, Keyboard, FlatList, RefreshControl } from 'react-native';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
 import { friendlyDbError } from '../../lib/db-errors';
@@ -15,10 +15,12 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Notice } from '../../components/ui/Notice';
 import { Overlay } from '../../components/ui/Overlay';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { AnnouncementsFeed, type AnnouncementSort } from '../../components/AnnouncementsFeed';
 import { AlertCategoryPicker } from '../../components/AlertCategoryPicker';
+import { SecurityAlertCard } from '../../components/admin/SecurityAlertCard';
 import { SearchAndEstateFilter } from '../../components/admin/SearchAndEstateFilter';
-import type { AlertCategory } from '../../types/database';
+import type { AlertCategory, SecurityAlert } from '../../types/database';
 
 const SORT_LABELS: Record<AnnouncementSort, string> = {
   date: 'Date',
@@ -26,12 +28,17 @@ const SORT_LABELS: Record<AnnouncementSort, string> = {
   type: 'Alert type',
 };
 
+type AlertWithAuthor = SecurityAlert & { author: { full_name: string | null } | null };
+type AnnouncementsTab = 'all' | 'alerts';
+
 export default function AdminAnnouncementsScreen() {
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
   const queryClient = useQueryClient();
   const navigation = useNavigation();
   const router = useRouter();
+  const { tab: openOnLoad } = useLocalSearchParams<{ tab?: string }>();
+  const [activeTab, setActiveTab] = useState<AnnouncementsTab>('all');
   const [formOpen, setFormOpen] = useState(false);
   const [emergency, setEmergency] = useState(false);
   const [category, setCategory] = useState<AlertCategory>('other');
@@ -44,8 +51,60 @@ export default function AdminAnnouncementsScreen() {
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const sortOptions: AnnouncementSort[] = ['date', 'type'];
   const [listSearch, setListSearch] = useState('');
+  const [markingAddressedId, setMarkingAddressedId] = useState<string | null>(null);
 
   const targetEstateId = profile?.estate_id;
+
+  // Deep-linked from a security-alert notification (?tab=alerts).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (openOnLoad === 'alerts') setActiveTab('alerts');
+  }, [openOnLoad]);
+
+  const {
+    data: alerts,
+    isRefetching: isRefetchingAlerts,
+    refetch: refetchAlerts,
+  } = useQuery({
+    queryKey: ['security_alerts', profile?.estate_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('security_alerts')
+        .select('*, author:profiles!security_alerts_author_id_fkey(full_name)')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as AlertWithAuthor[];
+    },
+    enabled: !!profile,
+    // Same reasoning as the admin Residents pending tab: a security report
+    // sitting unseen until someone happens to refresh isn't good enough -
+    // only polls while this is the tab actually showing.
+    refetchInterval: activeTab === 'alerts' ? 15_000 : false,
+  });
+
+  const openAlertCount = alerts?.filter((a) => a.status === 'open').length ?? 0;
+
+  async function markAlertAddressed(alertId: string) {
+    setMarkingAddressedId(alertId);
+    const { error } = await supabase
+      .from('security_alerts')
+      .update({ status: 'addressed' })
+      .eq('id', alertId);
+    setMarkingAddressedId(null);
+    if (error) {
+      setNotice({ tone: 'error', message: friendlyDbError(error) });
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['security_alerts', profile?.estate_id] });
+  }
+
+  function draftAnnouncementFrom(alert: SecurityAlert) {
+    setTitle(alert.title);
+    setBody(alert.body);
+    setEmergency(false);
+    setFormOpen(true);
+    setActiveTab('all');
+  }
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -168,6 +227,74 @@ export default function AdminAnnouncementsScreen() {
     router.push(`/admin/announcement-detail?id=${data.id}&toast=${toast.tone}&toastMsg=${encodeURIComponent(toast.message)}`);
   }
 
+  const tabs = (
+    <View className="mb-lg flex-row border-b border-paper-200 dark:border-ink-border">
+      {(
+        [
+          { key: 'all' as const, label: 'All announcements' },
+          { key: 'alerts' as const, label: `Security alerts${openAlertCount > 0 ? ` (${openAlertCount})` : ''}` },
+        ]
+      ).map((t) => {
+        const active = activeTab === t.key;
+        return (
+          <Pressable
+            key={t.key}
+            onPress={() => setActiveTab(t.key)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active }}
+            className={`flex-1 items-center border-b-2 pb-sm ${
+              active ? 'border-brand-800 dark:border-brand-300' : 'border-transparent'
+            }`}
+          >
+            <Text
+              className={`text-[14px] font-semibold ${
+                active ? 'text-brand-800 dark:text-brand-300' : 'text-paper-500 dark:text-ink-textMuted'
+              }`}
+            >
+              {t.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+
+  if (activeTab === 'alerts') {
+    return (
+      <FlatList
+        className="bg-white dark:bg-ink-bg"
+        contentContainerClassName="px-xl pb-xl"
+        refreshControl={
+          <RefreshControl refreshing={isRefetchingAlerts} onRefresh={refetchAlerts} tintColor={colors.primary} />
+        }
+        data={alerts ?? []}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={
+          <View>
+            {tabs}
+            {notice && <Notice tone={notice.tone} message={notice.message} />}
+          </View>
+        }
+        ListEmptyComponent={
+          <EmptyState
+            icon={<Ionicons name="shield-checkmark-outline" color={colors.textMuted} size={26} />}
+            title="Nothing reported"
+            message="Alerts security sends will show up here."
+          />
+        }
+        renderItem={({ item }) => (
+          <SecurityAlertCard
+            alert={item}
+            authorName={item.author?.full_name ?? undefined}
+            onMarkAddressed={() => markAlertAddressed(item.id)}
+            onPostAnnouncement={() => draftAnnouncementFrom(item)}
+            markingAddressed={markingAddressedId === item.id}
+          />
+        )}
+      />
+    );
+  }
+
   return (
     <>
     <AnnouncementsFeed
@@ -175,6 +302,7 @@ export default function AdminAnnouncementsScreen() {
       search={listSearch}
       ListHeaderComponent={
         <View>
+          {tabs}
           {formOpen && (
             <View className="mb-lg">
           {notice && <Notice tone={notice.tone} message={notice.message} />}

@@ -164,6 +164,22 @@ export interface Announcement {
   created_at: string;
 }
 
+export type SecurityAlertStatus = 'open' | 'addressed';
+
+/** Reported by security, visible to admin/super_admin only - never a
+ * resident-facing announcement. Admin decides separately whether it's
+ * worth posting one, see app/admin/announcements.tsx. */
+export interface SecurityAlert {
+  id: string;
+  estate_id: string;
+  author_id: string;
+  category: AlertCategory;
+  title: string;
+  body: string;
+  status: SecurityAlertStatus;
+  created_at: string;
+}
+
 export interface PushToken {
   id: string;
   profile_id: string;
@@ -191,7 +207,8 @@ export type NotificationType =
   | 'issue_feedback'
   | 'due_assigned'
   | 'join_request_submitted'
-  | 'join_request_rejected';
+  | 'join_request_rejected'
+  | 'security_alert_reported';
 
 export interface Notification {
   id: string;
