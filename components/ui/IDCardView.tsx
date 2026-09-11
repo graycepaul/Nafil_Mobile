@@ -1,7 +1,7 @@
-import { View, Text } from 'react-native';
-import QRCode from 'react-native-qrcode-svg';
-import { Avatar } from './Avatar';
-import { StatusBadge } from './StatusBadge';
+import { View, Text } from "react-native";
+import QRCode from "react-native-qrcode-svg";
+import { Avatar } from "./Avatar";
+import { StatusBadge } from "./StatusBadge";
 
 interface IDCardViewProps {
   photoUrl?: string | null;
@@ -48,7 +48,7 @@ export function IDCardView({
 }: IDCardViewProps) {
   return (
     <View
-      className={`overflow-hidden rounded-lg border border-paper-200 bg-white dark:border-ink-border dark:bg-ink-raised ${elevated ? 'shadow-lg' : ''}`}
+      className={`overflow-hidden rounded-lg border border-paper-200 bg-white dark:border-ink-border dark:bg-ink-raised ${elevated ? "shadow-lg" : ""}`}
     >
       <View className="flex-row items-center justify-between bg-brand-800 px-lg py-md dark:bg-brand-900">
         <Text
@@ -75,9 +75,13 @@ export function IDCardView({
 
       <View className="items-center p-xl">
         <Avatar uri={photoUrl} name={name} size={72} />
-        <Text className="mt-md text-lg font-semibold text-paper-900 dark:text-ink-text">{name}</Text>
+        <Text className="mt-md text-lg font-semibold text-paper-900 dark:text-ink-text">
+          {name}
+        </Text>
         {subtitle && (
-          <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">{subtitle}</Text>
+          <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
+            {subtitle}
+          </Text>
         )}
 
         {revoked ? (
@@ -92,7 +96,9 @@ export function IDCardView({
           )
         )}
 
-        <View className={`mt-xl rounded-md bg-white p-md ${revoked ? 'opacity-35' : ''}`}>
+        <View
+          className={`mt-xl rounded-md bg-white p-md ${revoked ? "opacity-35" : ""}`}
+        >
           <QRCode value={code} size={140} />
         </View>
         <Text className="mt-md text-base font-semibold tracking-[2px] text-paper-900 dark:text-ink-text">
@@ -100,10 +106,10 @@ export function IDCardView({
         </Text>
         <Text className="mt-xs text-center text-[13px] text-paper-500 dark:text-ink-textMuted">
           {revoked
-            ? 'This code no longer works.'
+            ? "This code no longer works."
             : singleUse
-              ? 'Works once - stops working as soon as security scans it at the gate.'
-              : 'Show this to security at the gate.'}
+              ? "This is a one time pass and cannot be reused once it has been scanned by the security officer at the gate."
+              : "Show this to security at the gate."}
         </Text>
       </View>
     </View>
