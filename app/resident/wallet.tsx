@@ -34,9 +34,10 @@ const MORE_SERVICES: { icon: string; label: string; category: DueCategory }[] = 
  * Wallet funding is transfer-only for now - "Debit/credit card" used to be
  * offered here too, but it just adjusted the balance directly with no real
  * gateway behind it, so it's hidden until one is actually wired up. Paying
- * dues from the wallet still settles immediately via `adjust_wallet_balance`
- * (that's a real internal transfer, not a simulated charge); a transfer
- * submission just logs a pending record for someone to reconcile by hand.
+ * dues from the wallet still settles immediately via the `pay_dues_from_wallet`
+ * RPC (that's a real internal transfer, not a simulated charge - it validates
+ * ownership and balance server-side and debits/marks-paid atomically); a
+ * transfer submission just logs a pending record for someone to reconcile by hand.
  */
 export default function WalletScreen() {
   const router = useRouter();
@@ -189,7 +190,6 @@ export default function WalletScreen() {
 
   async function handlePayDues(selectedIds: string[], method: PaymentMethod) {
     const selectedItems = unpaidDues.filter((item) => selectedIds.includes(item.id));
-    const total = selectedItems.reduce((sum, item) => sum + item.amount, 0);
     setError(undefined);
 
     if (method === 'transfer') {
@@ -207,22 +207,8 @@ export default function WalletScreen() {
       setNotice("Thanks. We'll mark your dues as paid once the transfer is confirmed.");
       invalidateTransfers();
     } else {
-      if (method === 'wallet') {
-        const { error: rpcErr } = await supabase.rpc('adjust_wallet_balance', { delta: -total });
-        if (rpcErr) return setError(friendlyDbError(rpcErr));
-      }
-      const { error: duesErr } = await supabase.from('dues').update({ status: 'paid' }).in('id', selectedIds);
-      if (duesErr) return setError(friendlyDbError(duesErr));
-      const { error: txErr } = await supabase.from('wallet_transactions').insert({
-        profile_id: profile!.id,
-        label:
-          selectedItems.length === 1
-            ? `Estate dues · ${selectedItems[0].label}`
-            : `Estate dues · ${selectedItems.length} items`,
-        amount: -total,
-        status: 'completed',
-      });
-      if (txErr) return setError(friendlyDbError(txErr));
+      const { error: rpcErr } = await supabase.rpc('pay_dues_from_wallet', { p_due_ids: selectedIds });
+      if (rpcErr) return setError(friendlyDbError(rpcErr));
       setNotice('Estate dues paid successfully.');
       invalidateWallet();
     }
