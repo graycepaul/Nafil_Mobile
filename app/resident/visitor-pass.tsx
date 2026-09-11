@@ -1,11 +1,12 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, SectionList, RefreshControl, Pressable, Platform } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
+import ViewShot, { type ViewShotRef } from 'react-native-view-shot';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { friendlyDbError } from '../../lib/db-errors';
-import { sharePass, sharePassToWhatsApp } from '../../lib/share-pass';
+import { sharePassToWhatsApp, shareVisitorPassImage } from '../../lib/share-pass';
 import { pickVisitorPhone } from '../../lib/contacts';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
@@ -20,6 +21,7 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { CardSkeletonList } from '../../components/ui/CardSkeleton';
+import { IDCardView } from '../../components/ui/IDCardView';
 import { ScheduleVisitForm } from '../../components/resident/ScheduleVisitForm';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { VisitorPass, VisitorPassStatus, ScheduledVisit } from '../../types/database';
@@ -51,6 +53,12 @@ export default function VisitorPassScreen() {
   const [cancelingVisitId, setCancelingVisitId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string>();
   const [formNotice, setFormNotice] = useState<string>();
+  // The pass currently being captured for image sharing - rendered off-screen
+  // one at a time (see the ViewShot block below) rather than one capture
+  // target per row, mirroring the same pattern profile.tsx uses for
+  // household ID cards.
+  const [sharingPass, setSharingPass] = useState<VisitorPass | null>(null);
+  const passShotRef = useRef<ViewShotRef>(null);
 
   const { data: estate } = useQuery({
     queryKey: ['my_estate', profile?.estate_id],
@@ -170,6 +178,28 @@ export default function VisitorPassScreen() {
     queryClient.invalidateQueries({ queryKey: ['visitor_passes', profile.id] });
     queryClient.invalidateQueries({ queryKey: ['dashboard_active_passes'] });
   }
+
+  // Fires once the off-screen card has actually re-rendered with
+  // sharingPass's data - setSharingPass alone isn't enough to capture from,
+  // since the ViewShot ref's view needs a real paint first.
+  useEffect(() => {
+    if (!sharingPass) return;
+    let cancelled = false;
+    (async () => {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const uri = await passShotRef.current?.capture?.();
+      if (cancelled) return;
+      const outcome = uri
+        ? await shareVisitorPassImage(uri, sharingPass, estate?.name)
+        : 'dismissed';
+      if (outcome === 'downloaded') setFormNotice('Saved. Attach the image in WhatsApp.');
+      if (outcome === 'copied') setFormNotice('Copied. Paste it into WhatsApp.');
+      setSharingPass(null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sharingPass, estate?.name]);
 
   async function cancelScheduledVisit(id: string) {
     setCancelingVisitId(id);
@@ -386,12 +416,8 @@ export default function VisitorPassScreen() {
                   <Button
                     label="Share with visitor"
                     variant="secondary"
-                    onPress={async () => {
-                      const outcome = await sharePass(item, estate?.name);
-                      if (outcome === 'copied') {
-                        setFormNotice('Copied. Paste it into WhatsApp.');
-                      }
-                    }}
+                    loading={sharingPass?.id === item.id}
+                    onPress={() => setSharingPass(item)}
                     className="flex-1"
                   />
                 </View>
@@ -400,6 +426,22 @@ export default function VisitorPassScreen() {
           );
         }}
       />
+
+      {sharingPass && (
+        <View style={{ position: 'absolute', left: -9999, top: 0 }} pointerEvents="none">
+          <ViewShot ref={passShotRef} options={{ format: 'png', quality: 1 }}>
+            <View className="items-center rounded-xl bg-paper-100 p-xl">
+              <IDCardView
+                name={titleCase(sharingPass.visitor_name)}
+                subtitle="Visitor"
+                estateName={estate?.name}
+                code={sharingPass.code}
+                elevated={false}
+              />
+            </View>
+          </ViewShot>
+        </View>
+      )}
 
       <ConfirmDialog
         visible={!!pendingRevoke}

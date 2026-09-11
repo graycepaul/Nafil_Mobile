@@ -22,12 +22,19 @@ import { shareText, type ShareOutcome } from './share-text';
  * a real file to attach in WhatsApp themselves, which beats a share sheet
  * that mostly doesn't appear or a text-only fallback with no photo.
  */
-export async function shareImage(uri: string, fallbackMessage: string): Promise<ShareOutcome> {
+export async function shareImage(
+  uri: string,
+  fallbackMessage: string,
+  options?: { fileName?: string; dialogTitle?: string }
+): Promise<ShareOutcome> {
+  const fileName = options?.fileName ?? 'id-card.png';
+  const dialogTitle = options?.dialogTitle ?? 'Share ID card';
+
   if (Platform.OS === 'web') {
     try {
       const nav = typeof navigator !== 'undefined' ? navigator : undefined;
       const blob = await fetch(uri).then((r) => r.blob());
-      const file = new File([blob], 'id-card.png', { type: blob.type || 'image/png' });
+      const file = new File([blob], fileName, { type: blob.type || 'image/png' });
       if (nav?.canShare?.({ files: [file] })) {
         await nav.share({ files: [file] });
         return 'shared';
@@ -40,7 +47,7 @@ export async function shareImage(uri: string, fallbackMessage: string): Promise<
     try {
       const link = document.createElement('a');
       link.href = uri;
-      link.download = 'id-card.png';
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -54,7 +61,7 @@ export async function shareImage(uri: string, fallbackMessage: string): Promise<
   if (!available) return shareText(fallbackMessage);
 
   try {
-    await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share ID card' });
+    await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle });
     return 'shared';
   } catch {
     return 'dismissed';

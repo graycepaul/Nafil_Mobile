@@ -1,4 +1,5 @@
 import { shareText, shareTextToWhatsApp, type ShareOutcome } from './share-text';
+import { shareImage } from './share-image';
 import type { VisitorPass } from '../types/database';
 
 export function buildPassMessage(pass: VisitorPass, estateName?: string) {
@@ -30,4 +31,24 @@ export async function sharePass(pass: VisitorPass, estateName?: string): Promise
 
 export async function sharePassToWhatsApp(pass: VisitorPass, estateName?: string): Promise<ShareOutcome> {
   return shareTextToWhatsApp(buildPassMessage(pass, estateName), pass.visitor_phone);
+}
+
+/**
+ * Shares the pass as a picture (captured by the caller via
+ * `react-native-view-shot`) rather than plain text - the whole point of the
+ * QR is that security scans it at the gate, and a text-only share (the
+ * WhatsApp shortcut above, or `sharePass`'s plain-text fallback) hands the
+ * visitor a code with no scannable image at all, since neither the OS share
+ * sheet's text mode nor a `wa.me` deep link can carry a QR. Falls back to
+ * `sharePass`'s text message if image sharing isn't available.
+ */
+export async function shareVisitorPassImage(
+  imageUri: string,
+  pass: VisitorPass,
+  estateName?: string
+): Promise<ShareOutcome> {
+  return shareImage(imageUri, buildPassMessage(pass, estateName), {
+    fileName: 'visitor-pass.png',
+    dialogTitle: 'Share visitor pass',
+  });
 }
