@@ -263,7 +263,7 @@ export default function AdminAnnouncementsScreen() {
     return (
       <FlatList
         className="bg-white dark:bg-ink-bg"
-        contentContainerClassName="px-xl pb-xl"
+        contentContainerClassName="p-xl"
         refreshControl={
           <RefreshControl refreshing={isRefetchingAlerts} onRefresh={refetchAlerts} tintColor={colors.primary} />
         }
