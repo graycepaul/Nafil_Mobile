@@ -150,6 +150,19 @@ export interface IssueComment {
   created_at: string;
 }
 
+/** System-generated, one row per status change - written only by a DB
+ * trigger (see 0047_issue_status_activity_log.sql), never inserted by the
+ * client. Distinct from IssueComment: this is the audit trail, not the
+ * resident/admin feedback conversation. */
+export interface IssueActivity {
+  id: string;
+  issue_id: string;
+  actor_id: string;
+  from_status: IssueStatus;
+  to_status: IssueStatus;
+  created_at: string;
+}
+
 export type AlertCategory = 'missing_child' | 'security_breach' | 'epidemic' | 'other';
 
 export interface Announcement {

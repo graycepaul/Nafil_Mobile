@@ -52,6 +52,10 @@ export default function AdminIssuesScreen() {
       return data as IssueWithContext[];
     },
     enabled: !!profile,
+    // Another admin/super_admin can change an issue's status while this
+    // list is open - without this, the badge shown here just goes stale
+    // until someone happens to pull to refresh.
+    refetchInterval: 15_000,
   });
 
   const filteredIssues = useMemo(() => {

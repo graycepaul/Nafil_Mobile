@@ -16,6 +16,7 @@ import { RemoteImage } from '../../components/ui/RemoteImage';
 import { DetailSkeleton } from '../../components/ui/DetailSkeleton';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { IssueFeedbackThread } from '../../components/issues/IssueFeedbackThread';
+import { IssueActivityLog } from '../../components/issues/IssueActivityLog';
 import type { Issue, IssueStatus } from '../../types/database';
 
 const STATUS_TONE: Record<IssueStatus, BadgeTone> = {
@@ -70,6 +71,11 @@ export default function AdminIssueDetailScreen() {
       return data as IssueWithContext;
     },
     enabled: !!id,
+    // Another admin/super_admin can act on this same issue at the same
+    // time - without this, whoever's already sitting on this screen keeps
+    // seeing the status as it was when they opened it, not as it actually
+    // is, until they happen to navigate away and back.
+    refetchInterval: 15_000,
   });
 
   async function advance() {
@@ -217,6 +223,8 @@ export default function AdminIssueDetailScreen() {
               className="mt-md"
             />
           )}
+
+          <IssueActivityLog issueId={issue.id} />
 
           {(issue.status === 'resolved' || issue.status === 'closed') && (
             <IssueFeedbackThread issueId={issue.id} canPost={issue.status === 'resolved'} />

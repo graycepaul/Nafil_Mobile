@@ -10,6 +10,7 @@ import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { RemoteImage } from '../../components/ui/RemoteImage';
 import { DetailSkeleton } from '../../components/ui/DetailSkeleton';
 import { IssueFeedbackThread } from '../../components/issues/IssueFeedbackThread';
+import { IssueActivityLog } from '../../components/issues/IssueActivityLog';
 import type { Issue, IssueStatus } from '../../types/database';
 
 const STATUS_TONE: Record<IssueStatus, BadgeTone> = {
@@ -122,6 +123,8 @@ export default function IssueDetailScreen() {
               </View>
             </>
           )}
+
+          <IssueActivityLog issueId={issue.id} />
 
           {(issue.status === 'resolved' || issue.status === 'closed') && (
             <IssueFeedbackThread issueId={issue.id} canPost={issue.status === 'resolved'} />
