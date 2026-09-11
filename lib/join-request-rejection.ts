@@ -22,8 +22,8 @@ export const REJECTION_PRESETS: { label: string; advice: string }[] = [
     advice: 'Retake the photo somewhere well-lit with all four corners visible, then try again.',
   },
   {
-    label: 'Utility bill is older than 3 months',
-    advice: 'Upload a utility bill dated within the last 3 months, then try again.',
+    label: 'Receipt is older than 3 months',
+    advice: 'Upload a receipt dated within the last 3 months, then try again.',
   },
   {
     label: 'Service number could not be verified',
