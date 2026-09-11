@@ -1,5 +1,8 @@
 interface PickPhoneResult {
   phone?: string;
+  /** The contact's saved name, if it had one - callers pre-fill a name field
+   * with this, but the resident can still edit it before submitting. */
+  name?: string;
   cancelled?: boolean;
   error?: string;
 }
@@ -21,7 +24,7 @@ interface PickPhoneResult {
 export async function pickVisitorPhone(): Promise<PickPhoneResult> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { Contact } = require('expo-contacts') as typeof import('expo-contacts');
+    const { Contact, ContactField } = require('expo-contacts') as typeof import('expo-contacts');
     const contact = await Contact.presentPicker();
     if (!contact) return { cancelled: true } as const;
 
@@ -30,7 +33,12 @@ export async function pickVisitorPhone(): Promise<PickPhoneResult> {
     if (!first?.number) {
       return { error: 'That contact doesn’t have a phone number saved.' } as const;
     }
-    return { phone: first.number } as const;
+
+    // Best-effort: a contact with no name at all (rare, but some SIM-imported
+    // ones are number-only) just leaves the name field for the resident to
+    // fill in themselves, same as before this existed.
+    const { fullName } = await contact.getDetails([ContactField.FULL_NAME]);
+    return { phone: first.number, name: fullName?.trim() || undefined } as const;
   } catch {
     return { error: 'Couldn’t open contacts. Try entering the number instead.' } as const;
   }

@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { friendlyDbError } from '../../lib/db-errors';
-import { sharePassToWhatsApp, shareVisitorPassImage } from '../../lib/share-pass';
+import { shareVisitorPassImage } from '../../lib/share-pass';
 import { pickVisitorPhone } from '../../lib/contacts';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
@@ -145,7 +145,7 @@ export default function VisitorPassScreen() {
 
   async function handlePickContact() {
     setFormError(undefined);
-    const { phone, error } = await pickVisitorPhone();
+    const { phone, name, error } = await pickVisitorPhone();
     if (error) {
       setFormError(error);
       return;
@@ -154,6 +154,9 @@ export default function VisitorPassScreen() {
       setVisitorPhone(phone);
       setPhoneError(undefined);
     }
+    // Pre-fills from the contact's saved name - still just a starting point,
+    // the resident can edit it same as if they'd typed it themselves.
+    if (name) setVisitorName(name);
   }
 
   async function createPass() {
@@ -403,22 +406,11 @@ export default function VisitorPassScreen() {
                 </View>
               </View>
               {isActionable && (
-                <View className="mt-md flex-row gap-sm">
-                  <Pressable
-                    onPress={() => sharePassToWhatsApp(item, estate?.name)}
-                    accessibilityRole="button"
-                    accessibilityLabel="Share with visitor on WhatsApp"
-                    className="min-h-[52px] flex-1 flex-row items-center justify-center gap-sm rounded-md bg-[#25D366] px-lg active:opacity-90"
-                  >
-                    <Ionicons name="logo-whatsapp" size={18} color="#fff" />
-                    <Text className="text-base font-semibold text-white">WhatsApp</Text>
-                  </Pressable>
+                <View className="mt-md">
                   <Button
                     label="Share with visitor"
-                    variant="secondary"
                     loading={sharingPass?.id === item.id}
                     onPress={() => setSharingPass(item)}
-                    className="flex-1"
                   />
                 </View>
               )}

@@ -1,4 +1,4 @@
-import { shareText, shareTextToWhatsApp, type ShareOutcome } from './share-text';
+import { type ShareOutcome } from './share-text';
 import { shareImage } from './share-image';
 import type { VisitorPass } from '../types/database';
 
@@ -25,22 +25,17 @@ export function buildPassMessage(pass: VisitorPass, estateName?: string) {
 
 export type { ShareOutcome };
 
-export async function sharePass(pass: VisitorPass, estateName?: string): Promise<ShareOutcome> {
-  return shareText(buildPassMessage(pass, estateName));
-}
-
-export async function sharePassToWhatsApp(pass: VisitorPass, estateName?: string): Promise<ShareOutcome> {
-  return shareTextToWhatsApp(buildPassMessage(pass, estateName), pass.visitor_phone);
-}
-
 /**
  * Shares the pass as a picture (captured by the caller via
  * `react-native-view-shot`) rather than plain text - the whole point of the
- * QR is that security scans it at the gate, and a text-only share (the
- * WhatsApp shortcut above, or `sharePass`'s plain-text fallback) hands the
- * visitor a code with no scannable image at all, since neither the OS share
- * sheet's text mode nor a `wa.me` deep link can carry a QR. Falls back to
- * `sharePass`'s text message if image sharing isn't available.
+ * QR is that security scans it at the gate, and a text-only share hands the
+ * visitor a code with no scannable image at all. There's deliberately no
+ * WhatsApp-direct-link shortcut for this (unlike some other share flows in
+ * this app) - a `wa.me` deep link can only carry text, never a file, so it
+ * can never produce a scannable result; going through the OS share sheet
+ * (which lets the sender pick WhatsApp themselves) is the only path that
+ * actually attaches the image. Falls back to a text message if image
+ * sharing isn't available at all.
  */
 export async function shareVisitorPassImage(
   imageUri: string,
