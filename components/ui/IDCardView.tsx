@@ -11,6 +11,11 @@ interface IDCardViewProps {
   estateName?: string | null;
   code: string;
   revoked?: boolean;
+  /** True for a visitor pass (one scan and it's spent) - false/omitted for a
+   * standing credential (a resident's own e-ID, a household/frequent-visitor
+   * card) that works every time until revoked. Changes the badge and footer
+   * copy so it's never ambiguous which kind of code someone's looking at. */
+  singleUse?: boolean;
   /**
    * Drops the outer drop shadow. Used for the instance captured by
    * `react-native-view-shot` for sharing - on web, its `html2canvas` backend
@@ -38,6 +43,7 @@ export function IDCardView({
   estateName,
   code,
   revoked,
+  singleUse,
   elevated = true,
 }: IDCardViewProps) {
   return (
@@ -74,10 +80,16 @@ export function IDCardView({
           <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">{subtitle}</Text>
         )}
 
-        {revoked && (
+        {revoked ? (
           <View className="mt-sm">
             <StatusBadge label="Revoked" tone="danger" />
           </View>
+        ) : (
+          singleUse && (
+            <View className="mt-sm">
+              <StatusBadge label="Single use" tone="warning" />
+            </View>
+          )
         )}
 
         <View className={`mt-xl rounded-md bg-white p-md ${revoked ? 'opacity-35' : ''}`}>
@@ -87,7 +99,11 @@ export function IDCardView({
           {code}
         </Text>
         <Text className="mt-xs text-center text-[13px] text-paper-500 dark:text-ink-textMuted">
-          {revoked ? 'This code no longer works.' : 'Show this to security at the gate.'}
+          {revoked
+            ? 'This code no longer works.'
+            : singleUse
+              ? 'Works once - stops working as soon as security scans it at the gate.'
+              : 'Show this to security at the gate.'}
         </Text>
       </View>
     </View>

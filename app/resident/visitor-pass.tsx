@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { friendlyDbError } from '../../lib/db-errors';
-import { shareVisitorPassImage } from '../../lib/share-pass';
+import { sharePassToWhatsApp, shareVisitorPassImage } from '../../lib/share-pass';
 import { pickVisitorPhone } from '../../lib/contacts';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
@@ -406,11 +406,22 @@ export default function VisitorPassScreen() {
                 </View>
               </View>
               {isActionable && (
-                <View className="mt-md">
+                <View className="mt-md flex-row gap-sm">
+                  <Pressable
+                    onPress={() => sharePassToWhatsApp(item, estate?.name)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Share with visitor on WhatsApp"
+                    className="min-h-[52px] flex-1 flex-row items-center justify-center gap-sm rounded-md bg-[#25D366] px-lg active:opacity-90"
+                  >
+                    <Ionicons name="logo-whatsapp" size={18} color="#fff" />
+                    <Text className="text-base font-semibold text-white">WhatsApp</Text>
+                  </Pressable>
                   <Button
-                    label="Share with visitor"
+                    label="Share QR image"
+                    variant="secondary"
                     loading={sharingPass?.id === item.id}
                     onPress={() => setSharingPass(item)}
+                    className="flex-1"
                   />
                 </View>
               )}
@@ -428,6 +439,7 @@ export default function VisitorPassScreen() {
                 subtitle="Visitor"
                 estateName={estate?.name}
                 code={sharingPass.code}
+                singleUse
                 elevated={false}
               />
             </View>

@@ -1,4 +1,4 @@
-import { type ShareOutcome } from './share-text';
+import { shareTextToWhatsApp, type ShareOutcome } from './share-text';
 import { shareImage } from './share-image';
 import type { VisitorPass } from '../types/database';
 
@@ -26,16 +26,25 @@ export function buildPassMessage(pass: VisitorPass, estateName?: string) {
 export type { ShareOutcome };
 
 /**
+ * Direct-to-WhatsApp shortcut, text-only - a `wa.me` deep link can never
+ * carry a file, so this can't include the QR image. Kept anyway: a direct
+ * WhatsApp button is a real requirement here regardless of that limitation.
+ * The code in the message still works at the gate either way - security's
+ * scan screen accepts it typed in by hand, not only scanned - so this isn't
+ * a broken share, just one that needs the visitor (or security) to read the
+ * code rather than scan it. Use `shareVisitorPassImage` when a scannable
+ * result specifically matters more than reaching WhatsApp directly.
+ */
+export async function sharePassToWhatsApp(pass: VisitorPass, estateName?: string): Promise<ShareOutcome> {
+  return shareTextToWhatsApp(buildPassMessage(pass, estateName), pass.visitor_phone);
+}
+
+/**
  * Shares the pass as a picture (captured by the caller via
  * `react-native-view-shot`) rather than plain text - the whole point of the
  * QR is that security scans it at the gate, and a text-only share hands the
- * visitor a code with no scannable image at all. There's deliberately no
- * WhatsApp-direct-link shortcut for this (unlike some other share flows in
- * this app) - a `wa.me` deep link can only carry text, never a file, so it
- * can never produce a scannable result; going through the OS share sheet
- * (which lets the sender pick WhatsApp themselves) is the only path that
- * actually attaches the image. Falls back to a text message if image
- * sharing isn't available at all.
+ * visitor a code with no scannable image at all. Falls back to a text
+ * message if image sharing isn't available at all.
  */
 export async function shareVisitorPassImage(
   imageUri: string,
