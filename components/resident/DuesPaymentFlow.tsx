@@ -8,7 +8,9 @@ import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
 import { StatusBadge } from "../ui/StatusBadge";
 import { PaymentMethodSheet, type PaymentMethod } from "./PaymentMethodSheet";
-import type { Due } from "../../types/database";
+import type { Due, PaymentPurpose } from "../../types/database";
+
+type ResolvedAccount = { name: string; accountNumber: string; bankName: string };
 
 /**
  * Two-step dues payment: pick which line items to settle, then pick how to
@@ -19,12 +21,15 @@ import type { Due } from "../../types/database";
 export function DuesPaymentFlow({
   items,
   walletBalance,
+  transferAccountFor,
   onConfirm,
   onCancel,
 }: {
   /** Unpaid items only. Paid ones aren't shown here. */
   items: Due[];
   walletBalance: number;
+  /** Resolves a purpose (a due category) to its configured payout account - see wallet.tsx. */
+  transferAccountFor: (purpose: PaymentPurpose) => ResolvedAccount | null | undefined;
   onConfirm: (
     selectedIds: string[],
     method: PaymentMethod,
@@ -44,9 +49,30 @@ export function DuesPaymentFlow({
     });
   }
 
-  const total = items
-    .filter((item) => selected.has(item.id))
-    .reduce((sum, item) => sum + item.amount, 0);
+  const selectedItems = items.filter((item) => selected.has(item.id));
+  const total = selectedItems.reduce((sum, item) => sum + item.amount, 0);
+
+  // A bank transfer has exactly one recipient - if the selected dues span
+  // categories that resolve to different accounts, there's no single
+  // transfer that pays all of them at once. Same account for every
+  // category (a common setup - most estates route general/service
+  // fee/security into one place) is fine; only a genuine mismatch blocks.
+  const distinctCategories = [...new Set(selectedItems.map((item) => item.category))];
+  const resolvedAccounts = distinctCategories.map((category) => transferAccountFor(category));
+  const anyUnresolved = resolvedAccounts.some((a) => a === undefined);
+  const anyMissing = resolvedAccounts.some((a) => a === null);
+  const distinctAccountKeys = new Set(
+    resolvedAccounts.filter((a): a is ResolvedAccount => !!a).map((a) => `${a.accountNumber}·${a.bankName}`)
+  );
+  const mixedAccounts = distinctAccountKeys.size > 1;
+  const duesTransferAccount: ResolvedAccount | null | undefined = anyUnresolved
+    ? undefined
+    : anyMissing || mixedAccounts
+      ? null
+      : resolvedAccounts[0];
+  const duesTransferUnavailableMessage = mixedAccounts
+    ? "These dues pay into different accounts - pay each category separately to use bank transfer."
+    : undefined;
 
   if (items.length === 0) {
     return (
@@ -79,6 +105,8 @@ export function DuesPaymentFlow({
         amount={total}
         methods={["wallet", "transfer"]}
         walletBalance={walletBalance}
+        transferAccount={duesTransferAccount}
+        transferUnavailableMessage={duesTransferUnavailableMessage}
         onConfirm={(method) => onConfirm([...selected], method)}
         onCancel={() => setStep("select")}
       />

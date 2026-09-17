@@ -17,6 +17,14 @@ interface AdminUiState {
    */
   lastViewedMarketAt: string | null;
   markMarketViewed: () => void;
+  /**
+   * Whether the Financials screen's wallet balance is masked - same idea as
+   * a banking app's balance-visibility toggle. Persisted (not per-session
+   * state) so it stays hidden across app opens once super_admin hides it,
+   * e.g. before screen-sharing or handing their phone to someone.
+   */
+  balanceHidden: boolean;
+  toggleBalanceHidden: () => void;
 }
 
 export const useAdminUiStore = create<AdminUiState>()(
@@ -24,6 +32,8 @@ export const useAdminUiStore = create<AdminUiState>()(
     (set) => ({
       lastViewedMarketAt: null,
       markMarketViewed: () => set({ lastViewedMarketAt: new Date().toISOString() }),
+      balanceHidden: false,
+      toggleBalanceHidden: () => set((s) => ({ balanceHidden: !s.balanceHidden })),
     }),
     {
       name: 'nafil-admin-ui',

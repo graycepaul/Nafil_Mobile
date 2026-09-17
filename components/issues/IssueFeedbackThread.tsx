@@ -42,6 +42,11 @@ export function IssueFeedbackThread({ issueId, canPost }: IssueFeedbackThreadPro
       if (error) throw error;
       return data as CommentWithAuthor[];
     },
+    // Polls while mounted, same as IssueActivityLog - the resident and the
+    // admin/staff replying are on different devices, so without this
+    // neither side sees the other's reply until they happen to leave and
+    // re-enter the screen.
+    refetchInterval: 15_000,
   });
 
   async function send() {

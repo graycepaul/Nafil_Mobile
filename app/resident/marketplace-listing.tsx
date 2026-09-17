@@ -20,7 +20,7 @@ import { DetailSkeleton } from '../../components/ui/DetailSkeleton';
 import { MarketplaceCheckoutFlow } from '../../components/resident/MarketplaceCheckoutFlow';
 import type { PaymentMethod } from '../../components/resident/PaymentMethodSheet';
 import { CATEGORY_ICON, formatListingPrice, type ListingCategory } from '../../components/resident/marketplace-categories';
-import type { Listing, PublicProfile, Wallet } from '../../types/database';
+import type { Listing, PublicProfile } from '../../types/database';
 
 export default function MarketplaceListingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,16 +34,6 @@ export default function MarketplaceListingScreen() {
   const [buying, setBuying] = useState(false);
   const [notice, setNotice] = useState<string>();
   const [error, setError] = useState<string>();
-
-  const { data: wallet } = useQuery({
-    queryKey: ['wallet', profile?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('wallets').select('*').eq('profile_id', profile!.id).single();
-      if (error) throw error;
-      return data as Wallet;
-    },
-    enabled: !!profile,
-  });
 
   const { data: listing, isLoading } = useQuery({
     queryKey: ['listing', id],
@@ -85,53 +75,19 @@ export default function MarketplaceListingScreen() {
   }
 
   const isOwnListing = listing.seller_id === profile?.id;
+  // Older listings from before 0053 have no payout account on file - nowhere
+  // for a buyer's transfer to actually go, so "Buy now" can't be offered.
+  const hasPayoutAccount = !!(listing.seller_account_name && listing.seller_account_number && listing.seller_bank_name);
 
+  // Transfer-only, straight into the seller's own account (see
+  // 0053_listing_seller_payout_account.sql) - Nafil Estates never touches
+  // this money, so it never goes through the shared `transfers` queue that
+  // admin/finance review. The order just sits at 'pending_transfer' until
+  // the seller confirms they've received it (see store.tsx).
   async function handleBuy(details: { total: number }, method: PaymentMethod) {
     setBuying(false);
     setError(undefined);
-    const label = `Marketplace · ${listing!.title}`;
 
-    if (method === 'transfer') {
-      const { data: order, error: orderErr } = await supabase
-        .from('orders')
-        .insert({
-          estate_id: profile!.estate_id,
-          listing_id: listing!.id,
-          seller_id: listing!.seller_id,
-          buyer_id: profile!.id,
-          amount: details.total,
-          payment_method: 'transfer',
-          status: 'pending_transfer',
-        })
-        .select()
-        .single();
-      if (orderErr) return setError(friendlyDbError(orderErr));
-      const { error: transferErr } = await supabase.from('transfers').insert({
-        estate_id: profile!.estate_id,
-        profile_id: profile!.id,
-        purpose: 'marketplace_order',
-        reference_id: order.id,
-        amount: details.total,
-        label,
-      });
-      if (transferErr) return setError(friendlyDbError(transferErr));
-      queryClient.invalidateQueries({ queryKey: ['listing', id] });
-      queryClient.invalidateQueries({ queryKey: ['listings'] });
-      setNotice("Thanks. We'll notify the seller once your transfer is confirmed.");
-      return;
-    }
-
-    if (method === 'wallet') {
-      const { error: rpcErr } = await supabase.rpc('adjust_wallet_balance', { delta: -details.total });
-      if (rpcErr) return setError(friendlyDbError(rpcErr));
-    }
-    const { error: txErr } = await supabase.from('wallet_transactions').insert({
-      profile_id: profile!.id,
-      label,
-      amount: -details.total,
-      status: 'completed',
-    });
-    if (txErr) return setError(friendlyDbError(txErr));
     const { error: orderErr } = await supabase.from('orders').insert({
       estate_id: profile!.estate_id,
       listing_id: listing!.id,
@@ -139,14 +95,12 @@ export default function MarketplaceListingScreen() {
       buyer_id: profile!.id,
       amount: details.total,
       payment_method: method,
-      status: 'paid',
+      status: 'pending_transfer',
     });
     if (orderErr) return setError(friendlyDbError(orderErr));
-    queryClient.invalidateQueries({ queryKey: ['wallet', profile?.id] });
-    queryClient.invalidateQueries({ queryKey: ['wallet_transactions', profile?.id] });
     queryClient.invalidateQueries({ queryKey: ['listing', id] });
     queryClient.invalidateQueries({ queryKey: ['listings'] });
-    setNotice('Purchase complete. The seller will arrange handover.');
+    setNotice("Thanks. We'll let you know once the seller confirms your payment.");
   }
 
   function messageOnWhatsApp() {
@@ -252,20 +206,15 @@ export default function MarketplaceListingScreen() {
           />
         )}
         <Button
-          label={isOwnListing ? 'This is your listing' : 'Buy now'}
+          label={isOwnListing ? 'This is your listing' : hasPayoutAccount ? 'Buy now' : 'Payout account missing'}
           onPress={() => setBuying(true)}
-          disabled={isOwnListing}
+          disabled={isOwnListing || !hasPayoutAccount}
           className="flex-1"
         />
       </View>
 
       <Overlay visible={buying} onDismiss={() => setBuying(false)}>
-        <MarketplaceCheckoutFlow
-          listing={listing}
-          walletBalance={wallet?.balance ?? 0}
-          onConfirm={handleBuy}
-          onCancel={() => setBuying(false)}
-        />
+        <MarketplaceCheckoutFlow listing={listing} onConfirm={handleBuy} onCancel={() => setBuying(false)} />
       </Overlay>
 
       <Toast

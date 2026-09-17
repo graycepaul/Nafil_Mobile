@@ -1,5 +1,13 @@
 import { useRef, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  RefreshControl,
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import ViewShot, { type ViewShotRef } from 'react-native-view-shot';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
@@ -162,10 +170,14 @@ export default function ProfileScreen() {
   }
 
   return (
-    <>
+    <KeyboardAvoidingView
+      className="flex-1 bg-white dark:bg-ink-bg"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <FlatList
         className="bg-white dark:bg-ink-bg"
         contentContainerClassName="p-xl"
+        keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
         data={household ?? []}
         keyExtractor={(item) => item.id}
@@ -390,6 +402,6 @@ export default function ProfileScreen() {
         onConfirm={regenerateCode}
         onCancel={() => setConfirmingRegenerate(false)}
       />
-    </>
+    </KeyboardAvoidingView>
   );
 }

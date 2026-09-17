@@ -82,6 +82,11 @@ export function AnnouncementsFeed({
       if (error) throw error;
       return data as (Announcement & { estate: { name: string } | null })[];
     },
+    // Polls while mounted, same as IssueActivityLog/IssueFeedbackThread -
+    // without this, an announcement posted by another admin (or an
+    // emergency alert) only shows up once the viewer manually pulls to
+    // refresh, even if they had the feed open the whole time.
+    refetchInterval: 15_000,
   });
 
   const q = search.trim().toLowerCase();

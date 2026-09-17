@@ -1,5 +1,13 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, SectionList, RefreshControl, Pressable, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  SectionList,
+  RefreshControl,
+  Pressable,
+  Platform,
+  KeyboardAvoidingView,
+} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import ViewShot, { type ViewShotRef } from 'react-native-view-shot';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -239,10 +247,14 @@ export default function VisitorPassScreen() {
   }
 
   return (
-    <>
+    <KeyboardAvoidingView
+      className="flex-1 bg-white dark:bg-ink-bg"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <SectionList
         className="bg-white dark:bg-ink-bg"
         contentContainerClassName="p-xl"
+        keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={
@@ -462,6 +474,6 @@ export default function VisitorPassScreen() {
         onConfirm={revokePass}
         onCancel={() => setPendingRevoke(null)}
       />
-    </>
+    </KeyboardAvoidingView>
   );
 }

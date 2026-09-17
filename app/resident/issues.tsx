@@ -1,5 +1,14 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { View, Text, SectionList, RefreshControl, Pressable, Image } from 'react-native';
+import {
+  View,
+  Text,
+  SectionList,
+  RefreshControl,
+  Pressable,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
@@ -145,10 +154,14 @@ export default function IssuesScreen() {
   const sections = groupByDate(issues ?? [], (item) => item.created_at);
 
   return (
-    <View className="flex-1 bg-white dark:bg-ink-bg">
+    <KeyboardAvoidingView
+      className="flex-1 bg-white dark:bg-ink-bg"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
     <SectionList
       className="bg-white dark:bg-ink-bg"
       contentContainerClassName="p-xl"
+      keyboardShouldPersistTaps="handled"
       stickySectionHeadersEnabled={false}
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
       ListHeaderComponent={
@@ -263,6 +276,6 @@ export default function IssuesScreen() {
       >
         <Ionicons name="megaphone-outline" color="#fff" size={22} />
       </Pressable>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
