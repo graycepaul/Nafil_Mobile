@@ -1,4 +1,13 @@
-import { View, Text, ScrollView, Pressable, RefreshControl, useWindowDimensions } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  RefreshControl,
+  KeyboardAvoidingView,
+  Platform,
+  useWindowDimensions,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -52,10 +61,12 @@ export default function IssueDetailScreen() {
 
   function pullToRefresh() {
     refetch();
-    // IssueActivityLog owns its own query - invalidating by key here rather
-    // than lifting its state up, since the query key is already the shared
-    // contract between this screen and that component.
+    // IssueActivityLog and IssueFeedbackThread each own their own query -
+    // invalidating by key here rather than lifting their state up, since
+    // the query key is already the shared contract between this screen and
+    // those components.
     queryClient.invalidateQueries({ queryKey: ['issue_activity', id] });
+    queryClient.invalidateQueries({ queryKey: ['issue_comments', id] });
   }
 
   const heroHeight = width * 0.75;
@@ -77,9 +88,13 @@ export default function IssueDetailScreen() {
   }
 
   return (
-    <View className="flex-1 bg-white dark:bg-ink-bg">
+    <KeyboardAvoidingView
+      className="flex-1 bg-white dark:bg-ink-bg"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <ScrollView
         contentContainerClassName="pb-xl"
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl refreshing={isRefetching} onRefresh={pullToRefresh} tintColor={colors.primary} />
         }
@@ -150,6 +165,6 @@ export default function IssueDetailScreen() {
           )}
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }

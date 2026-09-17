@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { View, Text, Platform, ScrollView } from 'react-native';
+import { View, Text, Platform, ScrollView, KeyboardAvoidingView } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
@@ -253,14 +253,19 @@ export default function SecurityScanScreen() {
 
   if (!canScan) {
     return (
-      <ScrollView className="flex-1 bg-white dark:bg-ink-bg" contentContainerClassName="p-lg">
-        <Text className="mb-lg text-[13px] text-paper-500 dark:text-ink-textMuted">
-          QR scanning needs the camera on a phone. On web, enter the visitor&apos;s code manually.
-        </Text>
-        {manualEntry}
-        <ScheduledVisitLookup />
-        <ScanResultModal result={result} onClose={closeResult} />
-      </ScrollView>
+      <KeyboardAvoidingView
+        className="flex-1 bg-white dark:bg-ink-bg"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView contentContainerClassName="p-lg" keyboardShouldPersistTaps="handled">
+          <Text className="mb-lg text-[13px] text-paper-500 dark:text-ink-textMuted">
+            QR scanning needs the camera on a phone. On web, enter the visitor&apos;s code manually.
+          </Text>
+          {manualEntry}
+          <ScheduledVisitLookup />
+          <ScanResultModal result={result} onClose={closeResult} />
+        </ScrollView>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -278,31 +283,36 @@ export default function SecurityScanScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-white dark:bg-ink-bg" contentContainerClassName="p-lg">
-      <View className="h-[320px] overflow-hidden rounded-lg bg-black">
-        <CameraView
-          style={{ flex: 1 }}
-          barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-          onBarcodeScanned={
-            scanning
-              ? ({ data }) => {
-                  if (scanLockRef.current) return;
-                  scanLockRef.current = true;
-                  setScanning(false);
-                  checkInByCode(data, 'qr');
-                }
-              : undefined
-          }
-        />
-      </View>
+    <KeyboardAvoidingView
+      className="flex-1 bg-white dark:bg-ink-bg"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView contentContainerClassName="p-lg" keyboardShouldPersistTaps="handled">
+        <View className="h-[320px] overflow-hidden rounded-lg bg-black">
+          <CameraView
+            style={{ flex: 1 }}
+            barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+            onBarcodeScanned={
+              scanning
+                ? ({ data }) => {
+                    if (scanLockRef.current) return;
+                    scanLockRef.current = true;
+                    setScanning(false);
+                    checkInByCode(data, 'qr');
+                  }
+                : undefined
+            }
+          />
+        </View>
 
-      <Text className="my-lg text-center text-[13px] text-paper-500 dark:text-ink-textMuted">
-        or enter code manually
-      </Text>
+        <Text className="my-lg text-center text-[13px] text-paper-500 dark:text-ink-textMuted">
+          or enter code manually
+        </Text>
 
-      {manualEntry}
-      <ScheduledVisitLookup />
-      <ScanResultModal result={result} onClose={closeResult} />
-    </ScrollView>
+        {manualEntry}
+        <ScheduledVisitLookup />
+        <ScanResultModal result={result} onClose={closeResult} />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

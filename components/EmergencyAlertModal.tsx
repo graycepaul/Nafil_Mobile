@@ -17,6 +17,16 @@ const ROLE_HOME: Record<UserRole, string> = {
   finance: '/admin',
 };
 
+// Security has no announcements screen (see AnnouncementsFeed) - it falls
+// back to ROLE_HOME below, same as the notification-tap handler in
+// app/_layout.tsx.
+const ROLE_ANNOUNCEMENTS: Partial<Record<UserRole, string>> = {
+  resident: '/resident/announcements',
+  admin: '/admin/announcements',
+  super_admin: '/admin/announcements',
+  finance: '/admin/announcements',
+};
+
 /**
  * Rendered once at the app root (app/_layout.tsx) - not per-screen - so an
  * emergency alert interrupts whatever the resident is doing, not just the
@@ -60,7 +70,7 @@ export function EmergencyAlertModal() {
             variant="danger"
             onPress={() => {
               dismiss();
-              if (role) router.push(ROLE_HOME[role] as never);
+              if (role) router.push((ROLE_ANNOUNCEMENTS[role] ?? ROLE_HOME[role]) as never);
             }}
             className="flex-1"
           />

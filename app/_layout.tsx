@@ -46,6 +46,15 @@ const ROLE_NOTIFICATIONS: Partial<Record<UserRole, string>> = {
   finance: "/admin/notifications",
 };
 
+// Same idea for an emergency alert's "View" - security has no announcements
+// screen (see AnnouncementsFeed), so it falls back to ROLE_HOME below.
+const ROLE_ANNOUNCEMENTS: Partial<Record<UserRole, string>> = {
+  resident: "/resident/announcements",
+  admin: "/admin/announcements",
+  super_admin: "/admin/announcements",
+  finance: "/admin/announcements",
+};
+
 const AUTH_GROUP = "(auth)";
 const ONBOARDING_GROUP = "(onboarding)";
 // Shared across every role (theme, sign-out) - not nested under any role's
@@ -205,7 +214,7 @@ function useNotificationRouting(
           | { kind?: string }
           | undefined;
         if (data?.kind === "emergency_alert") {
-          if (role) router.push(ROLE_HOME[role] as never);
+          if (role) router.push((ROLE_ANNOUNCEMENTS[role] ?? ROLE_HOME[role]) as never);
           return;
         }
         const notificationsPath = role ? ROLE_NOTIFICATIONS[role] : undefined;

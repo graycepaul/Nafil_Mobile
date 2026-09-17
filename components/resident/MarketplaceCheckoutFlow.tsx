@@ -5,7 +5,7 @@ import { useTheme } from '../../context/theme-context';
 import { formatNaira } from '../../lib/format';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
-import { PaymentMethodSheet, type PaymentMethod } from './PaymentMethodSheet';
+import { PaymentMethodSheet, type PaymentMethod, type PaymentProof } from './PaymentMethodSheet';
 import type { Listing } from '../../types/database';
 
 type DeliveryChoice = 'pickup' | 'delivery';
@@ -16,16 +16,24 @@ type DeliveryChoice = 'pickup' | 'delivery';
  * one option, and all services, skip straight to payment. Mirrors
  * `DuesPaymentFlow`'s two-step shape for the same reason: the running total
  * and the choice that produces it need to live together.
+ *
+ * Payment is transfer-only, straight to the seller's own account (see
+ * 0053_listing_seller_payout_account.sql) - "pay from wallet" used to be
+ * offered here too, but adjust_wallet_balance only ever debits the caller's
+ * own wallet, so it silently destroyed the buyer's balance with no seller
+ * ever credited. The seller confirms receipt themselves once it lands.
  */
 export function MarketplaceCheckoutFlow({
   listing,
-  walletBalance,
   onConfirm,
   onCancel,
 }: {
   listing: Listing;
-  walletBalance: number;
-  onConfirm: (details: { deliveryChoice?: DeliveryChoice; total: number }, method: PaymentMethod) => Promise<void> | void;
+  onConfirm: (
+    details: { deliveryChoice?: DeliveryChoice; total: number },
+    method: PaymentMethod,
+    proof?: PaymentProof
+  ) => Promise<void> | void;
   onCancel: () => void;
 }) {
   const { colors } = useTheme();
@@ -148,9 +156,16 @@ export function MarketplaceCheckoutFlow({
     <PaymentMethodSheet
       title={`Buy "${listing.title}"`}
       amount={total}
-      methods={['wallet', 'transfer']}
-      walletBalance={walletBalance}
-      onConfirm={(method) => onConfirm({ deliveryChoice: hasDelivery ? deliveryChoice : undefined, total }, method)}
+      methods={['transfer']}
+      transferAccount={{
+        name: listing.seller_account_name ?? 'Seller',
+        accountNumber: listing.seller_account_number ?? '',
+        bankName: listing.seller_bank_name ?? '',
+      }}
+      transferNote="This goes straight to the seller - Nafil Estates doesn't hold or forward it."
+      onConfirm={(method, proof) =>
+        onConfirm({ deliveryChoice: hasDelivery ? deliveryChoice : undefined, total }, method, proof)
+      }
       onCancel={onCancel}
     />
   );

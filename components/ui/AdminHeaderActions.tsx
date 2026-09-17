@@ -13,6 +13,7 @@ export function AdminHeaderActions() {
   const { colors } = useTheme();
   const profile = useAuthStore((s) => s.profile);
   const canManageMarket = profile?.role === 'super_admin' || profile?.role === 'finance';
+  const isSuperAdmin = profile?.role === 'super_admin';
   const lastViewedMarketAt = useAdminUiStore((s) => s.lastViewedMarketAt);
 
   const { data: unreadCount } = useQuery({
@@ -65,6 +66,16 @@ export function AdminHeaderActions() {
           {hasNewListing && (
             <View className="absolute -right-[6px] -top-[4px] h-[9px] w-[9px] rounded-full border border-white bg-danger dark:border-ink-bg" />
           )}
+        </Pressable>
+      )}
+      {isSuperAdmin && (
+        <Pressable
+          onPress={() => router.push('/admin/financials')}
+          accessibilityRole="button"
+          accessibilityLabel="Financials"
+          hitSlop={8}
+        >
+          <Ionicons name="wallet-outline" size={20} color={colors.onHeaderBg} />
         </Pressable>
       )}
       <Pressable

@@ -53,7 +53,7 @@ export function IssueActivityLog({ issueId }: { issueId: string }) {
             <View className="mt-[7px] h-[6px] w-[6px] rounded-full bg-paper-300 dark:bg-ink-border" />
             <Text className="flex-1 text-[13px] leading-[19px] text-paper-500 dark:text-ink-textMuted">
               <Text className="font-semibold text-paper-900 dark:text-ink-text">
-                {entry.actor?.full_name ?? 'Someone'}
+                {entry.actor?.full_name ?? 'Admin'}
               </Text>{' '}
               marked this{' '}
               <Text className="font-semibold text-paper-900 dark:text-ink-text">

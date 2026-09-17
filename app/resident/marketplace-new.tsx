@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Image } from 'react-native';
+import { View, Text, ScrollView, Pressable, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -86,6 +86,9 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
     initial ? initial.home_delivery && initial.delivery_fee === 0 : false
   );
   const [whatsapp, setWhatsapp] = useState(initial?.whatsapp ?? '');
+  const [accountName, setAccountName] = useState(initial?.seller_account_name ?? '');
+  const [accountNumber, setAccountNumber] = useState(initial?.seller_account_number ?? '');
+  const [bankName, setBankName] = useState(initial?.seller_bank_name ?? '');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -115,7 +118,9 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
   const deliveryValid = deliveryMethodChosen && pickupAddressValid;
   const whatsappValid = type !== 'service' || whatsapp.trim().length > 0;
   const priceValid = type === 'good' ? Number(price) > 0 : Number(price) > 0 && Number(priceTo) >= Number(price);
-  const canSubmit = title.trim() && priceValid && description.trim() && deliveryValid && whatsappValid;
+  const payoutAccountValid = accountName.trim().length > 0 && accountNumber.trim().length > 0 && bankName.trim().length > 0;
+  const canSubmit =
+    title.trim() && priceValid && description.trim() && deliveryValid && whatsappValid && payoutAccountValid;
 
   async function handleSubmit() {
     if (!canSubmit || !profile?.estate_id) return;
@@ -144,6 +149,9 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
         home_delivery: type === 'good' && homeDeliveryAvailable,
         delivery_fee: type === 'good' && homeDeliveryAvailable && !freeDelivery ? Number(deliveryFee) || 0 : 0,
         whatsapp: type === 'service' ? whatsapp.trim() : null,
+        seller_account_name: accountName.trim(),
+        seller_account_number: accountNumber.trim(),
+        seller_bank_name: bankName.trim(),
       };
 
       if (isEditing) {
@@ -183,6 +191,9 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
         setDeliveryFee('');
         setFreeDelivery(false);
         setWhatsapp('');
+        setAccountName('');
+        setAccountNumber('');
+        setBankName('');
       }
 
       // Not router.back(): this screen is a pushed href:null route reached
@@ -198,7 +209,10 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
   }
 
   return (
-    <View className="flex-1 bg-white dark:bg-ink-bg">
+    <KeyboardAvoidingView
+      className="flex-1 bg-white dark:bg-ink-bg"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <View
         style={{ paddingTop: insets.top + 16 }}
         className="flex-row items-center gap-md px-lg pb-lg"
@@ -216,7 +230,7 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
         </Text>
       </View>
 
-      <ScrollView contentContainerClassName="p-lg">
+      <ScrollView contentContainerClassName="p-lg" keyboardShouldPersistTaps="handled">
         {error && <Notice message={error} />}
 
         <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">What are you listing?</Text>
@@ -410,6 +424,41 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
           />
         )}
 
+        <Text className="mb-xs mt-md text-base font-semibold text-paper-900 dark:text-ink-text">
+          Get paid
+        </Text>
+        <Text className="mb-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
+          Buyers pay straight into this account - Nafil Estates never holds or forwards the money.
+        </Text>
+        <Input
+          label="Account name"
+          showLabel
+          placeholder="e.g. Ade Johnson"
+          value={accountName}
+          onChangeText={setAccountName}
+        />
+        <View className="flex-row gap-sm">
+          <View className="flex-1">
+            <Input
+              label="Account number"
+              showLabel
+              placeholder="e.g. 0123456789"
+              keyboardType="number-pad"
+              value={accountNumber}
+              onChangeText={(v) => setAccountNumber(v.replace(/[^0-9]/g, ''))}
+            />
+          </View>
+          <View className="flex-1">
+            <Input
+              label="Bank"
+              showLabel
+              placeholder="e.g. Providus Bank"
+              value={bankName}
+              onChangeText={setBankName}
+            />
+          </View>
+        </View>
+
         <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">
           Photos ({photos.length}/{MAX_PHOTOS})
         </Text>
@@ -447,6 +496,6 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
           disabled={!canSubmit}
         />
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }

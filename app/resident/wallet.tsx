@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -17,11 +17,19 @@ import { Toast } from '../../components/ui/Toast';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { CardSkeletonList } from '../../components/ui/CardSkeleton';
-import { PaymentMethodSheet, type PaymentMethod } from '../../components/resident/PaymentMethodSheet';
+import { PaymentMethodSheet, type PaymentMethod, type PaymentProof } from '../../components/resident/PaymentMethodSheet';
 import { DuesPaymentFlow } from '../../components/resident/DuesPaymentFlow';
 import { ContestTransferSheet } from '../../components/resident/ContestTransferSheet';
 import { uploadTransferProof } from '../../lib/transfer-proof';
-import type { Due, DueCategory, Transfer, Wallet, WalletTransaction } from '../../types/database';
+import type {
+  Due,
+  DueCategory,
+  PaymentPurpose,
+  ResolvedPaymentAccount,
+  Transfer,
+  Wallet,
+  WalletTransaction,
+} from '../../types/database';
 
 const INLINE_ACTIVITY_LIMIT = 3;
 
@@ -34,9 +42,10 @@ const MORE_SERVICES: { icon: string; label: string; category: DueCategory }[] = 
  * Wallet funding is transfer-only for now - "Debit/credit card" used to be
  * offered here too, but it just adjusted the balance directly with no real
  * gateway behind it, so it's hidden until one is actually wired up. Paying
- * dues from the wallet still settles immediately via `adjust_wallet_balance`
- * (that's a real internal transfer, not a simulated charge); a transfer
- * submission just logs a pending record for someone to reconcile by hand.
+ * dues from the wallet still settles immediately via the `pay_dues_from_wallet`
+ * RPC (that's a real internal transfer, not a simulated charge - it validates
+ * ownership and balance server-side and debits/marks-paid atomically); a
+ * transfer submission just logs a pending record for someone to reconcile by hand.
  */
 export default function WalletScreen() {
   const router = useRouter();
@@ -45,7 +54,12 @@ export default function WalletScreen() {
   const profile = useAuthStore((s) => s.profile);
   const queryClient = useQueryClient();
 
-  const { data: wallet, isLoading: walletLoading } = useQuery({
+  const {
+    data: wallet,
+    isLoading: walletLoading,
+    refetch: refetchWallet,
+    isRefetching: walletRefetching,
+  } = useQuery({
     queryKey: ['wallet', profile?.id],
     queryFn: async () => {
       const { data, error } = await supabase.from('wallets').select('*').eq('profile_id', profile!.id).single();
@@ -119,11 +133,34 @@ export default function WalletScreen() {
   );
   const unpaidDues = (allUnpaidDues ?? []).filter((item) => !pendingDueIds.has(item.id));
 
+  // Whatever super_admin has configured per purpose (wallet top-up, and
+  // each due category) - see 0054_configurable_payment_accounts_and_financials.sql.
+  // A purpose missing from this map means it isn't set up yet, which
+  // PaymentMethodSheet shows as a blocking notice rather than a fake
+  // fallback account.
+  const { data: paymentAccounts } = useQuery({
+    queryKey: ['payment_accounts', profile?.estate_id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_payment_accounts');
+      if (error) throw error;
+      return new Map(
+        (data as ResolvedPaymentAccount[]).map((row) => [row.purpose, row])
+      ) as Map<PaymentPurpose, ResolvedPaymentAccount>;
+    },
+    enabled: !!profile,
+  });
+
+  function transferAccountFor(purpose: PaymentPurpose) {
+    if (!paymentAccounts) return undefined;
+    const account = paymentAccounts.get(purpose);
+    if (!account) return null;
+    return { name: account.account_name, accountNumber: account.account_number, bankName: account.bank_name };
+  }
+
   const [funding, setFunding] = useState(false);
   const [fundAmount, setFundAmount] = useState('10000');
   const [payingDues, setPayingDues] = useState(false);
   const [payingCategory, setPayingCategory] = useState<DueCategory>();
-  const [moreServicesOpen, setMoreServicesOpen] = useState(false);
   const [contestingTransfer, setContestingTransfer] = useState<Transfer>();
   const [notice, setNotice] = useState<string>();
   const [error, setError] = useState<string>();
@@ -136,6 +173,13 @@ export default function WalletScreen() {
   function invalidateTransfers() {
     queryClient.invalidateQueries({ queryKey: ['transfers', profile?.id] });
     queryClient.invalidateQueries({ queryKey: ['transfers_rejected', profile?.id] });
+  }
+
+  function pullToRefresh() {
+    refetchWallet();
+    queryClient.invalidateQueries({ queryKey: ['wallet_transactions', profile?.id] });
+    queryClient.invalidateQueries({ queryKey: ['dues', profile?.id] });
+    invalidateTransfers();
   }
 
   async function handleContestSubmit(photo: { uri: string; mimeType: string | null }) {
@@ -159,17 +203,27 @@ export default function WalletScreen() {
     }
   }
 
-  async function handleConfirmFund(method: PaymentMethod) {
+  async function handleConfirmFund(method: PaymentMethod, proof?: PaymentProof) {
     const amount = Number(fundAmount) || 0;
     setError(undefined);
 
     if (method === 'transfer') {
+      let proofUrl: string | undefined;
+      if (proof) {
+        try {
+          proofUrl = await uploadTransferProof(profile!.id, proof);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Something went wrong uploading your proof.');
+          return;
+        }
+      }
       const { error: err } = await supabase.from('transfers').insert({
         estate_id: profile!.estate_id,
         profile_id: profile!.id,
         purpose: 'wallet_topup',
         amount,
         label: 'Wallet top-up · Bank transfer',
+        proof_url: proofUrl,
       });
       if (err) return setError(friendlyDbError(err));
       setNotice("Thanks. We'll credit your wallet once the transfer is confirmed.");
@@ -189,7 +243,6 @@ export default function WalletScreen() {
 
   async function handlePayDues(selectedIds: string[], method: PaymentMethod) {
     const selectedItems = unpaidDues.filter((item) => selectedIds.includes(item.id));
-    const total = selectedItems.reduce((sum, item) => sum + item.amount, 0);
     setError(undefined);
 
     if (method === 'transfer') {
@@ -207,22 +260,8 @@ export default function WalletScreen() {
       setNotice("Thanks. We'll mark your dues as paid once the transfer is confirmed.");
       invalidateTransfers();
     } else {
-      if (method === 'wallet') {
-        const { error: rpcErr } = await supabase.rpc('adjust_wallet_balance', { delta: -total });
-        if (rpcErr) return setError(friendlyDbError(rpcErr));
-      }
-      const { error: duesErr } = await supabase.from('dues').update({ status: 'paid' }).in('id', selectedIds);
-      if (duesErr) return setError(friendlyDbError(duesErr));
-      const { error: txErr } = await supabase.from('wallet_transactions').insert({
-        profile_id: profile!.id,
-        label:
-          selectedItems.length === 1
-            ? `Estate dues · ${selectedItems[0].label}`
-            : `Estate dues · ${selectedItems.length} items`,
-        amount: -total,
-        status: 'completed',
-      });
-      if (txErr) return setError(friendlyDbError(txErr));
+      const { error: rpcErr } = await supabase.rpc('pay_dues_from_wallet', { p_due_ids: selectedIds });
+      if (rpcErr) return setError(friendlyDbError(rpcErr));
       setNotice('Estate dues paid successfully.');
       invalidateWallet();
     }
@@ -257,7 +296,12 @@ export default function WalletScreen() {
         <Text className="text-[22px] font-bold text-paper-900 dark:text-ink-text">Wallet</Text>
       </View>
 
-      <ScrollView contentContainerClassName="p-lg">
+      <ScrollView
+        contentContainerClassName="p-lg"
+        refreshControl={
+          <RefreshControl refreshing={walletRefetching} onRefresh={pullToRefresh} tintColor={colors.primary} />
+        }
+      >
         <View className="mb-xl items-center rounded-md bg-brand-800 py-xl dark:bg-brand-900">
           <Text className="text-[13px] text-white/70">Available balance</Text>
           <Text className="mt-xs text-[34px] font-bold text-white">{formatNaira(balance)}</Text>
@@ -290,29 +334,29 @@ export default function WalletScreen() {
             <Text className="text-[13px] text-paper-900 dark:text-ink-text">Dues</Text>
           </View>
 
-          <View className="items-center gap-sm">
-            <Pressable
-              onPress={() => router.push('/resident/marketplace')}
-              accessibilityRole="button"
-              accessibilityLabel="Marketplace"
-              className="h-14 w-14 items-center justify-center rounded-full bg-brand-50 active:opacity-80 dark:bg-brand-900"
-            >
-              <Ionicons name="storefront-outline" size={24} color={colors.primary} />
-            </Pressable>
-            <Text className="text-[13px] text-paper-900 dark:text-ink-text">Market</Text>
-          </View>
-
-          <View className="items-center gap-sm">
-            <Pressable
-              onPress={() => setMoreServicesOpen(true)}
-              accessibilityRole="button"
-              accessibilityLabel="More services"
-              className="h-14 w-14 items-center justify-center rounded-full bg-brand-50 active:opacity-80 dark:bg-brand-900"
-            >
-              <Ionicons name="grid-outline" size={24} color={colors.primary} />
-            </Pressable>
-            <Text className="text-[13px] text-paper-900 dark:text-ink-text">More</Text>
-          </View>
+          {MORE_SERVICES.map((service) => {
+            const items = unpaidDues.filter((item) => item.category === service.category);
+            return (
+              <View key={service.category} className="items-center gap-sm">
+                <Pressable
+                  onPress={() => {
+                    if (items.length === 0) {
+                      setNotice(`No open ${service.label.toLowerCase()} charges right now.`);
+                      return;
+                    }
+                    setPayingCategory(service.category);
+                    setPayingDues(true);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={service.label}
+                  className="h-14 w-14 items-center justify-center rounded-full bg-brand-50 active:opacity-80 dark:bg-brand-900"
+                >
+                  <Ionicons name={service.icon as never} size={24} color={colors.primary} />
+                </Pressable>
+                <Text className="text-[13px] text-paper-900 dark:text-ink-text">{service.label}</Text>
+              </View>
+            );
+          })}
         </Card>
 
         {(pendingTransfers ?? []).length > 0 && (
@@ -457,6 +501,8 @@ export default function WalletScreen() {
           title="Fund wallet"
           amount={Number(fundAmount) || 0}
           methods={['transfer']}
+          requireProof
+          transferAccount={transferAccountFor('wallet_topup')}
           onConfirm={handleConfirmFund}
           onCancel={() => setFunding(false)}
         />
@@ -466,51 +512,10 @@ export default function WalletScreen() {
         <DuesPaymentFlow
           items={payingCategory ? unpaidDues.filter((item) => item.category === payingCategory) : unpaidDues}
           walletBalance={balance}
+          transferAccountFor={transferAccountFor}
           onConfirm={handlePayDues}
           onCancel={() => setPayingDues(false)}
         />
-      </Overlay>
-
-      <Overlay visible={moreServicesOpen} onDismiss={() => setMoreServicesOpen(false)}>
-        <Card className="bg-white p-lg dark:bg-ink-surface">
-          <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">More services</Text>
-          <View className="gap-sm">
-            {MORE_SERVICES.map((service) => {
-              const items = unpaidDues.filter((item) => item.category === service.category);
-              const total = items.reduce((sum, item) => sum + item.amount, 0);
-              return (
-                <Pressable
-                  key={service.label}
-                  onPress={() => {
-                    setMoreServicesOpen(false);
-                    if (items.length === 0) {
-                      setNotice(`No open ${service.label.toLowerCase()} charges right now.`);
-                      return;
-                    }
-                    setPayingCategory(service.category);
-                    setPayingDues(true);
-                  }}
-                  accessibilityRole="button"
-                  className="flex-row items-center gap-md rounded-md border border-paper-200 p-md active:opacity-80 dark:border-ink-border"
-                >
-                  <View className="h-9 w-9 items-center justify-center rounded-md bg-brand-50 dark:bg-brand-900">
-                    <Ionicons name={service.icon as never} size={18} color={colors.primary} />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-base text-paper-900 dark:text-ink-text">{service.label}</Text>
-                    {items.length > 0 && (
-                      <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
-                        {formatNaira(total)} due
-                      </Text>
-                    )}
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-                </Pressable>
-              );
-            })}
-          </View>
-          <Button label="Close" variant="ghost" onPress={() => setMoreServicesOpen(false)} className="mt-md" />
-        </Card>
       </Overlay>
 
       <Overlay visible={!!contestingTransfer} onDismiss={() => setContestingTransfer(undefined)}>

@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
 import { friendlyDbError } from '../../lib/db-errors';
+import { getTransferProofSignedUrl } from '../../lib/transfer-proof';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { formatNaira, relativeTime } from '../../lib/format';
@@ -98,6 +99,16 @@ export default function AdminTransfersScreen() {
       return;
     }
     queryClient.invalidateQueries({ queryKey: ['transfers_admin', profile?.estate_id] });
+  }
+
+  async function viewProof(path: string) {
+    setError(undefined);
+    try {
+      const signedUrl = await getTransferProofSignedUrl(path);
+      Linking.openURL(signedUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not open proof of payment.');
+    }
   }
 
   if (isLoading) {
@@ -196,7 +207,7 @@ export default function AdminTransfersScreen() {
                     Submitted {relativeTime(item.created_at)}
                   </Text>
                   {item.proof_url && (
-                    <Pressable onPress={() => Linking.openURL(item.proof_url!)} accessibilityRole="link">
+                    <Pressable onPress={() => viewProof(item.proof_url!)} accessibilityRole="link">
                       <Text className="mt-xs text-[13px] font-semibold text-brand-800 dark:text-brand-300">
                         View proof of payment
                       </Text>

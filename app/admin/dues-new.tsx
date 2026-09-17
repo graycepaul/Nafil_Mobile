@@ -1,5 +1,14 @@
 import { createElement, useMemo, useState } from 'react';
-import { View, Text, Pressable, ScrollView, ActivityIndicator, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  FlatList,
+  ActivityIndicator,
+  Platform,
+  KeyboardAvoidingView,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -35,9 +44,10 @@ export default function AssignDuesScreen() {
   const profile = useAuthStore((s) => s.profile);
   const queryClient = useQueryClient();
 
-  const [search, setSearch] = useState('');
+  const [assignMode, setAssignMode] = useState<'all' | 'specific'>('all');
+  const [residentSearch, setResidentSearch] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [allSelected, setAllSelected] = useState(false);
+  const [residentPickerOpen, setResidentPickerOpen] = useState(false);
   const [label, setLabel] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<DueCategory>('general');
@@ -65,14 +75,18 @@ export default function AssignDuesScreen() {
     enabled: !!profile,
   });
 
+  const selectedResidents = useMemo(
+    () => (residents ?? []).filter((r) => selected.has(r.id)),
+    [residents, selected]
+  );
+
   const filteredResidents = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = residentSearch.trim().toLowerCase();
     if (!q) return residents ?? [];
     return (residents ?? []).filter((r) => r.full_name?.toLowerCase().includes(q));
-  }, [residents, search]);
+  }, [residents, residentSearch]);
 
   function toggleResident(id: string) {
-    setAllSelected(false);
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -81,20 +95,15 @@ export default function AssignDuesScreen() {
     });
   }
 
-  function toggleAll() {
-    setAllSelected((prev) => !prev);
-    setSelected(new Set());
-  }
-
   const resolvedDate = isWeb ? (/^\d{4}-\d{2}-\d{2}$/.test(webDate) ? new Date(`${webDate}T00:00:00`) : null) : dueDate;
-  const selectedCount = allSelected ? (residents ?? []).length : selected.size;
+  const selectedCount = assignMode === 'all' ? (residents ?? []).length : selected.size;
   const canSubmit = selectedCount > 0 && label.trim() && Number(amount) > 0 && !!resolvedDate;
 
   async function handleSubmit() {
     if (!canSubmit || !profile?.estate_id || !resolvedDate) return;
     setError(undefined);
     setSubmitting(true);
-    const residentIds = allSelected ? (residents ?? []).map((r) => r.id) : [...selected];
+    const residentIds = assignMode === 'all' ? (residents ?? []).map((r) => r.id) : [...selected];
     const { error: insertError } = await supabase.from('dues').insert(
       residentIds.map((residentId) => ({
         estate_id: profile.estate_id,
@@ -115,7 +124,10 @@ export default function AssignDuesScreen() {
   }
 
   return (
-    <View className="flex-1 bg-white dark:bg-ink-bg">
+    <KeyboardAvoidingView
+      className="flex-1 bg-white dark:bg-ink-bg"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <View
         style={{ paddingTop: insets.top + 16 }}
         className="flex-row items-center gap-md px-lg pb-lg"
@@ -131,7 +143,7 @@ export default function AssignDuesScreen() {
         <Text className="text-[22px] font-bold text-paper-900 dark:text-ink-text">Assign a due</Text>
       </View>
 
-      <ScrollView contentContainerClassName="p-lg">
+      <ScrollView contentContainerClassName="p-lg" keyboardShouldPersistTaps="handled">
         {error && <Notice message={error} />}
 
         <Input
@@ -260,63 +272,79 @@ export default function AssignDuesScreen() {
         <Text className="mb-sm text-sm font-medium text-paper-900 dark:text-ink-text">
           Assign to ({selectedCount} selected)
         </Text>
-        <Pressable
-          onPress={toggleAll}
-          accessibilityRole="checkbox"
-          accessibilityState={{ checked: allSelected }}
-          className={`mb-sm flex-row items-center gap-md rounded-md border p-md ${
-            allSelected
-              ? 'border-brand-800 bg-paper-50 dark:border-brand-300 dark:bg-ink-bg'
-              : 'border-paper-200 dark:border-ink-border'
-          }`}
-        >
-          <View
-            className={`h-5 w-5 items-center justify-center rounded border-[1.5px] ${
-              allSelected
-                ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
-                : 'border-paper-200 dark:border-ink-border'
-            }`}
-          >
-            {allSelected && <Ionicons name="checkmark" size={13} color={colors.onButtonFill} />}
-          </View>
-          <Text className="flex-1 text-base font-semibold text-paper-900 dark:text-ink-text">
-            All residents ({(residents ?? []).length})
-          </Text>
-        </Pressable>
-
-        <Input placeholder="Search residents by name" value={search} onChangeText={setSearch} />
-
-        {isLoading ? (
-          <ActivityIndicator color={colors.primary} />
-        ) : (
-          <View className="gap-xs">
-            {filteredResidents.map((item) => {
-              const checked = allSelected || selected.has(item.id);
-              return (
-                <Pressable
-                  key={item.id}
-                  onPress={() => toggleResident(item.id)}
-                  disabled={allSelected}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked }}
-                  className="flex-row items-center gap-md rounded-md border border-paper-200 p-md dark:border-ink-border"
+        <View className="mb-md flex-row gap-sm">
+          {(
+            [
+              { value: 'all', label: 'All residents' },
+              { value: 'specific', label: 'Specific residents' },
+            ] as const
+          ).map((option) => {
+            const active = assignMode === option.value;
+            return (
+              <Pressable
+                key={option.value}
+                onPress={() => setAssignMode(option.value)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                className={`flex-1 items-center rounded-md border p-md ${
+                  active
+                    ? 'border-brand-800 bg-paper-50 dark:border-brand-300 dark:bg-ink-bg'
+                    : 'border-paper-200 bg-white dark:border-ink-border dark:bg-ink-surface'
+                }`}
+              >
+                <Text
+                  className={`text-[13px] font-semibold ${
+                    active ? 'text-brand-800 dark:text-brand-300' : 'text-paper-900 dark:text-ink-text'
+                  }`}
                 >
+                  {option.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {assignMode === 'specific' && (
+          <View className="mb-lg">
+            <Pressable
+              onPress={() => {
+                setResidentSearch('');
+                setResidentPickerOpen(true);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Select residents"
+              className="mb-sm flex-row items-center justify-between rounded-md border border-paper-200 px-md py-md dark:border-ink-border"
+            >
+              <Text className="text-base text-paper-900 dark:text-ink-text">
+                {selected.size === 0 ? 'Select residents' : `${selected.size} resident${selected.size === 1 ? '' : 's'} selected`}
+              </Text>
+              <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
+            </Pressable>
+
+            {selectedResidents.length > 0 && (
+              <View className="flex-row flex-wrap gap-sm">
+                {selectedResidents.map((item) => (
                   <View
-                    className={`h-5 w-5 items-center justify-center rounded border-[1.5px] ${
-                      checked
-                        ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
-                        : 'border-paper-200 dark:border-ink-border'
-                    }`}
+                    key={item.id}
+                    className="flex-row items-center gap-xs rounded-full border border-paper-200 py-xs pl-md pr-xs dark:border-ink-border"
                   >
-                    {checked && <Ionicons name="checkmark" size={13} color={colors.onButtonFill} />}
+                    <Text className="text-[13px] text-paper-900 dark:text-ink-text">
+                      {item.full_name ?? 'Unnamed'}
+                      {item.unit_no ? ` · Unit ${item.unit_no}` : ''}
+                    </Text>
+                    <Pressable
+                      onPress={() => toggleResident(item.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove ${item.full_name ?? 'resident'}`}
+                      hitSlop={8}
+                      className="h-5 w-5 items-center justify-center rounded-full bg-paper-100 dark:bg-ink-raised"
+                    >
+                      <Ionicons name="close" size={12} color={colors.textMuted} />
+                    </Pressable>
                   </View>
-                  <Text className="flex-1 text-base text-paper-900 dark:text-ink-text">
-                    {item.full_name ?? 'Unnamed'}
-                    {item.unit_no ? ` · Unit ${item.unit_no}` : ''}
-                  </Text>
-                </Pressable>
-              );
-            })}
+                ))}
+              </View>
+            )}
           </View>
         )}
 
@@ -328,6 +356,66 @@ export default function AssignDuesScreen() {
           className="mt-lg"
         />
       </ScrollView>
-    </View>
+
+      {/*
+        Rendered as a sibling of the form's ScrollView, not nested inside it -
+        a FlatList (below) inside a ScrollView of the same orientation
+        defeats FlatList's own virtualization and triggers RN's nested
+        VirtualizedLists warning, exactly the "list of 1000+ residents"
+        performance problem this dropdown exists to avoid in the first place.
+      */}
+      <Overlay visible={residentPickerOpen} onDismiss={() => setResidentPickerOpen(false)}>
+        <Card className="bg-white p-lg dark:bg-ink-surface">
+          <Text className="mb-md text-lg font-semibold text-paper-900 dark:text-ink-text">Select residents</Text>
+          <Input
+            placeholder="Search residents by name"
+            value={residentSearch}
+            onChangeText={setResidentSearch}
+          />
+          {isLoading ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : (
+            <FlatList
+              data={filteredResidents}
+              keyExtractor={(item) => item.id}
+              keyboardShouldPersistTaps="handled"
+              style={{ maxHeight: 320 }}
+              ItemSeparatorComponent={() => <View className="h-xs" />}
+              ListEmptyComponent={
+                <Text className="py-lg text-center text-[13px] text-paper-500 dark:text-ink-textMuted">
+                  No residents match your search.
+                </Text>
+              }
+              renderItem={({ item }) => {
+                const checked = selected.has(item.id);
+                return (
+                  <Pressable
+                    onPress={() => toggleResident(item.id)}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked }}
+                    className="flex-row items-center gap-md rounded-md border border-paper-200 p-md dark:border-ink-border"
+                  >
+                    <View
+                      className={`h-5 w-5 items-center justify-center rounded border-[1.5px] ${
+                        checked
+                          ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
+                          : 'border-paper-200 dark:border-ink-border'
+                      }`}
+                    >
+                      {checked && <Ionicons name="checkmark" size={13} color={colors.onButtonFill} />}
+                    </View>
+                    <Text className="flex-1 text-base text-paper-900 dark:text-ink-text">
+                      {item.full_name ?? 'Unnamed'}
+                      {item.unit_no ? ` · Unit ${item.unit_no}` : ''}
+                    </Text>
+                  </Pressable>
+                );
+              }}
+            />
+          )}
+          <Button label="Done" onPress={() => setResidentPickerOpen(false)} className="mt-md" />
+        </Card>
+      </Overlay>
+    </KeyboardAvoidingView>
   );
 }
