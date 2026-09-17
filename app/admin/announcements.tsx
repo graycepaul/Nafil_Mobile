@@ -1,5 +1,15 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { View, Text, Image, Pressable, Keyboard, FlatList, RefreshControl } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  Pressable,
+  Keyboard,
+  FlatList,
+  RefreshControl,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
@@ -296,7 +306,10 @@ export default function AdminAnnouncementsScreen() {
   }
 
   return (
-    <>
+    <KeyboardAvoidingView
+      className="flex-1"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
     <AnnouncementsFeed
       sortBy={sortBy}
       search={listSearch}
@@ -444,6 +457,6 @@ export default function AdminAnnouncementsScreen() {
           })}
         </View>
       </Overlay>
-    </>
+    </KeyboardAvoidingView>
   );
 }

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, View, Pressable } from 'react-native';
+import { StyleSheet, View, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../../context/theme-context';
 
@@ -40,14 +40,19 @@ export function Overlay({
         tint={isDark ? 'dark' : 'light'}
         style={StyleSheet.absoluteFill}
       />
-      <Pressable
-        onPress={onDismiss}
-        className="flex-1 items-center justify-center bg-black/30 p-xl dark:bg-black/45"
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <Pressable onPress={(e) => e.stopPropagation()} className="w-full max-w-[360px]">
-          {children}
+        <Pressable
+          onPress={onDismiss}
+          className="flex-1 items-center justify-center bg-black/30 p-xl dark:bg-black/45"
+        >
+          <Pressable onPress={(e) => e.stopPropagation()} className="w-full max-w-[360px]">
+            {children}
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </KeyboardAvoidingView>
     </View>
   );
 }

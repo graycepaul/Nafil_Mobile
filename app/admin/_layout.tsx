@@ -117,6 +117,16 @@ export default function AdminLayout() {
         // Reached via the Estate dues screen's + icon.
         options={{ title: 'Assign a due', href: null, headerShown: false }}
       />
+      <Tabs.Screen
+        name="financials"
+        // super_admin only. Reached via the Dashboard header's wallet icon.
+        options={{ title: 'Financials', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
+        name="payment-settings"
+        // super_admin only. Reached via the Dashboard header's payment-settings icon.
+        options={{ title: 'Payment accounts', href: null, headerShown: false }}
+      />
     </Tabs>
   );
 }

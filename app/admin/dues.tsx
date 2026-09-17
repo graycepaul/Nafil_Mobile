@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { View, Text, Pressable, FlatList, RefreshControl, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, TextInput, FlatList, RefreshControl, Platform, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -12,9 +12,10 @@ import { Card } from '../../components/ui/Card';
 import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { CardSkeletonList } from '../../components/ui/CardSkeleton';
-import { SearchAndEstateFilter } from '../../components/admin/SearchAndEstateFilter';
 import { TAB_PROMOTION_BREAKPOINT } from '../../components/ui/tab-options';
 import type { Due, DueCategory, DueStatus, Profile } from '../../types/database';
+
+const suppressBrowserOutline = Platform.select({ web: { outlineStyle: 'none' } as object, default: {} });
 
 const STATUS_TONE: Record<DueStatus, BadgeTone> = {
   due: 'info',
@@ -53,6 +54,10 @@ export default function AdminDuesScreen() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<DueStatus>();
   const [categoryFilter, setCategoryFilter] = useState<DueCategory>();
+  // Category pills hide behind this until asked for - status and category
+  // pills sitting in two stacked rows, both the same shape, read as one
+  // long undifferentiated list of filters rather than two distinct kinds.
+  const [categoryFiltersOpen, setCategoryFiltersOpen] = useState(false);
 
   const { data: dues, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['dues_admin', profile?.estate_id],
@@ -116,11 +121,38 @@ export default function AdminDuesScreen() {
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
         ListHeaderComponent={
           <View>
-            <SearchAndEstateFilter
-              search={search}
-              onSearchChange={setSearch}
-              placeholder="Search by label or resident"
-            />
+            <View className="mb-md flex-row items-center gap-sm">
+              <View className="h-[40px] flex-1 flex-row items-center rounded-md border border-paper-200 bg-white pl-md pr-sm dark:border-ink-border dark:bg-ink-surface">
+                <Ionicons name="search-outline" size={16} color={colors.textMuted} />
+                <TextInput
+                  placeholder="Search by label or resident"
+                  placeholderTextColor={colors.placeholder}
+                  value={search}
+                  onChangeText={setSearch}
+                  accessibilityLabel="Search by label or resident"
+                  className="ml-sm flex-1 bg-transparent text-[14px] text-paper-900 dark:text-ink-text"
+                  style={suppressBrowserOutline}
+                />
+              </View>
+              <Pressable
+                onPress={() => setCategoryFiltersOpen((v) => !v)}
+                accessibilityRole="button"
+                accessibilityLabel={categoryFiltersOpen ? 'Hide category filter' : 'Filter by category'}
+                accessibilityState={{ expanded: categoryFiltersOpen }}
+                className={`h-[40px] w-[40px] items-center justify-center rounded-md border ${
+                  categoryFilter || categoryFiltersOpen
+                    ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
+                    : 'border-paper-200 bg-white dark:border-ink-border dark:bg-ink-surface'
+                }`}
+              >
+                <Ionicons
+                  name="options-outline"
+                  size={18}
+                  color={categoryFilter || categoryFiltersOpen ? colors.onButtonFill : colors.textMuted}
+                />
+              </Pressable>
+            </View>
+
             <View className="mb-md flex-row flex-wrap gap-sm">
               {STATUS_FILTERS.map((f) => {
                 const active = statusFilter === f.value;
@@ -147,32 +179,35 @@ export default function AdminDuesScreen() {
                 );
               })}
             </View>
-            <View className="mb-lg flex-row flex-wrap gap-sm">
-              {CATEGORY_FILTERS.map((f) => {
-                const active = categoryFilter === f.value;
-                return (
-                  <Pressable
-                    key={f.label}
-                    onPress={() => setCategoryFilter(f.value)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: active }}
-                    className={`rounded-full border px-md py-xs ${
-                      active
-                        ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
-                        : 'border-paper-200 dark:border-ink-border'
-                    }`}
-                  >
-                    <Text
-                      className={`text-[13px] font-medium ${
-                        active ? 'text-white dark:text-ink-bg' : 'text-paper-500 dark:text-ink-textMuted'
+
+            {categoryFiltersOpen && (
+              <View className="mb-lg flex-row flex-wrap gap-sm">
+                {CATEGORY_FILTERS.map((f) => {
+                  const active = categoryFilter === f.value;
+                  return (
+                    <Pressable
+                      key={f.label}
+                      onPress={() => setCategoryFilter(f.value)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active }}
+                      className={`rounded-full border px-md py-xs ${
+                        active
+                          ? 'border-brand-800 bg-brand-800 dark:border-brand-300 dark:bg-brand-300'
+                          : 'border-paper-200 dark:border-ink-border'
                       }`}
                     >
-                      {f.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+                      <Text
+                        className={`text-[13px] font-medium ${
+                          active ? 'text-white dark:text-ink-bg' : 'text-paper-500 dark:text-ink-textMuted'
+                        }`}
+                      >
+                        {f.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
           </View>
         }
         data={filteredDues}

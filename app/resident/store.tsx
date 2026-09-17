@@ -116,6 +116,24 @@ export default function StoreScreen() {
     queryClient.invalidateQueries({ queryKey: ['store_orders', profile?.id] });
   }
 
+  // A marketplace transfer goes straight to the seller's own account (see
+  // 0053_listing_seller_payout_account.sql), not the estate's - so unlike
+  // dues/wallet top-ups, admin/finance has no visibility into whether it
+  // landed. The seller is the only one who can actually confirm this, via
+  // the same orders_update policy that already lets them mark 'paid' as
+  // 'completed' above.
+  async function confirmPayment(orderId: string) {
+    setError(undefined);
+    setCompletingId(orderId);
+    const { error } = await supabase.from('orders').update({ status: 'paid' }).eq('id', orderId);
+    setCompletingId(null);
+    if (error) {
+      setError(friendlyDbError(error));
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['store_orders', profile?.id] });
+  }
+
   async function updateListingStatus(listingId: string, status: ListingStatus) {
     setError(undefined);
     setUpdatingListingId(listingId);
@@ -212,6 +230,15 @@ export default function StoreScreen() {
                   {buyer?.full_name ?? 'Resident'}
                   {buyer?.unit_no ? ` · Unit ${buyer.unit_no}` : ''} · {relativeTime(order.created_at)}
                 </Text>
+                {order.status === 'pending_transfer' && (
+                  <Button
+                    label="Confirm payment received"
+                    onPress={() => confirmPayment(order.id)}
+                    loading={completingId === order.id}
+                    disabled={completingId !== null && completingId !== order.id}
+                    className="mt-sm"
+                  />
+                )}
                 {order.status === 'paid' && (
                   <Button
                     label="Mark as completed"

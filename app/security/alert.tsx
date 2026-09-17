@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Text, Keyboard, Pressable, ScrollView } from 'react-native';
+import { Text, Keyboard, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
@@ -48,49 +48,54 @@ export default function SecurityAlertScreen() {
   }
 
   return (
-    // Tapping anywhere outside the inputs dismisses the keyboard - without
-    // this, the keyboard had no dismiss route on this screen (multiline body
-    // text swallows the return key, and there's no "Done" bar), which could
-    // leave the tab bar hidden behind it with no way back except sending.
-    <Pressable onPress={() => Keyboard.dismiss()} className="flex-1 bg-white dark:bg-ink-bg" accessible={false}>
-      <ScrollView contentContainerClassName="p-xl" keyboardShouldPersistTaps="handled">
-        <Text className="mb-lg text-[13px] text-paper-500 dark:text-ink-textMuted">
-          Sends this straight to your estate&apos;s admin - not to residents. Admin will follow
-          up directly, or post an announcement if residents need to know.
-        </Text>
+    <KeyboardAvoidingView
+      className="flex-1 bg-white dark:bg-ink-bg"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      {/* Tapping anywhere outside the inputs dismisses the keyboard - without
+          this, the keyboard had no dismiss route on this screen (multiline body
+          text swallows the return key, and there's no "Done" bar), which could
+          leave the tab bar hidden behind it with no way back except sending. */}
+      <Pressable onPress={() => Keyboard.dismiss()} className="flex-1" accessible={false}>
+        <ScrollView contentContainerClassName="p-xl" keyboardShouldPersistTaps="handled">
+          <Text className="mb-lg text-[13px] text-paper-500 dark:text-ink-textMuted">
+            Sends this straight to your estate&apos;s admin - not to residents. Admin will follow
+            up directly, or post an announcement if residents need to know.
+          </Text>
 
-        {notice && <Notice tone={notice.tone} message={notice.message} />}
+          {notice && <Notice tone={notice.tone} message={notice.message} />}
 
-        <AlertCategoryPicker value={category} onChange={setCategory} />
+          <AlertCategoryPicker value={category} onChange={setCategory} />
 
-        <Input
-          label="Alert title"
-          showLabel
-          placeholder="e.g. Security breach at Gate 2"
-          value={title}
-          onChangeText={setTitle}
-          returnKeyType="done"
-          onSubmitEditing={() => Keyboard.dismiss()}
-        />
-        <Input
-          label="Details"
-          showLabel
-          placeholder="What's happening, and what should admin know?"
-          value={body}
-          onChangeText={setBody}
-          multiline
-          multilineHeight={110}
-        />
+          <Input
+            label="Alert title"
+            showLabel
+            placeholder="e.g. Security breach at Gate 2"
+            value={title}
+            onChangeText={setTitle}
+            returnKeyType="done"
+            onSubmitEditing={() => Keyboard.dismiss()}
+          />
+          <Input
+            label="Details"
+            showLabel
+            placeholder="What's happening, and what should admin know?"
+            value={body}
+            onChangeText={setBody}
+            multiline
+            multilineHeight={110}
+          />
 
-        <Button
-          label="Send to admin"
-          variant="danger"
-          onPress={sendAlert}
-          loading={sending}
-          disabled={!title.trim() || !body.trim()}
-          className="mt-sm"
-        />
-      </ScrollView>
-    </Pressable>
+          <Button
+            label="Send to admin"
+            variant="danger"
+            onPress={sendAlert}
+            loading={sending}
+            disabled={!title.trim() || !body.trim()}
+            className="mt-sm"
+          />
+        </ScrollView>
+      </Pressable>
+    </KeyboardAvoidingView>
   );
 }

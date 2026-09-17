@@ -256,6 +256,10 @@ export interface Listing {
   delivery_fee: number;
   /** Services only. */
   whatsapp: string | null;
+  /** Where the buyer pays - the seller's own account, not the estate's. */
+  seller_account_name: string | null;
+  seller_account_number: string | null;
+  seller_bank_name: string | null;
   status: ListingStatus;
   created_at: string;
 }
@@ -340,6 +344,43 @@ export interface Transfer {
 export interface TransferWithSubmitter extends Transfer {
   submitter: Pick<Profile, 'full_name' | 'unit_no'> | null;
   estate: { name: string } | null;
+}
+
+/** Wallet top-up, or one of the three due categories - see 0054_configurable_payment_accounts_and_financials.sql. */
+export type PaymentPurpose = 'wallet_topup' | DueCategory;
+
+export interface EstatePayoutAccount {
+  id: string;
+  estate_id: string;
+  account_name: string;
+  account_number: string;
+  bank_name: string;
+  created_at: string;
+}
+
+/** Row shape from the get_payment_accounts RPC - the resolved account for each purpose the estate has configured. */
+export interface ResolvedPaymentAccount {
+  purpose: PaymentPurpose;
+  account_name: string;
+  account_number: string;
+  bank_name: string;
+}
+
+/** Row shape from the get_financials_overview RPC. */
+export interface FinancialsOverview {
+  total_wallet_balance: number;
+  total_topup_confirmed: number;
+  total_dues_paid: number;
+  total_dues_outstanding: number;
+  dues_paid_general: number;
+  dues_paid_service_fee: number;
+  dues_paid_security: number;
+  transfers_pending_count: number;
+  transfers_pending_amount: number;
+  transfers_confirmed_count: number;
+  transfers_confirmed_amount: number;
+  transfers_rejected_count: number;
+  marketplace_volume: number;
 }
 
 /**

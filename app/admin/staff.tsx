@@ -1,5 +1,13 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  RefreshControl,
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { supabase } from '../../lib/supabase';
@@ -154,9 +162,14 @@ export default function AdminStaffScreen() {
   }
 
   return (
+    <KeyboardAvoidingView
+      className="flex-1 bg-white dark:bg-ink-bg"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
     <FlatList
       className="bg-white dark:bg-ink-bg"
       contentContainerClassName="p-xl"
+      keyboardShouldPersistTaps="handled"
       refreshControl={
         <RefreshControl
           refreshing={isRefetchingInvites || isRefetchingStaff}
@@ -235,5 +248,6 @@ export default function AdminStaffScreen() {
         </Card>
       )}
     />
+    </KeyboardAvoidingView>
   );
 }

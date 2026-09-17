@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, Image } from 'react-native';
+import { View, Text, ScrollView, Pressable, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -150,7 +150,10 @@ export default function AdminAnnouncementDetailScreen() {
   const isEmergency = announcement.severity === 'emergency';
 
   return (
-    <View className="flex-1 bg-white dark:bg-ink-bg">
+    <KeyboardAvoidingView
+      className="flex-1 bg-white dark:bg-ink-bg"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       {toast && toastVisible && (
         <Toast tone={toast.tone} message={toast.message} onDismiss={() => setToastVisible(false)} />
       )}
@@ -182,11 +185,11 @@ export default function AdminAnnouncementDetailScreen() {
       </View>
 
       {editing ? (
-        <ScrollView contentContainerClassName="p-lg">
+        <ScrollView contentContainerClassName="p-lg" keyboardShouldPersistTaps="handled">
           {editError && <Notice message={editError} />}
           <Notice
             tone="success"
-            message="You can edit this for 15 minutes after posting. It won't be sent as a new alert."
+            message="You can edit this within 15 minutes of posting. It won't be sent as a new alert."
           />
           <Input label="Title" showLabel value={editTitle} onChangeText={setEditTitle} />
           <Input label="Message" showLabel value={editBody} onChangeText={setEditBody} multiline />
@@ -248,6 +251,6 @@ export default function AdminAnnouncementDetailScreen() {
           </Text>
         </ScrollView>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
