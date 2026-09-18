@@ -6,7 +6,7 @@ import {
   RefreshControl,
   Pressable,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { supabase } from "../../lib/supabase";
@@ -23,7 +23,18 @@ import { CardSkeleton } from "../../components/ui/CardSkeleton";
 import { emergencyLabel } from "../../components/AnnouncementsFeed";
 import type { Announcement, Estate } from "../../types/database";
 
-export default function ResidentHome() {
+/**
+ * A visitors_only household member's nav is Visitors/Market/Profile - Home
+ * isn't one of their tabs, but the root route guard still sends every
+ * resident to /resident first, so this is where they get bounced onward.
+ */
+export default function ResidentHomeGate() {
+  const accessLevel = useAuthStore((s) => s.profile?.household_access_level);
+  if (accessLevel === "visitors_only") return <Redirect href="/resident/visitor-pass" />;
+  return <ResidentHome />;
+}
+
+function ResidentHome() {
   const profile = useAuthStore((s) => s.profile);
   const { colors } = useTheme();
   const router = useRouter();
