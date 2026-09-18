@@ -3,6 +3,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { acceptStaffInviteByEmail } from '../../lib/staff-invite';
+import { acceptHouseholdInviteByEmail } from '../../lib/household-invite';
 import { useTheme } from '../../context/theme-context';
 import { useAuthStore } from '../../store/auth-store';
 import type { EstateJoinRequest } from '../../types/database';
@@ -44,7 +45,16 @@ export default function OnboardingRouter() {
         return;
       }
 
-      // Not a staff invite - proceed as an ordinary resident.
+      // Not a staff invite - maybe a household invite from a resident
+      // (also a harmless no-op for anyone without a matching one).
+      const household = await acceptHouseholdInviteByEmail();
+      if (cancelled) return;
+      if (household.accepted) {
+        await refreshProfile();
+        return;
+      }
+
+      // Neither - proceed as an ordinary resident.
       if (!profile!.phone) {
         router.replace('/profile-setup');
         return;

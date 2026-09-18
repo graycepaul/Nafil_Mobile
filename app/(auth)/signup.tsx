@@ -74,11 +74,19 @@ export default function SignupScreen() {
       subtitle="Signing up as a resident"
       onBack={() => router.back()}
       footer={
-        <View className="flex-row items-center justify-center gap-[6px]">
-          <Text className="text-[13px] text-paper-500 dark:text-ink-textMuted">
-            Already have an account?
-          </Text>
-          <AuthLink label="Sign in" onPress={() => router.replace('/login')} />
+        <View className="gap-md">
+          <View className="flex-row flex-wrap items-center justify-center gap-[6px]">
+            <Text className="text-[13px] text-paper-500 dark:text-ink-textMuted">
+              Invited to a household?
+            </Text>
+            <AuthLink label="Use your invite code" onPress={() => router.push('/household-invite')} />
+          </View>
+          <View className="flex-row items-center justify-center gap-[6px]">
+            <Text className="text-[13px] text-paper-500 dark:text-ink-textMuted">
+              Already have an account?
+            </Text>
+            <AuthLink label="Sign in" onPress={() => router.replace('/login')} />
+          </View>
         </View>
       }
     >

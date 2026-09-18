@@ -281,6 +281,17 @@ function RootNavigation() {
       return;
     }
 
+    // A household member whose access was revoked keeps their account (and
+    // stays approved - see 0056) but gets nothing but this one screen. Not
+    // reusing the onboarding redirect above: that wizard decides where to
+    // send someone by querying estate_join_requests, which a household
+    // member never has a row in, so it would tell them to search for an
+    // estate all over again.
+    if (profile.role === "resident" && profile.household_access_level === "revoked") {
+      if (section !== "access-revoked") router.replace("/access-revoked" as never);
+      return;
+    }
+
     if (section !== undefined && SHARED_ROUTES.has(section)) return;
 
     const homePath = ROLE_HOME[profile.role];

@@ -3,6 +3,7 @@ import { View, Text, Platform, ScrollView, KeyboardAvoidingView } from 'react-na
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -113,14 +114,26 @@ export default function SecurityScanScreen() {
           photoName: householdMatch.full_name,
         });
       } else {
-        // Supabase's query/rpc builders are lazy thenables: the request
-        // only actually fires once something awaits or .then()s them, so
-        // this has to be awaited even though the result itself is ignored.
-        // Only records the scan timestamp (a DB trigger turns that into a
-        // notification to the resident) - not part of the access decision
-        // itself, so a failure here doesn't block or contradict the
-        // "Verified" message the guard already sees.
-        await supabase.rpc('record_household_member_scan', { member_id: householdMatch.id });
+        // record_household_member_scan re-checks status='active' itself
+        // (see 0055) rather than trusting this branch's own status check
+        // above - so a card revoked/pending-review'd in the moment between
+        // that select and this call still gets denied here instead of
+        // silently granting access and logging a visit anyway.
+        const { error: scanError } = await supabase.rpc('record_household_member_scan', {
+          member_id: householdMatch.id,
+        });
+        if (scanError) {
+          setResult({
+            tone: 'error',
+            title: 'Access denied',
+            message: friendlyDbError(scanError),
+            photoUrl: householdMatch.avatar_url,
+            photoName: householdMatch.full_name,
+          });
+          setManualCode('');
+          setProcessing(false);
+          return;
+        }
         const { data: logRow } = await supabase
           .from('visitor_logs')
           .insert({
