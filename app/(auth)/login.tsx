@@ -10,30 +10,38 @@ import { Notice } from '../../components/ui/Notice';
 import { authErrorMessage } from '../../lib/auth-errors';
 import { SOCIAL_AUTH_ENABLED } from '../../constants/auth-config';
 import { validateEmail } from '../../lib/validation';
+import { looksLikePhone, normalizePhone } from '../../lib/phone';
 
 export default function LoginScreen() {
   const router = useRouter();
 
-  const [email, setEmail] = useState('');
+  // Email or phone number - dependants invited by a resident have a phone +
+  // password account and no email at all (see household-invite.tsx).
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ identifier?: string; password?: string }>({});
   const [formError, setFormError] = useState<string>();
   const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
+    const isPhone = looksLikePhone(identifier);
+    const phone = isPhone ? normalizePhone(identifier) : null;
     const nextErrors = {
-      email: validateEmail(email),
+      identifier: isPhone
+        ? phone
+          ? undefined
+          : 'That phone number doesn’t look right.'
+        : validateEmail(identifier)?.replace('your email address', 'your email or phone number'),
       password: password ? undefined : 'Enter your password.',
     };
     setErrors(nextErrors);
     setFormError(undefined);
-    if (nextErrors.email || nextErrors.password) return;
+    if (nextErrors.identifier || nextErrors.password) return;
 
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword(
+      phone ? { phone, password } : { email: identifier.trim(), password }
+    );
     setLoading(false);
 
     // On success the root layout picks up the session and redirects by role.
@@ -55,18 +63,18 @@ export default function LoginScreen() {
       {formError && <Notice message={formError} />}
 
       <Input
-        label="Email"
-        placeholder="Email"
+        label="Email or phone number"
+        placeholder="Email or phone number"
         autoCapitalize="none"
-        autoComplete="email"
+        autoComplete="username"
         keyboardType="email-address"
-        textContentType="emailAddress"
-        value={email}
+        textContentType="username"
+        value={identifier}
         onChangeText={(v) => {
-          setEmail(v);
-          if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
+          setIdentifier(v);
+          if (errors.identifier) setErrors((e) => ({ ...e, identifier: undefined }));
         }}
-        error={errors.email}
+        error={errors.identifier}
         returnKeyType="next"
       />
 

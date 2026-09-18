@@ -18,6 +18,7 @@ import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { IDCardView } from '../../components/ui/IDCardView';
 import { AddHouseholdMemberForm } from '../../components/resident/AddHouseholdMemberForm';
+import { HouseholdAccessSection } from '../../components/resident/HouseholdAccessSection';
 import { Avatar } from '../../components/ui/Avatar';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -161,6 +162,12 @@ export default function ProfileScreen() {
     invalidateHousehold();
   }
 
+  // A visitors_only household member keeps their ID card here but not the
+  // standing-card management; only a real (non-household-member) resident
+  // can invite others (0056).
+  const visitorsOnly = profile?.household_access_level === 'visitors_only';
+  const canInviteHousehold = profile?.household_access_level == null;
+
   if (isLoading || !profile) {
     return (
       <View className="flex-1 bg-white dark:bg-ink-bg">
@@ -179,8 +186,9 @@ export default function ProfileScreen() {
         contentContainerClassName="p-xl"
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
-        data={household ?? []}
+        data={visitorsOnly ? [] : (household ?? [])}
         keyExtractor={(item) => item.id}
+        ListFooterComponent={canInviteHousehold ? <HouseholdAccessSection /> : null}
         ListHeaderComponent={
           <View>
             <IDCardView
@@ -198,26 +206,32 @@ export default function ProfileScreen() {
               className="mb-2xl mt-md"
             />
 
-            <Text className="mb-xs text-lg font-semibold text-paper-900 dark:text-ink-text">
-              Household & frequent visitors
-            </Text>
-            <Text className="mb-md text-[13px] text-paper-500 dark:text-ink-textMuted">
-              Give family, house help, or a regular driver their own standing card. No need to
-              generate a new visitor pass every time they come.
-            </Text>
+            {!visitorsOnly && (
+              <>
+                <Text className="mb-xs text-lg font-semibold text-paper-900 dark:text-ink-text">
+                  Household & frequent visitors
+                </Text>
+                <Text className="mb-md text-[13px] text-paper-500 dark:text-ink-textMuted">
+                  Give family, house help, or a regular driver their own standing card. No need to
+                  generate a new visitor pass every time they come.
+                </Text>
 
-            <AddHouseholdMemberForm
-              residentId={profile.id}
-              estateId={profile.estate_id!}
-              onCreated={invalidateHousehold}
-            />
+                <AddHouseholdMemberForm
+                  residentId={profile.id}
+                  estateId={profile.estate_id!}
+                  onCreated={invalidateHousehold}
+                />
+              </>
+            )}
           </View>
         }
         ListEmptyComponent={
-          <EmptyState
-            title="No one added yet"
-            message="Add a household member or frequent visitor above to give them their own gate card."
-          />
+          visitorsOnly ? null : (
+            <EmptyState
+              title="No one added yet"
+              message="Add a household member or frequent visitor above to give them their own gate card."
+            />
+          )
         }
         renderItem={({ item }) => (
           <Card>

@@ -89,7 +89,10 @@ export default function WalletScreen() {
       const { data, error } = await supabase
         .from('dues')
         .select('*')
-        .eq('profile_id', profile!.id)
+        // No profile_id filter: dues_select already scopes a resident to
+        // their own dues plus, for a 'full' household member, everyone
+        // sharing the unit (0056) - filtering to profile.id here would hide
+        // the shared unit's dues that the database says they can pay.
         .neq('status', 'paid')
         .order('due_date', { ascending: true });
       if (error) throw error;
@@ -228,15 +231,6 @@ export default function WalletScreen() {
       if (err) return setError(friendlyDbError(err));
       setNotice("Thanks. We'll credit your wallet once the transfer is confirmed.");
       invalidateTransfers();
-    } else {
-      const { error: rpcErr } = await supabase.rpc('adjust_wallet_balance', { delta: amount });
-      if (rpcErr) return setError(friendlyDbError(rpcErr));
-      const { error: txErr } = await supabase
-        .from('wallet_transactions')
-        .insert({ profile_id: profile!.id, label: 'Wallet top-up · Card', amount, status: 'completed' });
-      if (txErr) return setError(friendlyDbError(txErr));
-      setNotice('Wallet funded successfully.');
-      invalidateWallet();
     }
     setFunding(false);
   }

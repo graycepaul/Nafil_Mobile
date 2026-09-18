@@ -3,6 +3,7 @@ import { Platform, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme } from '../../context/theme-context';
+import { useAuthStore } from '../../store/auth-store';
 import { themedTabOptions, TAB_PROMOTION_BREAKPOINT } from '../../components/ui/tab-options';
 import { HomeHeader } from '../../components/ui/HomeHeader';
 import { ProfileHeaderActions } from '../../components/ui/ProfileHeaderActions';
@@ -11,7 +12,11 @@ export default function ResidentLayout() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const showExtraTabs = Platform.OS === 'web' && width >= TAB_PROMOTION_BREAKPOINT;
+  const visitorsOnly = useAuthStore((s) => s.profile?.household_access_level) === 'visitors_only';
+  // A visitors_only household member's nav is just Visitors, Market, Profile
+  // (see 0056_household_access.sql) - same `href: condition ? null : undefined`
+  // pattern admin/_layout.tsx uses to hide tabs per role.
+  const showExtraTabs = Platform.OS === 'web' && width >= TAB_PROMOTION_BREAKPOINT && !visitorsOnly;
 
   return (
     <Tabs backBehavior="history" screenOptions={themedTabOptions(colors, insets.bottom, width)}>
@@ -19,6 +24,7 @@ export default function ResidentLayout() {
         name="index"
         options={{
           title: 'Home',
+          href: visitorsOnly ? null : undefined,
           header: () => <HomeHeader />,
           tabBarIcon: ({ color }) => <Ionicons name="home-outline" color={color as string} size={22} />,
         }}
@@ -41,6 +47,7 @@ export default function ResidentLayout() {
         name="issues"
         options={{
           title: 'Issues',
+          href: visitorsOnly ? null : undefined,
           tabBarIcon: ({ color }) => <Ionicons name="build-outline" color={color as string} size={22} />,
         }}
       />

@@ -65,7 +65,10 @@ const SHARED_ROUTES = new Set(["settings", "support"]);
 // link establishes a session, and the usual "session exists → go to role home"
 // redirect below would otherwise bounce the user away before they can set a
 // password.
-const AUTH_GROUP_EXCEPTIONS = new Set(["set-password"]);
+// household-invite creates the account and links it to the household in two
+// steps a moment apart; without this the unapproved-resident redirect would
+// pull the person off the screen between the two.
+const AUTH_GROUP_EXCEPTIONS = new Set(["set-password", "household-invite"]);
 
 /**
  * Native deep links (password reset, staff invite) land here as a raw URL string
@@ -278,6 +281,17 @@ function RootNavigation() {
     const needsOnboarding = profile.role === "resident" && !profile.approved;
     if (needsOnboarding) {
       if (section !== ONBOARDING_GROUP) router.replace("/onboarding");
+      return;
+    }
+
+    // A household member whose access was revoked keeps their account (and
+    // stays approved - see 0056) but gets nothing but this one screen. Not
+    // reusing the onboarding redirect above: that wizard decides where to
+    // send someone by querying estate_join_requests, which a household
+    // member never has a row in, so it would tell them to search for an
+    // estate all over again.
+    if (profile.role === "resident" && profile.household_access_level === "revoked") {
+      if (section !== "access-revoked") router.replace("/access-revoked" as never);
       return;
     }
 

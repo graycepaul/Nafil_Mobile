@@ -13,6 +13,7 @@ import { Avatar } from "../ui/Avatar";
 import type { HouseholdReviewFrequency } from "../../types/database";
 
 const REVIEW_OPTIONS: { key: HouseholdReviewFrequency; label: string }[] = [
+  { key: "weekly", label: "Weekly" },
   { key: "monthly", label: "Monthly" },
   { key: "quarterly", label: "Quarterly" },
   { key: "semiannual", label: "Every 6 months" },

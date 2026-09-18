@@ -6,7 +6,12 @@ export type AnnouncementSeverity = 'info' | 'emergency';
 export type JoinRequestStatus = 'pending' | 'approved' | 'rejected';
 export type StaffInviteStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
 export type HouseholdMemberStatus = 'active' | 'revoked' | 'pending_review';
-export type HouseholdReviewFrequency = 'monthly' | 'quarterly' | 'semiannual' | 'yearly';
+export type HouseholdAccessLevel = 'full' | 'visitors_only';
+/** profiles.household_access_level: null = not a household member (a normal approved resident or staff). */
+export type ProfileHouseholdAccess = HouseholdAccessLevel | 'revoked';
+export type HouseholdInviteStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
+export type HouseholdLinkStatus = 'active' | 'revoked';
+export type HouseholdReviewFrequency = 'weekly' | 'monthly' | 'quarterly' | 'semiannual' | 'yearly';
 export type ScheduledVisitStatus = 'pending' | 'arrived' | 'expired' | 'cancelled';
 
 export interface Estate {
@@ -28,6 +33,35 @@ export interface Profile {
   avatar_url: string | null;
   approved: boolean;
   resident_code: string | null;
+  household_access_level: ProfileHouseholdAccess | null;
+  created_at: string;
+}
+
+export interface HouseholdInvite {
+  id: string;
+  estate_id: string;
+  resident_id: string;
+  access_level: HouseholdAccessLevel;
+  /** International digits, no '+', e.g. 2348012345678. */
+  /** What the inviting resident calls them; the dependant's own name lives in first_name/last_name. */
+  invitee_name: string | null;
+  phone: string | null;
+  email: string | null;
+  code: string;
+  status: HouseholdInviteStatus;
+  first_name: string | null;
+  last_name: string | null;
+  created_at: string;
+  expires_at: string;
+}
+
+export interface HouseholdLink {
+  id: string;
+  estate_id: string;
+  primary_resident_id: string;
+  member_id: string;
+  access_level: HouseholdAccessLevel;
+  status: HouseholdLinkStatus;
   created_at: string;
 }
 

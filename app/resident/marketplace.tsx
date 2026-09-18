@@ -60,9 +60,14 @@ export default function MarketplaceScreen() {
     enabled: !!profile,
   });
 
+  // A visitors_only household member can browse and buy but not sell (see
+  // 0056 - listings_insert enforces it; this just hides the entry points).
+  const canSell = profile?.household_access_level !== 'visitors_only';
+
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerRight: () => (
+      headerRight: () =>
+        !canSell ? null : (
         <View className="flex-row items-center gap-md pr-lg">
           {hasStore && (
             <Pressable
@@ -85,7 +90,7 @@ export default function MarketplaceScreen() {
         </View>
       ),
     });
-  }, [navigation, router, colors.onHeaderBg, hasStore]);
+  }, [navigation, router, colors.onHeaderBg, hasStore, canSell]);
 
   const {
     data: allListings,
