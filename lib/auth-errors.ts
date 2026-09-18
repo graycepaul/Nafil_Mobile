@@ -11,7 +11,7 @@ import type { AuthError } from '@supabase/supabase-js';
 const MESSAGES: { match: RegExp; message: string }[] = [
   {
     match: /invalid login credentials/i,
-    message: 'That email and password don’t match. Check both and try again.',
+    message: 'Those sign-in details don’t match. Check them and try again.',
   },
   {
     match: /email not confirmed/i,
@@ -19,7 +19,7 @@ const MESSAGES: { match: RegExp; message: string }[] = [
   },
   {
     match: /user already registered|already been registered/i,
-    message: 'An account with this email already exists. Try signing in instead.',
+    message: 'An account with these details already exists. Try signing in instead.',
   },
   {
     match: /password should be at least/i,

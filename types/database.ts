@@ -42,7 +42,11 @@ export interface HouseholdInvite {
   estate_id: string;
   resident_id: string;
   access_level: HouseholdAccessLevel;
-  email: string;
+  /** International digits, no '+', e.g. 2348012345678. */
+  /** What the inviting resident calls them; the dependant's own name lives in first_name/last_name. */
+  invitee_name: string | null;
+  phone: string | null;
+  email: string | null;
   code: string;
   status: HouseholdInviteStatus;
   first_name: string | null;

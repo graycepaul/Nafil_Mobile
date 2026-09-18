@@ -1,10 +1,14 @@
 import { useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Platform } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
 import { friendlyDbError } from '../../lib/db-errors';
 import { shareHouseholdInvite } from '../../lib/share-household-invite';
-import { validateEmail } from '../../lib/validation';
+import { validatePhone, validateRequired } from '../../lib/validation';
+import { normalizePhone, formatPhoneForDisplay } from '../../lib/phone';
+import { pickVisitorPhone } from '../../lib/contacts';
+import { useTheme } from '../../context/theme-context';
 import { useAuthStore } from '../../store/auth-store';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -19,22 +23,22 @@ import type {
   PublicProfile,
 } from '../../types/database';
 
-const LEVELS: { key: HouseholdAccessLevel; label: string; hint: string }[] = [
+const LEVELS: { key: HouseholdAccessLevel; label: string; hint?: string; points?: string[] }[] = [
   {
     key: 'full',
     label: 'Full access',
-    hint: 'Their own account with everything a resident has: wallet, marketplace listings, visitor passes, and paying dues for your unit.',
+    hint: 'Gains full access to all features available to residents.',
   },
   {
     key: 'visitors_only',
-    label: 'Visitors & marketplace',
-    hint: 'Can create visitor passes and buy from the marketplace, and has their own ID card. No wallet, dues, issues, or selling.',
+    label: 'Limited access',
+    points: ['Generate visitor passes', 'Buy from the marketplace', 'Gets their personal ID card'],
   },
 ];
 
 const LEVEL_LABEL: Record<HouseholdAccessLevel, string> = {
   full: 'Full access',
-  visitors_only: 'Visitors & marketplace',
+  visitors_only: 'Limited access',
 };
 
 /**
@@ -53,8 +57,11 @@ export function HouseholdAccessSection() {
   const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
-  const [email, setEmail] = useState('');
-  const [emailError, setEmailError] = useState<string>();
+  const { colors } = useTheme();
+  const [name, setName] = useState('');
+  const [nameError, setNameError] = useState<string>();
+  const [phone, setPhone] = useState('');
+  const [phoneError, setPhoneError] = useState<string>();
   const [level, setLevel] = useState<HouseholdAccessLevel>('visitors_only');
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState<HouseholdInvite | null>(null);
@@ -112,18 +119,33 @@ export function HouseholdAccessSection() {
 
   function reset() {
     setOpen(false);
-    setEmail('');
-    setEmailError(undefined);
+    setName('');
+    setNameError(undefined);
+    setPhone('');
+    setPhoneError(undefined);
     setLevel('visitors_only');
     setCreated(null);
     setFormError(undefined);
   }
 
-  async function handleCreate() {
-    const err = validateEmail(email);
-    setEmailError(err);
+  async function handlePickContact() {
     setFormError(undefined);
-    if (err || !profile?.estate_id) return;
+    const { phone: picked, error } = await pickVisitorPhone();
+    if (error) return setFormError(error);
+    if (picked) {
+      setPhone(picked);
+      setPhoneError(undefined);
+    }
+  }
+
+  async function handleCreate() {
+    const normalized = normalizePhone(phone);
+    const err = validatePhone(phone) ?? (normalized ? undefined : 'Enter a valid phone number.');
+    const nameErr = validateRequired(name, 'their name');
+    setPhoneError(err);
+    setNameError(nameErr);
+    setFormError(undefined);
+    if (err || nameErr || !normalized || !profile?.estate_id) return;
 
     setCreating(true);
     const { data, error } = await supabase
@@ -132,7 +154,8 @@ export function HouseholdAccessSection() {
         estate_id: profile.estate_id,
         resident_id: profile.id,
         access_level: level,
-        email: email.trim(),
+        invitee_name: name.trim(),
+        phone: normalized,
       })
       .select()
       .single();
@@ -140,7 +163,9 @@ export function HouseholdAccessSection() {
 
     if (error) {
       setFormError(
-        error.code === '23505' ? 'This email already has a pending invite.' : friendlyDbError(error)
+        error.code === '23505'
+          ? 'This number already has a pending invite. Cancel it first to send a new one.'
+          : friendlyDbError(error)
       );
       return;
     }
@@ -173,21 +198,21 @@ export function HouseholdAccessSection() {
     <View className="mb-2xl">
       <Text className="mb-xs text-lg font-semibold text-paper-900 dark:text-ink-text">Household access</Text>
       <Text className="mb-md text-[13px] text-paper-500 dark:text-ink-textMuted">
-        Give the people you live with their own login on your unit, so they can issue visitor passes when
-        you&apos;re away. You&apos;re vouching for them - no estate admin approval is needed, and you can
-        remove their access any time.
+        Give a spouse, child or other dependant their own login on your unit, so they can issue visitor
+        passes when you&apos;re away. You&apos;re vouching for them, so no estate admin approval is needed,
+        and you can remove their access at any time.
       </Text>
 
       {listError && <Notice message={listError} />}
 
       {!open ? (
-        <Button label="Invite someone" variant="secondary" onPress={() => setOpen(true)} className="mb-lg" />
+        <Button label="Invite a dependant" variant="secondary" onPress={() => setOpen(true)} className="mb-lg" />
       ) : created ? (
         <Card className="mb-lg">
           <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">Invite created</Text>
           <Text className="mb-md mt-xs text-[13px] text-paper-500 dark:text-ink-textMuted">
-            Share this code with {created.email}. They must sign up with that same email address. It works
-            once, for 7 days.
+            Share this code with {created.invitee_name ?? formatPhoneForDisplay(created.phone)}. They sign up
+            using {formatPhoneForDisplay(created.phone)}. It works once, for 7 days.
           </Text>
           <View className="mb-md items-center rounded-[8px] bg-paper-50 p-md dark:bg-ink-bg">
             <Text className="text-[24px] font-bold tracking-[2px] text-brand-800 dark:text-brand-300">
@@ -224,25 +249,60 @@ export function HouseholdAccessSection() {
                   }`}
                 >
                   <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">{l.label}</Text>
-                  <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">{l.hint}</Text>
+                  {l.hint && (
+                    <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">{l.hint}</Text>
+                  )}
+                  {l.points?.map((point) => (
+                    <Text key={point} className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
+                      {'\u2022  '}
+                      {point}
+                    </Text>
+                  ))}
                 </Pressable>
               );
             })}
           </View>
 
           <Input
-            label="Their email"
+            label="Dependant's name"
             showLabel
-            placeholder="name@example.com"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            value={email}
+            placeholder="e.g. Tola Adeyemi"
+            autoComplete="name"
+            value={name}
             onChangeText={(v) => {
-              setEmail(v);
-              if (emailError) setEmailError(undefined);
+              setName(v);
+              if (nameError) setNameError(undefined);
             }}
-            error={emailError}
+            error={nameError}
           />
+          <View className="flex-row items-end gap-sm">
+            <View className="flex-1">
+              <Input
+                label="Dependant's phone number"
+                showLabel
+                placeholder="e.g. 0803 123 4567"
+                keyboardType="phone-pad"
+                autoComplete="tel"
+                value={phone}
+                onChangeText={(v) => {
+                  setPhone(v);
+                  if (phoneError) setPhoneError(undefined);
+                }}
+                error={phoneError}
+              />
+            </View>
+            {Platform.OS !== 'web' && (
+              <Pressable
+                onPress={handlePickContact}
+                accessibilityRole="button"
+                accessibilityLabel="Pick from contacts"
+                hitSlop={8}
+                className="mb-lg h-[52px] w-[52px] items-center justify-center rounded-md border border-paper-200 bg-white active:opacity-70 dark:border-ink-border dark:bg-ink-surface"
+              >
+                <Ionicons name="person-circle-outline" size={22} color={colors.primary} />
+              </Pressable>
+            )}
+          </View>
           <Text className="mb-lg text-[12px] leading-[17px] text-paper-500 dark:text-ink-textMuted">
             By inviting them you take responsibility for how they use this access.
           </Text>
@@ -258,9 +318,16 @@ export function HouseholdAccessSection() {
         <Card key={invite.id}>
           <View className="flex-row items-center gap-md">
             <View className="flex-1">
-              <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">{invite.email}</Text>
+              <Text className="text-base font-semibold text-paper-900 dark:text-ink-text">
+                {invite.invitee_name || formatPhoneForDisplay(invite.phone) || invite.email || 'Invite'}
+              </Text>
               <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
-                {LEVEL_LABEL[invite.access_level]} · code {invite.code}
+                {[invite.invitee_name ? formatPhoneForDisplay(invite.phone) : null, LEVEL_LABEL[invite.access_level]]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </Text>
+              <Text className="mt-0.5 text-[12px] text-paper-400 dark:text-ink-textMuted">
+                Invite code {invite.code}
               </Text>
             </View>
             <StatusBadge label="Invited" tone="warning" />

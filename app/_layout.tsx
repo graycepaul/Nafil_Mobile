@@ -65,7 +65,10 @@ const SHARED_ROUTES = new Set(["settings", "support"]);
 // link establishes a session, and the usual "session exists → go to role home"
 // redirect below would otherwise bounce the user away before they can set a
 // password.
-const AUTH_GROUP_EXCEPTIONS = new Set(["set-password"]);
+// household-invite creates the account and links it to the household in two
+// steps a moment apart; without this the unapproved-resident redirect would
+// pull the person off the screen between the two.
+const AUTH_GROUP_EXCEPTIONS = new Set(["set-password", "household-invite"]);
 
 /**
  * Native deep links (password reset, staff invite) land here as a raw URL string

@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { getAuthRedirectUrl } from '../../lib/auth-session';
 import {
   validateHouseholdInviteCode,
   saveHouseholdInviteProfile,
+  acceptHouseholdInvite,
   type ValidatedHouseholdInvite,
 } from '../../lib/household-invite';
+import { formatPhoneForDisplay, normalizePhone } from '../../lib/phone';
+import { useAuthStore } from '../../store/auth-store';
 import { AuthShell } from '../../components/auth/AuthShell';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -22,18 +24,27 @@ import {
   validateRequired,
 } from '../../lib/validation';
 
-type Step = 'code' | 'profile' | 'password' | 'sent';
+type Step = 'code' | 'profile' | 'password';
 
 /**
  * Where "Invited to a household? Use your invite code" leads - the household
- * counterpart of staff-invite.tsx, same single-screen step machine for the
- * same reason (no account exists until the last step, so nothing before it
- * has a route to catch mid-flow). The invite fixes the estate, unit, and
- * access level, so there's no estate search or admin approval here: the
- * resident who sent the code is the one vouching for this person.
+ * counterpart of staff-invite.tsx, same single-screen step machine (no
+ * account exists until the last step, so nothing before it has a route to
+ * catch mid-flow).
+ *
+ * The invite fixes the estate, unit, access level and phone number, so
+ * there's no estate search, no admin approval, and nothing to type but a
+ * name and a password: the resident who sent the code is the one vouching
+ * for this person. The account is a phone + password account, created and
+ * linked in one go - the auth server auto-confirms sign-ups, so there's no
+ * confirmation message to wait for. This route is exempt from the root
+ * layout's "unapproved resident -> onboarding" redirect (see
+ * AUTH_GROUP_EXCEPTIONS) so it isn't yanked away between the account being
+ * created and the invite being linked a moment later.
  */
 export default function HouseholdInviteScreen() {
   const router = useRouter();
+  const refreshProfile = useAuthStore((s) => s.refreshProfile);
 
   const [step, setStep] = useState<Step>('code');
   const [formError, setFormError] = useState<string>();
@@ -45,12 +56,7 @@ export default function HouseholdInviteScreen() {
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [profileErrors, setProfileErrors] = useState<{
-    firstName?: string;
-    lastName?: string;
-    phone?: string;
-  }>({});
+  const [profileErrors, setProfileErrors] = useState<{ firstName?: string; lastName?: string }>({});
   const [savingProfile, setSavingProfile] = useState(false);
 
   const [password, setPassword] = useState('');
@@ -75,6 +81,13 @@ export default function HouseholdInviteScreen() {
       return;
     }
     setInvite(result);
+    // Prefill from the name the resident gave when inviting - a starting
+    // point the dependant can change, since it's their own profile name.
+    if (result.inviteeName && !firstName && !lastName) {
+      const parts = result.inviteeName.trim().split(/\s+/);
+      setLastName(parts.length > 1 ? parts[parts.length - 1] : '');
+      setFirstName(parts.length > 1 ? parts.slice(0, -1).join(' ') : parts[0]);
+    }
     setStep('profile');
   }
 
@@ -82,7 +95,6 @@ export default function HouseholdInviteScreen() {
     const nextErrors = {
       firstName: validateRequired(firstName, 'first name'),
       lastName: validateRequired(lastName, 'last name'),
-      phone: validateRequired(phone, 'phone number'),
     };
     setProfileErrors(nextErrors);
     setFormError(undefined);
@@ -93,7 +105,6 @@ export default function HouseholdInviteScreen() {
       code: code.trim(),
       firstName: firstName.trim(),
       lastName: lastName.trim(),
-      phone: phone.trim(),
     });
     setSavingProfile(false);
 
@@ -113,40 +124,50 @@ export default function HouseholdInviteScreen() {
     setFormError(undefined);
     if (nextErrors.password || nextErrors.confirm) return;
 
-    setCreating(true);
-    const { error } = await supabase.auth.signUp({
-      email: invite!.email!,
-      password,
-      options: { emailRedirectTo: getAuthRedirectUrl('/') },
-    });
-    setCreating(false);
-
-    if (error) {
-      setFormError(authErrorMessage(error));
+    const phone = normalizePhone(invite!.phone!);
+    if (!phone) {
+      setFormError('This invite has an invalid phone number. Ask them for a new one.');
       return;
     }
-    setStep('sent');
-  }
 
-  if (step === 'sent') {
-    return (
-      <AuthShell
-        title="Check your email"
-        subtitle={`We've sent a confirmation link to ${invite?.email}. Click it to finish setting up your account.`}
-      >
-        <Text className="text-[13px] leading-[19px] text-paper-500 dark:text-ink-textMuted">
-          Your name and phone are already saved. There&apos;s nothing left to fill in once you
-          confirm.
-        </Text>
-      </AuthShell>
-    );
+    setCreating(true);
+    const signUp = await supabase.auth.signUp({
+      phone,
+      password,
+      options: { data: { full_name: `${firstName.trim()} ${lastName.trim()}`.trim() } },
+    });
+
+    if (signUp.error || !signUp.data.session) {
+      // Most likely an earlier attempt already created this account but never
+      // finished linking it (e.g. a dropped connection) - sign in with the
+      // same credentials and carry on rather than dead-ending.
+      const signIn = await supabase.auth.signInWithPassword({ phone, password });
+      if (signIn.error) {
+        setCreating(false);
+        setFormError(authErrorMessage(signUp.error ?? signIn.error));
+        return;
+      }
+    }
+
+    const { accepted } = await acceptHouseholdInvite(code.trim());
+    if (!accepted) {
+      setCreating(false);
+      setFormError(
+        'Your account was created but we couldn’t link it to the household. Try again, or ask for a new invite code.'
+      );
+      return;
+    }
+
+    await refreshProfile();
+    setCreating(false);
+    router.replace('/resident' as never);
   }
 
   if (step === 'password') {
     return (
       <AuthShell
         title="Set a password"
-        subtitle="You'll use this to sign in from now on."
+        subtitle={`You'll sign in with ${formatPhoneForDisplay(invite?.phone)} and this password.`}
         onBack={() => setStep('profile')}
       >
         {formError && <Notice message={formError} />}
@@ -189,7 +210,7 @@ export default function HouseholdInviteScreen() {
 
   if (step === 'profile') {
     const who = invite?.inviterName ? `${invite.inviterName}'s household` : 'a household';
-    const level = invite?.accessLevel === 'visitors_only' ? ' with visitor and marketplace access' : '';
+    const level = invite?.accessLevel === 'visitors_only' ? ' with limited access' : ' with full access';
     return (
       <AuthShell
         title="Set up your profile"
@@ -218,19 +239,10 @@ export default function HouseholdInviteScreen() {
           }}
           error={profileErrors.lastName}
         />
-        <Input
-          label="Phone number"
-          placeholder="Phone number"
-          keyboardType="phone-pad"
-          autoComplete="tel"
-          textContentType="telephoneNumber"
-          value={phone}
-          onChangeText={(v) => {
-            setPhone(v);
-            if (profileErrors.phone) setProfileErrors((e) => ({ ...e, phone: undefined }));
-          }}
-          error={profileErrors.phone}
-        />
+        <Text className="mb-lg text-[13px] leading-[19px] text-paper-500 dark:text-ink-textMuted">
+          Your account will use the phone number you were invited with:{' '}
+          {formatPhoneForDisplay(invite?.phone)}.
+        </Text>
 
         <Button label="Continue" onPress={handleProfileContinue} loading={savingProfile} />
       </AuthShell>
