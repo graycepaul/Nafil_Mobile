@@ -2,7 +2,7 @@
   "expo": {
     "name": "Nafil Estates",
     "slug": "nafil-estate",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -61,7 +61,7 @@
       [
         "expo-contacts",
         {
-          "contactsPermission": "Allow Nafil Estates to access your contacts so you can pick a visitor's phone number instead of typing it."
+          "contactsPermission": "Allow Nafil Estates to access your contacts so you can pick a visitor's or household member's phone number instead of typing it."
         }
       ],
       "expo-sharing",
