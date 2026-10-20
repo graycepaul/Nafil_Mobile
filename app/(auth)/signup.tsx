@@ -44,7 +44,7 @@ export default function SignupScreen() {
     if (Object.values(nextErrors).some(Boolean)) return;
 
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
@@ -52,8 +52,6 @@ export default function SignupScreen() {
         emailRedirectTo: getAuthRedirectUrl('/'),
       },
     });
-    setLoading(false);
-
     // "already registered" is deliberately treated like success, not an
     // error - routing to check-email either way (same as
     // forgot-password.tsx's reset flow) means an attacker probing emails
@@ -62,9 +60,17 @@ export default function SignupScreen() {
     // them to check an inbox that won't get a new mail - a minor dead end
     // for them, not a leak for everyone else.
     if (error && !/already been registered|already registered/i.test(error.message)) {
+      setLoading(false);
       setFormError(authErrorMessage(error));
       return;
     }
+    // This server confirms sign-ups itself, so a new account comes back already
+    // signed in and the root layout takes it to onboarding: no email is sent, so
+    // do not tell the person to check one. Only when no session came back (email
+    // confirmation required, or the address already exists) is "check your email"
+    // the right screen. Loading stays on until the redirect so nothing flashes.
+    if (data?.session) return;
+    setLoading(false);
     router.replace({ pathname: '/check-email', params: { email: email.trim() } });
   }
 
@@ -75,12 +81,6 @@ export default function SignupScreen() {
       onBack={() => router.back()}
       footer={
         <View className="gap-md">
-          <View className="flex-row flex-wrap items-center justify-center gap-[6px]">
-            <Text className="text-[13px] text-paper-500 dark:text-ink-textMuted">
-              Invited to a household?
-            </Text>
-            <AuthLink label="Use your invite code" onPress={() => router.push('/household-invite')} />
-          </View>
           <View className="flex-row items-center justify-center gap-[6px]">
             <Text className="text-[13px] text-paper-500 dark:text-ink-textMuted">
               Already have an account?

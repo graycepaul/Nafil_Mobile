@@ -9,6 +9,8 @@ import {
   type ValidatedInvite,
 } from '../../lib/staff-invite';
 import { pickAndUploadPendingInviteAvatar } from '../../lib/avatar';
+import { normalizePhone } from '../../lib/phone';
+import { clearPendingStaffInviteCode, savePendingStaffInviteCode } from '../../lib/pending-staff-invite';
 import { AuthShell } from '../../components/auth/AuthShell';
 import { Avatar } from '../../components/ui/Avatar';
 import { Button } from '../../components/ui/Button';
@@ -21,6 +23,7 @@ import {
   MIN_PASSWORD_LENGTH,
   validateConfirmation,
   validatePassword,
+  validatePhone,
   validateRequired,
 } from '../../lib/validation';
 
@@ -100,7 +103,7 @@ export default function StaffInviteScreen() {
     const nextErrors = {
       firstName: validateRequired(firstName, 'first name'),
       lastName: validateRequired(lastName, 'last name'),
-      phone: validateRequired(phone, 'phone number'),
+      phone: validatePhone(phone),
     };
     setProfileErrors(nextErrors);
     setFormError(undefined);
@@ -111,7 +114,7 @@ export default function StaffInviteScreen() {
       code: code.trim(),
       firstName: firstName.trim(),
       lastName: lastName.trim(),
-      phone: phone.trim(),
+      phone: normalizePhone(phone) ?? phone.trim(),
       avatarUrl,
     });
     setSavingProfile(false);
@@ -133,17 +136,25 @@ export default function StaffInviteScreen() {
     if (nextErrors.password || nextErrors.confirm) return;
 
     setCreating(true);
-    const { error } = await supabase.auth.signUp({
+    // Saved before the account exists so the onboarding step that runs as soon as
+    // the new session loads can accept the invite by code.
+    await savePendingStaffInviteCode(code);
+    const { data, error } = await supabase.auth.signUp({
       email: invite!.email!,
       password,
       options: { emailRedirectTo: getAuthRedirectUrl('/') },
     });
-    setCreating(false);
 
     if (error) {
+      setCreating(false);
+      await clearPendingStaffInviteCode();
       setFormError(authErrorMessage(error));
       return;
     }
+    // Signed in straight away (this server confirms sign-ups itself): the root
+    // layout and the onboarding step take it from here, so don't announce an email.
+    if (data?.session) return;
+    setCreating(false);
     setStep('sent');
   }
 
@@ -267,7 +278,7 @@ export default function StaffInviteScreen() {
   return (
     <AuthShell
       title="Enter your invite code"
-      subtitle="Your estate admin sent this to your email when they added you."
+      subtitle="Your estate admin gave you this code when they added you."
       onBack={() => router.back()}
     >
       {formError && <Notice message={formError} />}

@@ -7,25 +7,7 @@ import { useEmergencyAlertStore } from '../store/emergency-alert-store';
 import { Overlay } from './ui/Overlay';
 import { Button } from './ui/Button';
 import { RemoteImage } from './ui/RemoteImage';
-import type { UserRole } from '../types/database';
-
-const ROLE_HOME: Record<UserRole, string> = {
-  resident: '/resident',
-  security: '/security',
-  admin: '/admin',
-  super_admin: '/admin',
-  finance: '/admin',
-};
-
-// Security has no announcements screen (see AnnouncementsFeed) - it falls
-// back to ROLE_HOME below, same as the notification-tap handler in
-// app/_layout.tsx.
-const ROLE_ANNOUNCEMENTS: Partial<Record<UserRole, string>> = {
-  resident: '/resident/announcements',
-  admin: '/admin/announcements',
-  super_admin: '/admin/announcements',
-  finance: '/admin/announcements',
-};
+import { ROLE_ANNOUNCEMENTS, ROLE_HOME } from '../lib/role-routes';
 
 /**
  * Rendered once at the app root (app/_layout.tsx) - not per-screen - so an
@@ -70,7 +52,7 @@ export function EmergencyAlertModal() {
             variant="danger"
             onPress={() => {
               dismiss();
-              if (role) router.push((ROLE_ANNOUNCEMENTS[role] ?? ROLE_HOME[role]) as never);
+              if (role) router.push((ROLE_ANNOUNCEMENTS[role] ?? ROLE_HOME[role] ?? '/') as never);
             }}
             className="flex-1"
           />

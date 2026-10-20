@@ -1,6 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from './supabase';
 import { friendlyDbError } from './db-errors';
+import { imageExtension } from './image-ext';
 
 interface PickAndUploadResult {
   url?: string;
@@ -31,7 +32,7 @@ async function pickImage() {
 }
 
 async function uploadToPath(uri: string, mimeType: string | null | undefined, path: string) {
-  const ext = (uri.split('.').pop() || 'jpg').toLowerCase().split('?')[0];
+  const ext = imageExtension(uri, mimeType);
   const contentType = mimeType ?? `image/${ext === 'jpg' ? 'jpeg' : ext}`;
   // @supabase/storage-js ignores the `contentType` option once the body is a
   // Blob - it hands the Blob straight to a FormData, whose part gets its
@@ -60,7 +61,7 @@ async function uploadToPath(uri: string, mimeType: string | null | undefined, pa
 export async function pickAndUploadAvatar(userId: string): Promise<PickAndUploadResult> {
   const picked = await pickImage();
   if ('error' in picked || 'cancelled' in picked) return picked;
-  return uploadToPath(picked.asset.uri, picked.asset.mimeType, `${userId}/avatar.${(picked.asset.uri.split('.').pop() || 'jpg').toLowerCase().split('?')[0]}`);
+  return uploadToPath(picked.asset.uri, picked.asset.mimeType, `${userId}/avatar.${imageExtension(picked.asset.uri, picked.asset.mimeType)}`);
 }
 
 /**
@@ -76,7 +77,7 @@ export async function pickAndUploadAvatar(userId: string): Promise<PickAndUpload
 export async function pickAndUploadPendingInviteAvatar(code: string): Promise<PickAndUploadResult> {
   const picked = await pickImage();
   if ('error' in picked || 'cancelled' in picked) return picked;
-  const ext = (picked.asset.uri.split('.').pop() || 'jpg').toLowerCase().split('?')[0];
+  const ext = imageExtension(picked.asset.uri, picked.asset.mimeType);
   return uploadToPath(picked.asset.uri, picked.asset.mimeType, `pending/${code}/avatar.${ext}`);
 }
 
@@ -99,7 +100,7 @@ export async function pickAndUploadHouseholdAvatar(
 ): Promise<PickAndUploadResult> {
   const picked = await pickImage();
   if ('error' in picked || 'cancelled' in picked) return picked;
-  const ext = (picked.asset.uri.split('.').pop() || 'jpg').toLowerCase().split('?')[0];
+  const ext = imageExtension(picked.asset.uri, picked.asset.mimeType);
   return uploadToPath(picked.asset.uri, picked.asset.mimeType, `${residentId}/household/${memberId}.${ext}`);
 }
 
@@ -120,6 +121,6 @@ export async function uploadHouseholdAvatar(
   memberId: string,
   asset: { uri: string; mimeType: string | null | undefined }
 ): Promise<PickAndUploadResult> {
-  const ext = (asset.uri.split('.').pop() || 'jpg').toLowerCase().split('?')[0];
+  const ext = imageExtension(asset.uri, asset.mimeType);
   return uploadToPath(asset.uri, asset.mimeType, `${residentId}/household/${memberId}.${ext}`);
 }

@@ -5,16 +5,15 @@ import { AppState, Platform } from "react-native";
 import { Slot, useRouter, useSegments } from "expo-router";
 import * as Linking from "expo-linking";
 import * as Notifications from "expo-notifications";
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../lib/query-client";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { ThemeProvider, useTheme } from "../context/theme-context";
 import { useAuthStore } from "../store/auth-store";
 import { supabase } from "../lib/supabase";
-import {
-  establishSessionFromUrl,
-  urlLooksLikeAuthLink,
-} from "../lib/auth-session";
+import { establishSessionFromUrl, urlLooksLikeAuthLink } from "../lib/auth-session";
+import { shouldApplyAuthLink } from "../lib/auth-link";
 import {
   registerForPushNotifications,
   subscribeToPushTokenChanges,
@@ -25,35 +24,9 @@ import { useEmergencyAlertStore } from "../store/emergency-alert-store";
 import { useAppVersionGate } from "../lib/use-app-version-gate";
 import { UpdateRequiredScreen } from "../components/UpdateRequiredScreen";
 import { UpdateAvailableModal } from "../components/UpdateAvailableModal";
+import { ProfileLoadError } from "../components/ProfileLoadError";
 import type { UserRole } from "../types/database";
-
-const queryClient = new QueryClient();
-
-const ROLE_HOME: Record<UserRole, string> = {
-  resident: "/resident",
-  security: "/security",
-  admin: "/admin",
-  super_admin: "/admin",
-  finance: "/admin",
-};
-
-// Only these roles have a dedicated notifications list today - security
-// falls back to its home screen rather than a route that doesn't exist yet.
-const ROLE_NOTIFICATIONS: Partial<Record<UserRole, string>> = {
-  resident: "/resident/notifications",
-  admin: "/admin/notifications",
-  super_admin: "/admin/notifications",
-  finance: "/admin/notifications",
-};
-
-// Same idea for an emergency alert's "View" - security has no announcements
-// screen (see AnnouncementsFeed), so it falls back to ROLE_HOME below.
-const ROLE_ANNOUNCEMENTS: Partial<Record<UserRole, string>> = {
-  resident: "/resident/announcements",
-  admin: "/admin/announcements",
-  super_admin: "/admin/announcements",
-  finance: "/admin/announcements",
-};
+import { ROLE_HOME, notificationTapPath } from "../lib/role-routes";
 
 const AUTH_GROUP = "(auth)";
 const ONBOARDING_GROUP = "(onboarding)";
@@ -83,6 +56,7 @@ function useNativeAuthLinks() {
 
     function handleUrl(url: string | null) {
       if (!url || !urlLooksLikeAuthLink(url)) return;
+      if (!shouldApplyAuthLink(url, useAuthStore.getState().session?.user.id)) return;
       establishSessionFromUrl(url);
       // No explicit navigation here: expo-router's own linking integration
       // already routes to the path portion of this URL (e.g. `/set-password`).
@@ -106,11 +80,12 @@ function useNativeAuthLinks() {
  */
 /**
  * Registering as early as sign-in (rather than waiting for a specific
- * screen) means a resident's device is reachable for an emergency alert
- * from the moment they're part of an estate, not just once they happen to
- * visit some particular tab. estate_id gates it - a token registered
- * before a resident has one would just be unfindable by /alerts/broadcast,
- * which looks up recipients by estate.
+ * screen) means a device is reachable from the moment someone signs in, not
+ * just once they happen to visit some particular tab. That includes a resident
+ * whose estate request is still pending: without a token they would never get
+ * the "approved" or "declined" push. A token with no estate is harmless to
+ * everything else, because /alerts/broadcast finds recipients through their
+ * profile's estate, so it simply isn't found until they have one.
  *
  * Two things a one-shot effect misses, handled here: if the resident denies
  * the permission prompt and later grants it from Settings, nothing would
@@ -120,9 +95,9 @@ function useNativeAuthLinks() {
  * live session (reinstall, restored backup) - subscribeToPushTokenChanges
  * keeps that in sync for as long as this profile stays signed in.
  */
-function usePushRegistration(profileId: string | undefined, estateId: string | null | undefined) {
+function usePushRegistration(profileId: string | undefined) {
   useEffect(() => {
-    if (!profileId || !estateId) return;
+    if (!profileId) return;
 
     registerForPushNotifications(profileId);
 
@@ -135,7 +110,7 @@ function usePushRegistration(profileId: string | undefined, estateId: string | n
       appStateSub.remove();
       tokenSub.remove();
     };
-  }, [profileId, estateId]);
+  }, [profileId]);
 }
 
 function useBadgeSync(profileId: string | undefined) {
@@ -211,19 +186,28 @@ function useNotificationRouting(
       }
     });
 
-    const responseSub = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        const data = response.notification.request.content.data as
-          | { kind?: string }
-          | undefined;
-        if (data?.kind === "emergency_alert") {
-          if (role) router.push((ROLE_ANNOUNCEMENTS[role] ?? ROLE_HOME[role]) as never);
-          return;
-        }
-        const notificationsPath = role ? ROLE_NOTIFICATIONS[role] : undefined;
-        if (notificationsPath) router.push(notificationsPath as never);
-      }
-    );
+    function openFromTap(response: Notifications.NotificationResponse) {
+      if (response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
+      // Role not known yet (launch): leave the tap stored; the effect re-runs once
+      // the profile loads and picks it up then.
+      if (!role) return;
+      const data = response.notification.request.content.data as { kind?: string } | undefined;
+      const path = notificationTapPath(data?.kind, role);
+      if (path) router.push(path as never);
+      // Taken: otherwise the same tap would be replayed on the next launch or sign-in.
+      Notifications.clearLastNotificationResponseAsync();
+    }
+
+    const responseSub = Notifications.addNotificationResponseReceivedListener(openFromTap);
+
+    // A tap that launched the app from fully closed arrives before any listener
+    // exists, so it has to be read back. It waits for the role (the profile loads
+    // a moment after launch); this effect re-runs once `role` is known.
+    if (role) {
+      Notifications.getLastNotificationResponseAsync().then((last) => {
+        if (last) openFromTap(last);
+      });
+    }
 
     return () => {
       receivedSub.remove();
@@ -236,6 +220,7 @@ function RootNavigation() {
   const session = useAuthStore((s) => s.session);
   const profile = useAuthStore((s) => s.profile);
   const loading = useAuthStore((s) => s.loading);
+  const profileError = useAuthStore((s) => s.profileError);
   const init = useAuthStore((s) => s.init);
   const segments = useSegments();
   const router = useRouter();
@@ -245,7 +230,7 @@ function RootNavigation() {
   useBadgeSync(profile?.id);
   useNotificationRouting(profile?.role, router);
 
-  usePushRegistration(profile?.id, profile?.estate_id);
+  usePushRegistration(profile?.id);
 
   const versionGate = useAppVersionGate();
 
@@ -298,6 +283,9 @@ function RootNavigation() {
     if (section !== undefined && SHARED_ROUTES.has(section)) return;
 
     const homePath = ROLE_HOME[profile.role];
+    // A role this build doesn't know about (added server-side after release)
+    // must not crash the router; leave it on the splash rather than throwing.
+    if (!homePath) return;
     const isOnOwnSection = section === homePath.slice(1);
 
     if (
@@ -318,6 +306,14 @@ function RootNavigation() {
           iosStoreUrl={versionGate.config.ios_store_url}
           androidStoreUrl={versionGate.config.android_store_url}
         />
+      </AppShell>
+    );
+  }
+
+  if (session && !profile && profileError) {
+    return (
+      <AppShell>
+        <ProfileLoadError />
       </AppShell>
     );
   }

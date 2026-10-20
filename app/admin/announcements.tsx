@@ -25,6 +25,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Notice } from '../../components/ui/Notice';
 import { Overlay } from '../../components/ui/Overlay';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { AnnouncementsFeed, type AnnouncementSort } from '../../components/AnnouncementsFeed';
 import { AlertCategoryPicker } from '../../components/AlertCategoryPicker';
@@ -56,6 +57,7 @@ export default function AdminAnnouncementsScreen() {
   const [body, setBody] = useState('');
   const [photo, setPhoto] = useState<{ uri: string; mimeType: string | null }>();
   const [posting, setPosting] = useState(false);
+  const [confirmingEmergency, setConfirmingEmergency] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'error' | 'success'; message: string }>();
   const [sortBy, setSortBy] = useState<AnnouncementSort>('date');
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
@@ -140,6 +142,7 @@ export default function AdminAnnouncementsScreen() {
   }
 
   async function post() {
+    setConfirmingEmergency(false);
     if (!title.trim() || !body.trim() || !targetEstateId) return;
     setPosting(true);
     setNotice(undefined);
@@ -150,7 +153,7 @@ export default function AdminAnnouncementsScreen() {
         photoUrl = await uploadAnnouncementPhoto(targetEstateId, photo);
       } catch (uploadError) {
         setPosting(false);
-        setNotice({ tone: 'error', message: (uploadError as Error).message });
+        setNotice({ tone: 'error', message: friendlyDbError(uploadError) });
         return;
       }
     }
@@ -171,7 +174,7 @@ export default function AdminAnnouncementsScreen() {
 
     if (error || !data) {
       setPosting(false);
-      setNotice({ tone: 'error', message: error?.message ?? 'Could not post this announcement.' });
+      setNotice({ tone: 'error', message: friendlyDbError(error) });
       return;
     }
 
@@ -396,7 +399,7 @@ export default function AdminAnnouncementsScreen() {
           <Button
             label={emergency ? 'Send emergency alert' : 'Post announcement'}
             variant={emergency ? 'danger' : 'primary'}
-            onPress={post}
+            onPress={() => (emergency ? setConfirmingEmergency(true) : post())}
             loading={posting}
             disabled={!title.trim() || !body.trim()}
           />
@@ -426,6 +429,16 @@ export default function AdminAnnouncementsScreen() {
         </View>
       }
     />
+
+      <ConfirmDialog
+        visible={confirmingEmergency}
+        title="Send emergency alert?"
+        message="This sends a priority notification to every resident in your estate right now. It can't be recalled once sent."
+        confirmLabel="Send alert"
+        destructive
+        onConfirm={post}
+        onCancel={() => setConfirmingEmergency(false)}
+      />
 
       <Overlay visible={sortMenuOpen} onDismiss={() => setSortMenuOpen(false)}>
         <View className="rounded-lg bg-white p-xs dark:bg-ink-bg">

@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { acceptStaffInviteByEmail } from '../../lib/staff-invite';
+import { acceptStaffInviteByCode } from '../../lib/staff-invite';
+import { savePendingStaffInviteCode, takePendingStaffInviteCode } from '../../lib/pending-staff-invite';
 import { useTheme } from '../../context/theme-context';
 import { useAuthStore } from '../../store/auth-store';
 import type { EstateJoinRequest } from '../../types/database';
@@ -15,7 +16,8 @@ import type { EstateJoinRequest } from '../../types/database';
  * not at square one.
  *
  * The first thing it does, before any resident-wizard logic, is try to finalize
- * a staff invite by email match. This is where a just-confirmed staff signup
+ * a staff invite using the code the person entered before signing up (the code
+ * and their email must both match; the email alone is not enough). This is where a just-confirmed staff signup
  * actually becomes staff: they land here with a brand-new session and a
  * default resident-shaped profile (role='resident', approved=false - the
  * signup trigger's default for everyone), and this call is what turns that
@@ -33,16 +35,22 @@ export default function OnboardingRouter() {
     let cancelled = false;
 
     async function run() {
-      const { accepted } = await acceptStaffInviteByEmail();
-      if (cancelled) return;
+      const pendingCode = await takePendingStaffInviteCode();
+      const attempt = pendingCode ? await acceptStaffInviteByCode(pendingCode) : null;
+      const accepted = !!attempt?.accepted;
+      // The call never completed (connection): keep the code so the next visit retries.
+      if (pendingCode && attempt?.failed) await savePendingStaffInviteCode(pendingCode);
 
       if (accepted) {
         // Profile is no longer resident-shaped. Refreshing updates the store,
         // which the root layout's own effect reacts to and routes accordingly -
-        // nothing further for this component to decide.
+        // nothing further for this component to decide. This runs even if the
+        // effect was cancelled meanwhile: the code was consumed above, so the
+        // role change must not be left unread.
         await refreshProfile();
         return;
       }
+      if (cancelled) return;
 
       // Not a staff invite - proceed as an ordinary resident.
       if (!profile!.phone) {

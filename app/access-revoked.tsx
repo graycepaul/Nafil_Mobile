@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/auth-store';
 import { AuthShell } from '../components/auth/AuthShell';
 import { Button } from '../components/ui/Button';
+import { DeleteAccountSection } from '../components/DeleteAccountSection';
 import type { HouseholdLink, PublicProfile } from '../types/database';
 
 /**
@@ -34,17 +35,18 @@ export default function AccessRevokedScreen() {
 
   return (
     <AuthShell
-      title="Your access was removed"
+      title="Your access was revoked"
       subtitle={
         primaryName
-          ? `${primaryName} has removed your access to their household on Nafil Estates.`
-          : 'Your access to this household on Nafil Estates has been removed.'
+          ? `${primaryName} has revoked your access to their household on Nafil Estates.`
+          : 'Your access to this household on Nafil Estates has been revoked.'
       }
     >
       <Text className="mb-xl text-[13px] leading-[19px] text-paper-500 dark:text-ink-textMuted">
         If you think this was a mistake, please contact them directly - only they can restore it.
       </Text>
       <Button label="Sign out" variant="secondary" onPress={signOut} />
+      <DeleteAccountSection />
     </AuthShell>
   );
 }

@@ -3,6 +3,7 @@ import { View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { friendlyDbError } from '../../lib/db-errors';
+import { normalizePhone } from '../../lib/phone';
 import { pickAndUploadAvatar } from '../../lib/avatar';
 import { useAuthStore } from '../../store/auth-store';
 import { AuthShell } from '../../components/auth/AuthShell';
@@ -53,7 +54,7 @@ export default function ProfileSetupScreen() {
 
     const { error } = await supabase
       .from('profiles')
-      .update({ phone: trimmed, avatar_url: avatarUrl })
+      .update({ phone: normalizePhone(trimmed) ?? trimmed, avatar_url: avatarUrl })
       .eq('id', profile.id);
 
     setSaving(false);

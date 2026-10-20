@@ -82,6 +82,9 @@ export default function AdminResidentsScreen() {
         .select('*, estate:estates(name)')
         .eq('role', 'resident')
         .eq('approved', true)
+        // Primary residents only: dependants share their unit, and a revoked one is
+        // not a resident at all.
+        .is('household_access_level', null)
         .order('full_name');
       if (error) throw error;
       return data as WithEstateName<Profile>[];

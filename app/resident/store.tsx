@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
 import { friendlyDbError } from '../../lib/db-errors';
+import { cancelOrder } from '../../lib/orders';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { formatNaira, relativeTime } from '../../lib/format';
@@ -18,6 +19,7 @@ import { StatusBadge, type BadgeTone } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { CardSkeletonList } from '../../components/ui/CardSkeleton';
 import { Toast } from '../../components/ui/Toast';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import type { ListingStatus, ListingWithSeller, Order, OrderStatus, PublicProfile } from '../../types/database';
 
 type OrderWithListing = Order & { listing: { title: string } | null };
@@ -59,6 +61,8 @@ export default function StoreScreen() {
   const queryClient = useQueryClient();
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [updatingListingId, setUpdatingListingId] = useState<string | null>(null);
+  const [pendingCancel, setPendingCancel] = useState<OrderWithListing | null>(null);
+  const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<string>();
 
   const { data: orders, isLoading: ordersLoading } = useQuery({
@@ -132,6 +136,22 @@ export default function StoreScreen() {
       return;
     }
     queryClient.invalidateQueries({ queryKey: ['store_orders', profile?.id] });
+  }
+
+  async function confirmCancel() {
+    if (!pendingCancel) return;
+    setCancelling(true);
+    const message = await cancelOrder(supabase, pendingCancel.id);
+    setCancelling(false);
+    setPendingCancel(null);
+    if (message) {
+      setError(message);
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['store_orders', profile?.id] });
+    // A cancelled order puts a reserved good back on sale.
+    queryClient.invalidateQueries({ queryKey: ['store_listings', profile?.id] });
+    queryClient.invalidateQueries({ queryKey: ['listings'] });
   }
 
   async function updateListingStatus(listingId: string, status: ListingStatus) {
@@ -231,13 +251,21 @@ export default function StoreScreen() {
                   {buyer?.unit_no ? ` · Unit ${buyer.unit_no}` : ''} · {relativeTime(order.created_at)}
                 </Text>
                 {order.status === 'pending_transfer' && (
-                  <Button
-                    label="Confirm payment received"
-                    onPress={() => confirmPayment(order.id)}
-                    loading={completingId === order.id}
-                    disabled={completingId !== null && completingId !== order.id}
-                    className="mt-sm"
-                  />
+                  <>
+                    <Button
+                      label="Confirm payment received"
+                      onPress={() => confirmPayment(order.id)}
+                      loading={completingId === order.id}
+                      disabled={completingId !== null && completingId !== order.id}
+                      className="mt-sm"
+                    />
+                    <Button
+                      label="Cancel order"
+                      variant="ghost"
+                      onPress={() => setPendingCancel(order)}
+                      disabled={completingId !== null}
+                    />
+                  </>
                 )}
                 {order.status === 'paid' && (
                   <Button
@@ -364,6 +392,22 @@ export default function StoreScreen() {
           </View>
         )}
       </ScrollView>
+
+      <ConfirmDialog
+        visible={!!pendingCancel}
+        title="Cancel this order?"
+        message={
+          pendingCancel
+            ? `${pendingCancel.listing?.title ?? 'This order'} goes back on sale and the buyer sees the order as cancelled. Only cancel if the payment never arrived.`
+            : undefined
+        }
+        confirmLabel="Cancel order"
+        cancelLabel="Keep order"
+        destructive
+        loading={cancelling}
+        onConfirm={confirmCancel}
+        onCancel={() => setPendingCancel(null)}
+      />
 
       <Toast message={error} tone="error" onDismiss={() => setError(undefined)} />
     </View>

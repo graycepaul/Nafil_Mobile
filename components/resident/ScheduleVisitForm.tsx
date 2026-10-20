@@ -61,6 +61,11 @@ export function ScheduleVisitForm({
       setFormError('Choose a date and time.');
       return;
     }
+    // A few minutes of slack so "now" is not rejected by the clock ticking over.
+    if (date.getTime() < Date.now() - 5 * 60_000) {
+      setFormError('Choose a time that has not passed yet.');
+      return;
+    }
     setFormError(undefined);
     setCreating(true);
     const { error } = await supabase.from('scheduled_visits').insert({

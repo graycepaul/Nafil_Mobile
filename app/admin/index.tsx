@@ -61,7 +61,9 @@ export default function AdminDashboardScreen() {
         .from('profiles')
         .select('*', { count: 'exact', head: true })
         .eq('role', 'resident')
-        .eq('approved', true);
+        .eq('approved', true)
+        // Residents are counted by unit holder; dependants share their unit.
+        .is('household_access_level', null);
       return count ?? 0;
     },
     enabled: !!profile && !isFinance,

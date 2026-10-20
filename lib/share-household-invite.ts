@@ -13,8 +13,9 @@ export function buildHouseholdInviteMessage(invite: HouseholdInvite, inviterName
     '',
     `Your invite code: ${invite.code}`,
     '',
-    'Open the app, tap Sign up, then "Use your invite code" and enter it. Sign up with this phone number: ' +
-      formatPhoneForDisplay(invite.phone),
+    'To get started, open the Nafil Estates app, tap Sign up, choose Dependant, and enter your invite code.',
+    '',
+    `Your account is linked to this phone number: ${formatPhoneForDisplay(invite.phone)}. After you create a password, you can sign in with that number and your password.`,
   ].join('\n');
 }
 

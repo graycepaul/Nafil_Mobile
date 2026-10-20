@@ -60,16 +60,38 @@ export default function MarketplaceScreen() {
     enabled: !!profile,
   });
 
+  const { data: hasPurchases } = useQuery({
+    queryKey: ['has_purchases', profile?.id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('buyer_id', profile!.id);
+      if (error) throw error;
+      return (count ?? 0) > 0;
+    },
+    enabled: !!profile,
+  });
+
   // A visitors_only household member can browse and buy but not sell (see
   // 0056 - listings_insert enforces it; this just hides the entry points).
   const canSell = profile?.household_access_level !== 'visitors_only';
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerRight: () =>
-        !canSell ? null : (
+      headerRight: () => (
         <View className="flex-row items-center gap-md pr-lg">
-          {hasStore && (
+          {hasPurchases && (
+            <Pressable
+              onPress={() => router.push('/resident/purchases')}
+              accessibilityRole="button"
+              accessibilityLabel="My purchases"
+              hitSlop={8}
+            >
+              <Ionicons name="receipt-outline" color={colors.onHeaderBg} size={22} />
+            </Pressable>
+          )}
+          {canSell && hasStore && (
             <Pressable
               onPress={() => router.push('/resident/store')}
               accessibilityRole="button"
@@ -79,18 +101,20 @@ export default function MarketplaceScreen() {
               <Ionicons name="bag-handle-outline" color={colors.onHeaderBg} size={22} />
             </Pressable>
           )}
-          <Pressable
-            onPress={() => router.push('/resident/marketplace-new')}
-            accessibilityRole="button"
-            accessibilityLabel="New listing"
-            hitSlop={8}
-          >
-            <Ionicons name="add" color={colors.onHeaderBg} size={24} />
-          </Pressable>
+          {canSell && (
+            <Pressable
+              onPress={() => router.push('/resident/marketplace-new')}
+              accessibilityRole="button"
+              accessibilityLabel="New listing"
+              hitSlop={8}
+            >
+              <Ionicons name="add" color={colors.onHeaderBg} size={24} />
+            </Pressable>
+          )}
         </View>
       ),
     });
-  }, [navigation, router, colors.onHeaderBg, hasStore, canSell]);
+  }, [navigation, router, colors.onHeaderBg, hasStore, hasPurchases, canSell]);
 
   const {
     data: allListings,

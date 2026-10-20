@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text } from 'react-native';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { shareStaffInvite } from '../../lib/share-staff-invite';
 import { useAuthStore } from '../../store/auth-store';
 import { Button } from '../ui/Button';
@@ -79,7 +80,7 @@ export function InviteStaffForm({
       setFormError(
         insertError.code === '23505'
           ? 'This email already has a pending invite.'
-          : insertError.message
+          : friendlyDbError(insertError)
       );
       return;
     }
@@ -130,7 +131,7 @@ export function InviteStaffForm({
         error={error}
       />
       <View className="flex-row gap-sm">
-        <Button label="Send invite" onPress={handleCreate} loading={creating} className="flex-1" />
+        <Button label="Create invite" onPress={handleCreate} loading={creating} className="flex-1" />
         <Button label="Cancel" variant="secondary" onPress={onClose} className="flex-1" />
       </View>
     </Card>

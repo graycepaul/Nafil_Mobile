@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
 import { friendlyDbError } from '../../lib/db-errors';
+import { validateAccountNumber } from '../../lib/bank-account';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { Card } from '../../components/ui/Card';
@@ -95,8 +96,10 @@ export default function PaymentSettingsScreen() {
   }
 
   const usingNewAccount = selectedAccountId === NEW_ACCOUNT || !accounts || accounts.length === 0;
+  // Only shown once something is typed, so the field isn't red before they start.
+  const accountNumberError = newAccountNumber ? validateAccountNumber(newAccountNumber) : undefined;
   const canSave = usingNewAccount
-    ? newAccountName.trim() && newAccountNumber.trim() && newBankName.trim()
+    ? newAccountName.trim() && !validateAccountNumber(newAccountNumber) && newBankName.trim()
     : !!selectedAccountId;
 
   async function handleSave() {
@@ -239,6 +242,8 @@ export default function PaymentSettingsScreen() {
                 keyboardType="number-pad"
                 value={newAccountNumber}
                 onChangeText={(v) => setNewAccountNumber(v.replace(/[^0-9]/g, ''))}
+                maxLength={10}
+                error={accountNumberError}
               />
               <Input
                 label="Bank"

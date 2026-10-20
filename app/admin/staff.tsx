@@ -97,6 +97,8 @@ export default function AdminStaffScreen() {
         .from('staff_invites')
         .select('*, estate:estates(name)')
         .eq('status', 'pending')
+        // An invite past its expiry can no longer be used, so it is not "pending".
+        .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data as WithEstateName<StaffInvite>[];

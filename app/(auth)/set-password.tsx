@@ -35,6 +35,7 @@ export default function SetPasswordScreen() {
   const [formError, setFormError] = useState<string>();
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [accountEmail, setAccountEmail] = useState<string>();
 
   useEffect(() => {
     let settled = false;
@@ -49,20 +50,26 @@ export default function SetPasswordScreen() {
     // Covers native: `_layout.tsx` already established the session by the time
     // this screen mounts, so it's usually sitting here already.
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) markReady();
+      if (data.session) {
+        setAccountEmail(data.session.user.email ?? undefined);
+        markReady();
+      }
     });
 
     // Covers web: `detectSessionInUrl` resolves asynchronously after the client
     // is created, so the session may not exist yet on the first check above.
     const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY' || (session && event === 'SIGNED_IN')) markReady();
+      if (event === 'PASSWORD_RECOVERY' || (session && event === 'SIGNED_IN')) {
+        setAccountEmail(session?.user.email ?? undefined);
+        markReady();
+      }
     });
 
     // Neither fired in time: the link is expired, already used, or someone
     // navigated here directly. Give up rather than show a form with nothing to submit.
     const timeout = setTimeout(() => {
       if (!settled) setStatus('invalid');
-    }, 3500);
+    }, 10_000);
 
     return () => {
       subscription.subscription.unsubscribe();
@@ -127,7 +134,14 @@ export default function SetPasswordScreen() {
   }
 
   return (
-    <AuthShell title="Set your password" subtitle="Choose a password for your account.">
+    <AuthShell
+      title="Set your password"
+      subtitle={
+        accountEmail
+          ? `Choose a password for ${accountEmail}. If that isn't your account, close this screen.`
+          : 'Choose a password for your account.'
+      }
+    >
       {formError && <Notice message={formError} />}
 
       <Input
