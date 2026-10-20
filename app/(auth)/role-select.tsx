@@ -7,10 +7,15 @@ import { RoleCard } from '../../components/auth/RoleCard';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Button } from '../../components/ui/Button';
 
-type SignupRole = 'resident' | 'staff';
+type SignupRole = 'resident' | 'staff' | 'dependant';
 
 /**
  * "Sign up as" - the fork between the ways a person gets into Nafil Estates.
+ *
+ * Dependants (household members a resident invites) are their own option
+ * rather than a link buried in the resident signup form: they don't register
+ * with an email or wait for admin approval, they join with the invite code
+ * their resident sent.
  *
  * Resident is a real open signup. Security/staff accounts are provisioned by
  * an estate admin (the employer), not self-registered - a stranger self-declaring
@@ -37,6 +42,7 @@ export default function RoleSelectScreen() {
   function handleContinue() {
     if (role === 'resident') router.push('/signup');
     if (role === 'staff') router.push('/staff-access');
+    if (role === 'dependant') router.push('/household-invite');
   }
 
   return (
@@ -59,6 +65,13 @@ export default function RoleSelectScreen() {
           description="Manage visitors, track household access, and report issues in your home."
           selected={role === 'resident'}
           onPress={() => setRole('resident')}
+        />
+        <RoleCard
+          icon={<Ionicons name="people-outline" size={22} color={role === 'dependant' ? colors.onButtonFill : colors.textMuted} />}
+          title="Dependant"
+          description="Get your personalised access ID card, invite visitors and purchase items from the marketplace."
+          selected={role === 'dependant'}
+          onPress={() => setRole('dependant')}
         />
       </View>
 

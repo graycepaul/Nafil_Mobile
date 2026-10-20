@@ -167,7 +167,7 @@ export default function HouseholdInviteScreen() {
     return (
       <AuthShell
         title="Set a password"
-        subtitle={`You'll sign in with ${formatPhoneForDisplay(invite?.phone)} and this password.`}
+        subtitle={`Choose a password for your account. From now on, you can sign in with your phone number (${formatPhoneForDisplay(invite?.phone)}) and this password.`}
         onBack={() => setStep('profile')}
       >
         {formError && <Notice message={formError} />}
@@ -201,6 +201,11 @@ export default function HouseholdInviteScreen() {
           returnKeyType="go"
           onSubmitEditing={handleCreateAccount}
         />
+
+        <Text className="mb-lg text-[13px] leading-[19px] text-paper-500 dark:text-ink-textMuted">
+          Remember this password. Use it with {formatPhoneForDisplay(invite?.phone)} whenever you
+          sign in to Nafil Estates.
+        </Text>
 
         <Button label="Create account" onPress={handleCreateAccount} loading={creating} />
         <TermsNotice actionLabel="creating your account" />

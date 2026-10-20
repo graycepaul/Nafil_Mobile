@@ -164,7 +164,7 @@ export function HouseholdAccessSection() {
     if (error) {
       setFormError(
         error.code === '23505'
-          ? 'This number already has a pending invite. Cancel it first to send a new one.'
+          ? 'This number already has a pending invite. Revoke it first to send a new one.'
           : friendlyDbError(error)
       );
       return;
@@ -200,7 +200,7 @@ export function HouseholdAccessSection() {
       <Text className="mb-md text-[13px] text-paper-500 dark:text-ink-textMuted">
         Give a spouse, child or other dependant their own login on your unit, so they can issue visitor
         passes when you&apos;re away. You&apos;re vouching for them, so no estate admin approval is needed,
-        and you can remove their access at any time.
+        and you can revoke their access at any time.
       </Text>
 
       {listError && <Notice message={listError} />}
@@ -333,7 +333,7 @@ export function HouseholdAccessSection() {
             <StatusBadge label="Invited" tone="warning" />
           </View>
           <Button
-            label="Cancel invite"
+            label="Revoke invite"
             variant="ghost"
             loading={revokingId === invite.id}
             onPress={() => revokeInvite(invite.id)}
@@ -359,7 +359,7 @@ export function HouseholdAccessSection() {
               <StatusBadge label="Active" tone="success" />
             </View>
             <Button
-              label="Remove access"
+              label="Revoke access"
               variant="ghost"
               loading={revokingId === link.id}
               onPress={() => revokeLink(link.id)}
@@ -383,7 +383,7 @@ export function HouseholdAccessSection() {
                   {LEVEL_LABEL[link.access_level]}
                 </Text>
               </View>
-              <StatusBadge label="Removed" tone="neutral" />
+              <StatusBadge label="Revoked" tone="neutral" />
             </View>
           </Card>
         );
