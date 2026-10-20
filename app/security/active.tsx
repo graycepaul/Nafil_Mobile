@@ -55,7 +55,10 @@ export default function ActiveVisitorsScreen() {
         .is('checked_out_at', null)
         .order('checked_in_at', { ascending: false });
       if (error) throw error;
-      return data as VisitorLog[];
+      // Only visitors check out. Residents and household members are recorded as
+      // entries (see logs.tsx) but are never "on-site". A row from before the
+      // entry_type column existed has no type and counts as a visitor.
+      return (data as VisitorLog[]).filter((log) => (log.entry_type ?? 'visitor') === 'visitor');
     },
     enabled: !!profile,
   });

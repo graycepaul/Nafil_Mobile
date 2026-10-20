@@ -27,6 +27,11 @@ const METHOD_ICON: Record<VisitorLog['method'], IoniconsIconName> = {
   manual: 'create-outline',
 };
 
+/** Residents and household members live here: an entry for the register, with no checkout. */
+function isStandingEntry(log: VisitorLog): boolean {
+  return log.entry_type === 'resident' || log.entry_type === 'household';
+}
+
 function cutoffFor(filter: DateFilter): Date | null {
   const now = new Date();
   if (filter === 'today') return new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -156,11 +161,14 @@ export default function VisitorLogsScreen() {
                 {item.visitor_name}
               </Text>
               <Text className="mt-0.5 text-[13px] text-paper-500 dark:text-ink-textMuted">
-                {item.vehicle_plate ? `${item.vehicle_plate} · ` : ''}In{' '}
+                {item.vehicle_plate ? `${item.vehicle_plate} · ` : ''}
+                {isStandingEntry(item) ? 'Entered' : 'In'}{' '}
                 {new Date(item.checked_in_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                {item.checked_out_at
-                  ? ` · Out ${new Date(item.checked_out_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                  : ' · Still on-site'}
+                {isStandingEntry(item)
+                  ? ` · ${item.entry_type === 'household' ? 'Household member' : 'Resident'}`
+                  : item.checked_out_at
+                    ? ` · Out ${new Date(item.checked_out_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                    : ' · Still on-site'}
               </Text>
             </View>
           </Card>

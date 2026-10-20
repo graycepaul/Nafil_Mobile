@@ -1,6 +1,9 @@
 export type UserRole = 'resident' | 'security' | 'admin' | 'super_admin' | 'finance' | 'dev_admin';
 export type VisitorPassStatus = 'pending' | 'used' | 'expired' | 'revoked';
 export type VisitorLogMethod = 'qr' | 'code' | 'manual';
+
+/** visitor: checks out. resident / household: live here, recorded as an entry only (never on-site, no checkout). */
+export type VisitorLogEntryType = 'visitor' | 'resident' | 'household';
 export type IssueStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
 export type AnnouncementSeverity = 'info' | 'emergency';
 export type JoinRequestStatus = 'pending' | 'approved' | 'rejected';
@@ -159,6 +162,8 @@ export interface VisitorLog {
   visitor_name: string;
   vehicle_plate: string | null;
   method: VisitorLogMethod;
+  /** Absent on rows read from a database that predates migration 0064; treat as 'visitor'. */
+  entry_type?: VisitorLogEntryType;
   checked_in_at: string;
   checked_out_at: string | null;
   notes: string | null;
