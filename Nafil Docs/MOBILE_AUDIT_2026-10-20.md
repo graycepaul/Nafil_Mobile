@@ -38,7 +38,12 @@ config.
 | M8, M9, L15, L16 | Fixed in the resilience change set (app only, no migration). |
 | M15 | Refetch on app resume done (after 30s away). The offline indicator part needs a native module (NetInfo or expo-network) and so a new build: not done. |
 
-Found while fixing: after a scheduled-visit check-in (`ScheduledVisitLookup.tsx:56`) only the register list is refreshed, not the On-site list, so a scheduled visitor does not appear on-site until the guard pulls to refresh. Not yet fixed.
+| M17, M18, L1 to L8, L10 to L14, L17, L19, L20 (partial) | Fixed in the polish change set (app only). L20: a scan found no unlabeled icon buttons, so only the single-choice role announcement was fixed; Overlay accessibility was done under M8. |
+| L9 | Deferred: lists are unbounded (server caps at 1000 rows). Needs pagination UI; not an issue at current size. |
+| L18 | Deferred: resident gate codes are readable by other staff roles through the profiles table. Needs the gate lookup moved into a server function and the column hidden; its own task. |
+| Scheduled-visit On-site refresh | Fixed. |
+
+(Found while fixing Group 1: a scheduled-visit check-in did not refresh the On-site list. Fixed in the polish change set.)
 
 ## Summary
 

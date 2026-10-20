@@ -22,6 +22,10 @@ export function normalizePhone(input: string): string | null {
     digits = `234${digits}`;
   }
 
+  // People write "+234 (0)803 123 4567" or "+234 0803 123 4567": the trunk 0 after
+  // the country code is not part of the international number.
+  if (digits.startsWith('2340') && digits.length === 14) digits = `234${digits.slice(4)}`;
+
   if (digits.length < 8 || digits.length > 15) return null;
   return `+${digits}`;
 }

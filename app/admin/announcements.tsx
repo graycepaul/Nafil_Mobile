@@ -153,7 +153,7 @@ export default function AdminAnnouncementsScreen() {
         photoUrl = await uploadAnnouncementPhoto(targetEstateId, photo);
       } catch (uploadError) {
         setPosting(false);
-        setNotice({ tone: 'error', message: (uploadError as Error).message });
+        setNotice({ tone: 'error', message: friendlyDbError(uploadError) });
         return;
       }
     }
@@ -174,7 +174,7 @@ export default function AdminAnnouncementsScreen() {
 
     if (error || !data) {
       setPosting(false);
-      setNotice({ tone: 'error', message: error?.message ?? 'Could not post this announcement.' });
+      setNotice({ tone: 'error', message: friendlyDbError(error) });
       return;
     }
 

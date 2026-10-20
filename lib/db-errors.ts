@@ -64,6 +64,14 @@ const TEXT_MESSAGES: { match: RegExp; message: string }[] = [
     message: 'You don’t have permission to do that.',
   },
   {
+    match: /mime type|not supported|invalid_mime/i,
+    message: 'That photo type isn’t supported. Try a JPEG or PNG.',
+  },
+  {
+    match: /maximum allowed size|too large|payload too large|exceeded/i,
+    message: 'That photo is too large. Try a smaller one.',
+  },
+  {
     match: /timed out|took too long/i,
     message: 'The server took too long to respond. Check your connection and try again.',
   },

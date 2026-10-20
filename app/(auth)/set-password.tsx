@@ -69,7 +69,7 @@ export default function SetPasswordScreen() {
     // navigated here directly. Give up rather than show a form with nothing to submit.
     const timeout = setTimeout(() => {
       if (!settled) setStatus('invalid');
-    }, 3500);
+    }, 10_000);
 
     return () => {
       subscription.subscription.unsubscribe();

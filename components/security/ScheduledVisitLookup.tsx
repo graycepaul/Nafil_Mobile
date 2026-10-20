@@ -54,6 +54,8 @@ export function ScheduledVisitLookup() {
     setQuery('');
     refetch();
     queryClient.invalidateQueries({ queryKey: ['visitor_logs_all'] });
+    // A scheduled visitor is on-site from this moment and must appear there.
+    queryClient.invalidateQueries({ queryKey: ['visitor_logs_active'] });
   }
 
   return (

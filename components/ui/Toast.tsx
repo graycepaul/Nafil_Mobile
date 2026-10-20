@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -40,11 +40,17 @@ export function Toast({
   topOffset?: number;
 }) {
   const insets = useSafeAreaInsets();
+  // Callers pass a fresh inline function every render; depending on it would restart
+  // the timer whenever the parent re-renders, so a toast could never time out.
+  const dismissRef = useRef(onDismiss);
+  useEffect(() => {
+    dismissRef.current = onDismiss;
+  });
   useEffect(() => {
     if (!message) return;
-    const timer = setTimeout(onDismiss, duration);
+    const timer = setTimeout(() => dismissRef.current(), duration);
     return () => clearTimeout(timer);
-  }, [message, duration, onDismiss]);
+  }, [message, duration]);
 
   if (!message) return null;
 

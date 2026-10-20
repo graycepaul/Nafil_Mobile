@@ -58,9 +58,9 @@ function ResidentHome() {
   const { data: activePassCount, isLoading: activePassCountLoading } = useQuery({
     queryKey: ["dashboard_active_passes", profile?.id],
     queryFn: async () => {
-      // status='pending' alone overcounts: nothing flips it to 'expired'
-      // automatically (that job isn't deployed), so a lapsed pass still reads
-      // 'pending' in the DB. Excluding by valid_until keeps this number honest.
+      // status='pending' alone can overcount: the job that flips lapsed passes to
+      // 'expired' runs periodically, so a pass can read 'pending' for a short time
+      // after its window closed. Excluding by valid_until keeps this number honest.
       const { count } = await supabase
         .from("visitor_passes")
         .select("*", { count: "exact", head: true })

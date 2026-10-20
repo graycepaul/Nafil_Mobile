@@ -59,3 +59,10 @@ describe('friendlyDbError: rules enforced by 0065', () => {
     expect(friendlyDbError(raised('some internal detail'))).toBe('Something went wrong. Please try again.');
   });
 });
+
+describe('friendlyDbError: photo uploads', () => {
+  it('explains an unsupported or oversized photo instead of a generic failure', () => {
+    expect(friendlyDbError({ message: 'mime type image/heic is not supported' })).toMatch(/JPEG or PNG/);
+    expect(friendlyDbError({ message: 'The object exceeded the maximum allowed size' })).toMatch(/too large/);
+  });
+});

@@ -39,6 +39,7 @@ export default function FinancialsScreen() {
     data: overview,
     isLoading,
     isRefetching,
+    isError,
     refetch,
   } = useQuery({
     queryKey: ['financials_overview'],
@@ -80,7 +81,20 @@ export default function FinancialsScreen() {
         </Pressable>
       </View>
 
-      {isLoading || !overview ? (
+      {isError && !overview ? (
+        <View className="items-center py-2xl">
+          <Text className="mb-lg text-center text-base text-paper-900 dark:text-ink-text">
+            Couldn&apos;t load the financials.
+          </Text>
+          <Pressable
+            onPress={() => refetch()}
+            accessibilityRole="button"
+            className="rounded-md border border-paper-200 px-xl py-md dark:border-ink-border"
+          >
+            <Text className="font-semibold text-brand-800 dark:text-brand-300">Try again</Text>
+          </Pressable>
+        </View>
+      ) : isLoading || !overview ? (
         <View className="gap-lg">
           <StatCardSkeleton />
           <View className="flex-row gap-md">

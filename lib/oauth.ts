@@ -75,13 +75,14 @@ export async function signInWithApple(): Promise<OAuthResult> {
     });
   } catch (e) {
     const err = e as { code?: string; message?: string };
-    console.error('[AppleAuth] signInAsync rejected:', err.code, err.message, e);
+    // Code only: the error object and credential can carry account details.
+    console.warn('[AppleAuth] signInAsync rejected:', err.code);
     if (err.code === 'ERR_REQUEST_CANCELED') return { cancelled: true };
     return { error: e instanceof Error ? e : new Error('Sign-in failed.') };
   }
 
   if (!credential.identityToken) {
-    console.error('[AppleAuth] signInAsync resolved with no identityToken:', credential);
+    console.warn('[AppleAuth] signInAsync returned no identity token');
     return { error: new Error('Could not complete sign-in. Please try again.') };
   }
 
@@ -90,7 +91,7 @@ export async function signInWithApple(): Promise<OAuthResult> {
     token: credential.identityToken,
   });
   if (error) {
-    console.error('[AppleAuth] Supabase signInWithIdToken failed:', error.message, error);
+    console.warn('[AppleAuth] Supabase signInWithIdToken failed:', error.status);
     return { error };
   }
 

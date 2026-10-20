@@ -21,6 +21,7 @@ import { useTheme } from '../../context/theme-context';
 import { expiryLabel, titleCase } from '../../lib/format';
 import { groupByDate } from '../../lib/date-groups';
 import { validatePhone } from '../../lib/validation';
+import { normalizePhone } from '../../lib/phone';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
@@ -177,7 +178,7 @@ export default function VisitorPassScreen() {
       estate_id: profile.estate_id,
       resident_id: profile.id,
       visitor_name: titleCase(visitorName),
-      visitor_phone: visitorPhone.trim(),
+      visitor_phone: normalizePhone(visitorPhone) ?? visitorPhone.trim(),
     });
     setCreating(false);
     if (error) {
@@ -370,9 +371,9 @@ export default function VisitorPassScreen() {
           </Text>
         )}
         renderItem={({ item }) => {
-          // The DB's `status` only flips to 'expired' via a scheduled job that
-          // isn't deployed yet - so a pass past its window still reads 'pending'
-          // here. Compute the effective state client-side rather than show a
+          // The DB's `status` flips to 'expired' via a periodic server job, so a
+          // pass just past its window can still read 'pending' here. Compute the
+          // effective state client-side rather than show a
           // "Pending" badge next to "Expired 2h ago", which reads as contradictory.
           // Security enforces the real window at check-in regardless of this.
           // eslint-disable-next-line react-hooks/purity

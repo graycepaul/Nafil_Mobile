@@ -14,17 +14,25 @@ const FILL: StyleProp<ViewStyle> = { position: 'absolute', top: 0, left: 0, righ
  * outer container exactly as they would the `Image` itself - the image and
  * its loading/error states fill that container.
  */
-export function RemoteImage({
-  uri,
-  style,
-  className,
-  resizeMode = 'cover',
-}: {
+export function RemoteImage(props: RemoteImageProps) {
+  // Keyed by uri: a new address starts from "loading" instead of inheriting a
+  // previous failure (or an earlier image's "loaded" state).
+  return <RemoteImageInner key={props.uri} {...props} />;
+}
+
+interface RemoteImageProps {
   uri: string;
   style?: StyleProp<ViewStyle>;
   className?: string;
   resizeMode?: ImageResizeMode;
-}) {
+}
+
+function RemoteImageInner({
+  uri,
+  style,
+  className,
+  resizeMode = 'cover',
+}: RemoteImageProps) {
   const { colors } = useTheme();
   const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
 

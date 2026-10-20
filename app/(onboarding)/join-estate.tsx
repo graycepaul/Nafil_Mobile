@@ -3,6 +3,7 @@ import { View, Text, Pressable, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { pickPhoto } from '../../lib/pick-photo';
@@ -40,13 +41,6 @@ export default function JoinEstateScreen() {
   const [rejectionReason, setRejectionReason] = useState<string>();
   const [wasRejected, setWasRejected] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
-  const canSubmit =
-    !!estate &&
-    unitNo.trim().length > 0 &&
-    !!category &&
-    !!idPhoto &&
-    (category !== 'personnel' || serviceNumber.trim().length > 0);
 
   function handleCategoryChange(next: ResidentCategory) {
     setCategory(next);
@@ -101,8 +95,10 @@ export default function JoinEstateScreen() {
     if (Object.values(nextErrors).some(Boolean)) return;
 
     setSubmitting(true);
+    let uploadedPath: string | undefined;
     try {
       const idDocumentPath = await uploadIdDocument(profile.id, idPhoto!);
+      uploadedPath = idDocumentPath;
       const { error } = await supabase.from('estate_join_requests').insert({
         profile_id: profile.id,
         estate_id: estate!.id,
@@ -114,11 +110,16 @@ export default function JoinEstateScreen() {
       if (error) throw error;
       router.replace('/onboarding');
     } catch (err) {
+      // The request was not created, so the identity document just uploaded would be
+      // orphaned in storage (and uploaded again on retry). Best effort; ignore failure.
+      if (uploadedPath) {
+        supabase.storage.from('resident-id-documents').remove([uploadedPath]).catch(() => undefined);
+      }
       const dbError = err as { code?: string; message?: string };
       setFormError(
         dbError.code === '23505'
           ? 'You already have a request in review. No need to submit another.'
-          : (dbError.message ?? 'Could not submit your request. Please try again.')
+          : friendlyDbError(err)
       );
     } finally {
       setSubmitting(false);
@@ -173,7 +174,7 @@ export default function JoinEstateScreen() {
             <Pressable
               key={option.value}
               onPress={() => handleCategoryChange(option.value)}
-              accessibilityRole="checkbox"
+              accessibilityRole="radio"
               accessibilityState={{ checked: active }}
               className="flex-row items-center gap-sm py-xs"
             >
@@ -253,7 +254,6 @@ export default function JoinEstateScreen() {
         label="Request approval"
         onPress={handleSubmit}
         loading={submitting}
-        disabled={!canSubmit}
       />
     </AuthShell>
   );

@@ -67,7 +67,6 @@ export default function LoginScreen() {
         placeholder="Email or phone number"
         autoCapitalize="none"
         autoComplete="username"
-        keyboardType="email-address"
         textContentType="username"
         value={identifier}
         onChangeText={(v) => {

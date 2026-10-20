@@ -12,6 +12,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { relativeTime } from '../../lib/format';
@@ -137,7 +138,7 @@ export default function IssuesScreen() {
       queryClient.invalidateQueries({ queryKey: ['issues', profile.id] });
       queryClient.invalidateQueries({ queryKey: ['dashboard_open_issues'] });
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Could not report this issue. Please try again.');
+      setFormError(friendlyDbError(err));
     } finally {
       setSubmitting(false);
     }

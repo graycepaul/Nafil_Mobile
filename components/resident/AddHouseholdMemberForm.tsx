@@ -5,6 +5,7 @@ import { supabase } from "../../lib/supabase";
 import { friendlyDbError } from "../../lib/db-errors";
 import { pickHouseholdAvatarPhoto, uploadHouseholdAvatar } from "../../lib/avatar";
 import { validatePhone } from "../../lib/validation";
+import { normalizePhone } from "../../lib/phone";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Notice } from "../ui/Notice";
@@ -95,7 +96,7 @@ export function AddHouseholdMemberForm({
           resident_id: residentId,
           full_name: fullName.trim(),
           relationship: relationship.trim(),
-          phone: phone.trim(),
+          phone: normalizePhone(phone) ?? phone.trim(),
           review_frequency: reviewFrequency,
         })
         .select()
@@ -120,10 +121,16 @@ export function AddHouseholdMemberForm({
       return;
     }
 
-    await supabase
+    const { error: photoError } = await supabase
       .from("household_members")
       .update({ avatar_url: uploadResult.url })
       .eq("id", memberId);
+    if (photoError) {
+      // memberId is already remembered (pendingId), so "Add" retries just this step.
+      setCreating(false);
+      setFormError(`${fullName.trim()} was added, but saving the photo failed. Tap Add to try again.`);
+      return;
+    }
 
     setCreating(false);
     reset();

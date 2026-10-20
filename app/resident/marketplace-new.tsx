@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
+import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { pickPhoto } from '../../lib/pick-photo';
@@ -205,7 +206,7 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
       // instead of the actual previous screen. Navigate explicitly instead.
       router.replace(isEditing ? '/resident/store' : '/resident/marketplace');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not publish this listing. Please try again.');
+      setError(friendlyDbError(err));
     } finally {
       setSubmitting(false);
     }
