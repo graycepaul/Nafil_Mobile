@@ -26,34 +26,7 @@ import { UpdateRequiredScreen } from "../components/UpdateRequiredScreen";
 import { UpdateAvailableModal } from "../components/UpdateAvailableModal";
 import { ProfileLoadError } from "../components/ProfileLoadError";
 import type { UserRole } from "../types/database";
-
-const ROLE_HOME: Record<UserRole, string> = {
-  resident: "/resident",
-  security: "/security",
-  admin: "/admin",
-  super_admin: "/admin",
-  finance: "/admin",
-  // Platform developer: no estate, no residents - only the devControl dashboard.
-  dev_admin: "/devcontrol",
-};
-
-// Only these roles have a dedicated notifications list today - security
-// falls back to its home screen rather than a route that doesn't exist yet.
-const ROLE_NOTIFICATIONS: Partial<Record<UserRole, string>> = {
-  resident: "/resident/notifications",
-  admin: "/admin/notifications",
-  super_admin: "/admin/notifications",
-  finance: "/admin/notifications",
-};
-
-// Same idea for an emergency alert's "View" - security has no announcements
-// screen (see AnnouncementsFeed), so it falls back to ROLE_HOME below.
-const ROLE_ANNOUNCEMENTS: Partial<Record<UserRole, string>> = {
-  resident: "/resident/announcements",
-  admin: "/admin/announcements",
-  super_admin: "/admin/announcements",
-  finance: "/admin/announcements",
-};
+import { ROLE_HOME, notificationTapPath } from "../lib/role-routes";
 
 const AUTH_GROUP = "(auth)";
 const ONBOARDING_GROUP = "(onboarding)";
@@ -213,19 +186,28 @@ function useNotificationRouting(
       }
     });
 
-    const responseSub = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        const data = response.notification.request.content.data as
-          | { kind?: string }
-          | undefined;
-        if (data?.kind === "emergency_alert") {
-          if (role) router.push((ROLE_ANNOUNCEMENTS[role] ?? ROLE_HOME[role] ?? "/") as never);
-          return;
-        }
-        const notificationsPath = role ? ROLE_NOTIFICATIONS[role] : undefined;
-        if (notificationsPath) router.push(notificationsPath as never);
-      }
-    );
+    function openFromTap(response: Notifications.NotificationResponse) {
+      if (response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
+      // Role not known yet (launch): leave the tap stored; the effect re-runs once
+      // the profile loads and picks it up then.
+      if (!role) return;
+      const data = response.notification.request.content.data as { kind?: string } | undefined;
+      const path = notificationTapPath(data?.kind, role);
+      if (path) router.push(path as never);
+      // Taken: otherwise the same tap would be replayed on the next launch or sign-in.
+      Notifications.clearLastNotificationResponseAsync();
+    }
+
+    const responseSub = Notifications.addNotificationResponseReceivedListener(openFromTap);
+
+    // A tap that launched the app from fully closed arrives before any listener
+    // exists, so it has to be read back. It waits for the role (the profile loads
+    // a moment after launch); this effect re-runs once `role` is known.
+    if (role) {
+      Notifications.getLastNotificationResponseAsync().then((last) => {
+        if (last) openFromTap(last);
+      });
+    }
 
     return () => {
       receivedSub.remove();

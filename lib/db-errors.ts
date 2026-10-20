@@ -64,6 +64,10 @@ const TEXT_MESSAGES: { match: RegExp; message: string }[] = [
     message: 'You don’t have permission to do that.',
   },
   {
+    match: /timed out|took too long/i,
+    message: 'The server took too long to respond. Check your connection and try again.',
+  },
+  {
     match: /network|fetch failed|failed to fetch/i,
     message: 'Can’t reach the server. Check your connection and try again.',
   },

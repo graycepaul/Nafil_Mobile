@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { StyleSheet, View, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+import { useEffect, useRef, type ReactNode } from 'react';
+import { StyleSheet, View, Pressable, KeyboardAvoidingView, Platform, BackHandler } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../../context/theme-context';
 
@@ -31,10 +31,32 @@ export function Overlay({
   children: ReactNode;
 }) {
   const { isDark } = useTheme();
+
+  // Latest dismiss handler without re-subscribing on every parent render, so that
+  // when overlays stack (a photo viewer over a result dialog) the one that opened
+  // last keeps handling Back first.
+  const dismissRef = useRef(onDismiss);
+  useEffect(() => {
+    dismissRef.current = onDismiss;
+  });
+
+  // This is an absolutely positioned view, not a native Modal, so Android's
+  // hardware Back button knows nothing about it: with a dialog open, Back would
+  // leave the screen (or the app) underneath instead of closing the dialog.
+  useEffect(() => {
+    if (!visible || Platform.OS !== 'android') return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      dismissRef.current();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [visible]);
+
   if (!visible) return null;
 
   return (
-    <View className="absolute inset-0 z-50">
+    // accessibilityViewIsModal: screen readers should not wander into the page behind.
+    <View className="absolute inset-0 z-50" accessibilityViewIsModal>
       <BlurView
         intensity={70}
         tint={isDark ? 'dark' : 'light'}

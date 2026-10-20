@@ -35,6 +35,9 @@ config.
 | M7 (b) | Waiting on a decision: block the last owner, or allow with a stronger warning. |
 | H3 (follow-up) | Retire the old email-only function once released builds have updated. |
 
+| M8, M9, L15, L16 | Fixed in the resilience change set (app only, no migration). |
+| M15 | Refetch on app resume done (after 30s away). The offline indicator part needs a native module (NetInfo or expo-network) and so a new build: not done. |
+
 Found while fixing: after a scheduled-visit check-in (`ScheduledVisitLookup.tsx:56`) only the register list is refreshed, not the On-site list, so a scheduled visitor does not appear on-site until the guard pulls to refresh. Not yet fixed.
 
 ## Summary
