@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { View, Text, Pressable, ScrollView, Platform, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,11 +6,8 @@ import { useAuthStore } from '../store/auth-store';
 import type { ThemeMode } from '../store/theme-store';
 import { Card } from '../components/ui/Card';
 import { SignOutButton } from '../components/SignOutButton';
-import { ConfirmDialog } from '../components/ui/ConfirmDialog';
-import { Notice } from '../components/ui/Notice';
+import { DeleteAccountSection } from '../components/DeleteAccountSection';
 import { requestDndAccess } from '../lib/push-notifications';
-import { friendlyDbError } from '../lib/db-errors';
-import { apiDelete, ApiError } from '../lib/api';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 
 const THEME_OPTIONS: { mode: ThemeMode; label: string }[] = [
@@ -30,38 +26,13 @@ export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, mode, setMode } = useTheme();
-  const signOut = useAuthStore((s) => s.signOut);
   const profile = useAuthStore((s) => s.profile);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string>();
-
   // Staff access (admin/security/finance) represents institutional trust,
   // not a personal account a person unilaterally walks away with - only a
   // super_admin gets to decide someone's staff access ends. A resident's
   // account is their own to delete, same as super_admin's (the estate
   // owner role, not subject to anyone else's revocation).
   const canSelfDelete = profile?.role === 'resident' || profile?.role === 'super_admin';
-
-  async function handleDeleteAccount() {
-    setDeleting(true);
-    setDeleteError(undefined);
-    try {
-      await apiDelete('/account');
-    } catch (err) {
-      // The account may already be gone even though this specific request
-      // failed - e.g. a prior attempt's response never reached the client.
-      // Signing out regardless means a real deletion never leaves the app
-      // looking like nothing happened while quietly running on a session
-      // for an account that no longer exists; at worst it logs out a user
-      // whose account is actually fine, and they just sign back in.
-      setDeleteError(err instanceof ApiError ? friendlyDbError(err) : 'Something went wrong. Please try again.');
-      setConfirmingDelete(false);
-      await signOut();
-      return;
-    }
-    await signOut();
-  }
 
   return (
     <View className="flex-1 bg-white dark:bg-ink-bg">
@@ -167,37 +138,9 @@ export default function SettingsScreen() {
           <SignOutButton />
         </Card>
 
-        {canSelfDelete && (
-          <>
-            <Text className="mb-sm mt-xl text-sm font-medium text-paper-500 dark:text-ink-textMuted">
-              DANGER ZONE
-            </Text>
-            {deleteError && <Notice message={deleteError} />}
-            <Card className="items-start shadow-sm">
-              <Pressable onPress={() => setConfirmingDelete(true)} accessibilityRole="button" className="p-sm">
-                <Text className="font-semibold text-danger">Delete my account</Text>
-              </Pressable>
-              <Text className="px-sm pb-sm text-[13px] text-paper-500 dark:text-ink-textMuted">
-                Permanently deletes your profile, visitor passes, issues, and all other data tied
-                to your account. This can&apos;t be undone.
-              </Text>
-            </Card>
-          </>
-        )}
+        {canSelfDelete && <DeleteAccountSection />}
       </ScrollView>
 
-      {canSelfDelete && (
-        <ConfirmDialog
-          visible={confirmingDelete}
-          title="Delete your account?"
-          message="This permanently deletes your profile, visitor passes, issues, and all other data tied to your account. This can't be undone."
-          confirmLabel="Delete account"
-          destructive
-          loading={deleting}
-          onConfirm={handleDeleteAccount}
-          onCancel={() => setConfirmingDelete(false)}
-        />
-      )}
     </View>
   );
 }

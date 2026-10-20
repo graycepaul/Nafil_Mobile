@@ -30,6 +30,11 @@ config.
 
 | H4, H6, M11, M12, M13, M14 | Fixed in the money correctness change set (code and migration 0065). Needs: migration applied (merge backend to `prod`), then an EAS Update. |
 
+| H3, M4, M5, M6, M10, M7 (a, c) | Fixed in the auth and account safety change set (migration 0066 plus app). Needs: migration applied, then an EAS Update. |
+| H5 | Client message fixed; the server still needs SMTP set up: see `Nafil Backend/deploy/self-hosted/SMTP_SETUP.md`. |
+| M7 (b) | Waiting on a decision: block the last owner, or allow with a stronger warning. |
+| H3 (follow-up) | Retire the old email-only function once released builds have updated. |
+
 Found while fixing: after a scheduled-visit check-in (`ScheduledVisitLookup.tsx:56`) only the register list is refreshed, not the On-site list, so a scheduled visitor does not appear on-site until the guard pulls to refresh. Not yet fixed.
 
 ## Summary

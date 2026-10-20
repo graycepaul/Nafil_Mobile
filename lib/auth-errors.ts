@@ -53,9 +53,19 @@ const MESSAGES: { match: RegExp; message: string }[] = [
   },
 ];
 
+const SERVER_FAILURE_MESSAGE =
+  'Something went wrong on our side. Please try again in a few minutes.';
+
 export function authErrorMessage(error: AuthError | Error | null): string | undefined {
   if (!error) return undefined;
   const raw = error.message ?? '';
+  // A 5xx (for example the auth server being unable to send an email) or a body
+  // that came through as nothing useful ("", "{}") is not something a person can
+  // act on, so never show it as-is.
+  const status = (error as { status?: number }).status;
+  if ((status !== undefined && status >= 500) || /^[\s{}\[\]]*$/.test(raw) || /error sending .*email|unexpected_failure/i.test(raw)) {
+    return SERVER_FAILURE_MESSAGE;
+  }
   const hit = MESSAGES.find(({ match }) => match.test(raw));
   if (hit) return hit.message;
   // Unmapped: show Supabase's own text rather than a vague fallback, so real

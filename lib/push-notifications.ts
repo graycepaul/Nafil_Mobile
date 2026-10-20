@@ -136,6 +136,24 @@ export async function getCurrentPushToken(): Promise<string | null> {
 }
 
 /**
+ * Removes this device's push token for the signed-in profile, so the phone stops
+ * receiving that person's notifications (including emergency alerts) after they
+ * sign out. A token belongs to a device, and nothing else removes it when the
+ * session ends. Best effort and time-capped: signing out must never be held up
+ * by a bad connection. Call it before the session is destroyed (the delete is
+ * permitted by the signed-in user's own row policy).
+ */
+export async function unregisterThisDevice(timeoutMs = 3000): Promise<void> {
+  if (Platform.OS === 'web') return;
+  const work = (async () => {
+    const token = await getCurrentPushToken();
+    if (!token) return;
+    await supabase.from('push_tokens').delete().eq('token', token);
+  })().catch(() => undefined);
+  await Promise.race([work, new Promise<void>((resolve) => setTimeout(resolve, timeoutMs))]);
+}
+
+/**
  * Expo push tokens can rotate underneath an already-signed-in session (app
  * reinstall, restored backup, credential change) - a token saved once at
  * sign-in and never revisited goes stale, and every future push to it just

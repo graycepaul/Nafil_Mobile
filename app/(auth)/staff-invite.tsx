@@ -9,6 +9,7 @@ import {
   type ValidatedInvite,
 } from '../../lib/staff-invite';
 import { pickAndUploadPendingInviteAvatar } from '../../lib/avatar';
+import { clearPendingStaffInviteCode, savePendingStaffInviteCode } from '../../lib/pending-staff-invite';
 import { AuthShell } from '../../components/auth/AuthShell';
 import { Avatar } from '../../components/ui/Avatar';
 import { Button } from '../../components/ui/Button';
@@ -133,6 +134,9 @@ export default function StaffInviteScreen() {
     if (nextErrors.password || nextErrors.confirm) return;
 
     setCreating(true);
+    // Saved before the account exists so the onboarding step that runs as soon as
+    // the new session loads can accept the invite by code.
+    await savePendingStaffInviteCode(code);
     const { error } = await supabase.auth.signUp({
       email: invite!.email!,
       password,
@@ -141,6 +145,7 @@ export default function StaffInviteScreen() {
     setCreating(false);
 
     if (error) {
+      await clearPendingStaffInviteCode();
       setFormError(authErrorMessage(error));
       return;
     }

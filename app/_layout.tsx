@@ -5,16 +5,15 @@ import { AppState, Platform } from "react-native";
 import { Slot, useRouter, useSegments } from "expo-router";
 import * as Linking from "expo-linking";
 import * as Notifications from "expo-notifications";
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../lib/query-client";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { ThemeProvider, useTheme } from "../context/theme-context";
 import { useAuthStore } from "../store/auth-store";
 import { supabase } from "../lib/supabase";
-import {
-  establishSessionFromUrl,
-  urlLooksLikeAuthLink,
-} from "../lib/auth-session";
+import { establishSessionFromUrl, urlLooksLikeAuthLink } from "../lib/auth-session";
+import { shouldApplyAuthLink } from "../lib/auth-link";
 import {
   registerForPushNotifications,
   subscribeToPushTokenChanges,
@@ -25,9 +24,8 @@ import { useEmergencyAlertStore } from "../store/emergency-alert-store";
 import { useAppVersionGate } from "../lib/use-app-version-gate";
 import { UpdateRequiredScreen } from "../components/UpdateRequiredScreen";
 import { UpdateAvailableModal } from "../components/UpdateAvailableModal";
+import { ProfileLoadError } from "../components/ProfileLoadError";
 import type { UserRole } from "../types/database";
-
-const queryClient = new QueryClient();
 
 const ROLE_HOME: Record<UserRole, string> = {
   resident: "/resident",
@@ -85,6 +83,7 @@ function useNativeAuthLinks() {
 
     function handleUrl(url: string | null) {
       if (!url || !urlLooksLikeAuthLink(url)) return;
+      if (!shouldApplyAuthLink(url, useAuthStore.getState().session?.user.id)) return;
       establishSessionFromUrl(url);
       // No explicit navigation here: expo-router's own linking integration
       // already routes to the path portion of this URL (e.g. `/set-password`).
@@ -108,11 +107,12 @@ function useNativeAuthLinks() {
  */
 /**
  * Registering as early as sign-in (rather than waiting for a specific
- * screen) means a resident's device is reachable for an emergency alert
- * from the moment they're part of an estate, not just once they happen to
- * visit some particular tab. estate_id gates it - a token registered
- * before a resident has one would just be unfindable by /alerts/broadcast,
- * which looks up recipients by estate.
+ * screen) means a device is reachable from the moment someone signs in, not
+ * just once they happen to visit some particular tab. That includes a resident
+ * whose estate request is still pending: without a token they would never get
+ * the "approved" or "declined" push. A token with no estate is harmless to
+ * everything else, because /alerts/broadcast finds recipients through their
+ * profile's estate, so it simply isn't found until they have one.
  *
  * Two things a one-shot effect misses, handled here: if the resident denies
  * the permission prompt and later grants it from Settings, nothing would
@@ -122,9 +122,9 @@ function useNativeAuthLinks() {
  * live session (reinstall, restored backup) - subscribeToPushTokenChanges
  * keeps that in sync for as long as this profile stays signed in.
  */
-function usePushRegistration(profileId: string | undefined, estateId: string | null | undefined) {
+function usePushRegistration(profileId: string | undefined) {
   useEffect(() => {
-    if (!profileId || !estateId) return;
+    if (!profileId) return;
 
     registerForPushNotifications(profileId);
 
@@ -137,7 +137,7 @@ function usePushRegistration(profileId: string | undefined, estateId: string | n
       appStateSub.remove();
       tokenSub.remove();
     };
-  }, [profileId, estateId]);
+  }, [profileId]);
 }
 
 function useBadgeSync(profileId: string | undefined) {
@@ -238,6 +238,7 @@ function RootNavigation() {
   const session = useAuthStore((s) => s.session);
   const profile = useAuthStore((s) => s.profile);
   const loading = useAuthStore((s) => s.loading);
+  const profileError = useAuthStore((s) => s.profileError);
   const init = useAuthStore((s) => s.init);
   const segments = useSegments();
   const router = useRouter();
@@ -247,7 +248,7 @@ function RootNavigation() {
   useBadgeSync(profile?.id);
   useNotificationRouting(profile?.role, router);
 
-  usePushRegistration(profile?.id, profile?.estate_id);
+  usePushRegistration(profile?.id);
 
   const versionGate = useAppVersionGate();
 
@@ -323,6 +324,14 @@ function RootNavigation() {
           iosStoreUrl={versionGate.config.ios_store_url}
           androidStoreUrl={versionGate.config.android_store_url}
         />
+      </AppShell>
+    );
+  }
+
+  if (session && !profile && profileError) {
+    return (
+      <AppShell>
+        <ProfileLoadError />
       </AppShell>
     );
   }

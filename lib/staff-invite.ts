@@ -50,9 +50,29 @@ export async function saveStaffInviteProfile(params: {
 }
 
 /**
+ * Accepts an invite using the secret code AND the signed-in email. Unlike the
+ * email-only function below, knowing the invited address is not enough.
+ */
+export async function acceptStaffInviteByCode(
+  code: string
+): Promise<{ accepted: boolean; role: UserRole | null; failed?: boolean }> {
+  const { data, error } = await supabase.rpc('accept_staff_invite', { p_code: code }).single();
+  const result = data as { accepted: boolean; granted_role: UserRole | null } | null;
+  // `failed` = the call itself did not complete (network), as opposed to the
+  // server answering "no". Only a failed call is worth retrying later.
+  if (error || !result) return { accepted: false, role: null, failed: true };
+  return { accepted: result.accepted, role: result.granted_role };
+}
+
+/**
  * Called once a real session exists (after the confirmation-email click) -
  * matches by the caller's own verified email, finalizing role/estate/approved
  * and copying over the name/phone/photo saved during the anonymous steps.
+ */
+/**
+ * @deprecated Matches on the email alone, which anyone can claim. Kept only so
+ * the server function stays referenced for older builds; new code uses
+ * `acceptStaffInviteByCode`.
  */
 export async function acceptStaffInviteByEmail(): Promise<{ accepted: boolean; role: UserRole | null }> {
   const { data, error } = await supabase.rpc('accept_staff_invite_by_email').single();
