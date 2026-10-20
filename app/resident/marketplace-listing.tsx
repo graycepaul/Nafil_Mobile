@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
 import { friendlyDbError } from '../../lib/db-errors';
+import { normalizePhoneForWhatsApp } from '../../lib/share-text';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { formatNaira, relativeTime } from '../../lib/format';
@@ -100,12 +101,20 @@ export default function MarketplaceListingScreen() {
     if (orderErr) return setError(friendlyDbError(orderErr));
     queryClient.invalidateQueries({ queryKey: ['listing', id] });
     queryClient.invalidateQueries({ queryKey: ['listings'] });
+    queryClient.invalidateQueries({ queryKey: ['has_purchases'] });
+    queryClient.invalidateQueries({ queryKey: ['my_purchases'] });
     setNotice("Thanks. We'll let you know once the seller confirms your payment.");
   }
 
   function messageOnWhatsApp() {
-    if (!listing!.whatsapp) return;
-    Linking.openURL(`https://wa.me/${listing!.whatsapp}`);
+    // wa.me needs digits only, with the country code. Sellers type local numbers
+    // like 0801 234 5678, so normalize the same way the visitor-pass share does.
+    const number = listing!.whatsapp ? normalizePhoneForWhatsApp(listing!.whatsapp) : undefined;
+    if (!number) {
+      setError("This seller's WhatsApp number isn't valid.");
+      return;
+    }
+    Linking.openURL(`https://wa.me/${number}`).catch(() => setError("Couldn't open WhatsApp."));
   }
 
   return (

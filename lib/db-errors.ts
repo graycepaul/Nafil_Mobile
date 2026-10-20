@@ -29,6 +29,32 @@ const CODE_MESSAGES: Record<string, string> = {
 };
 
 const TEXT_MESSAGES: { match: RegExp; message: string }[] = [
+  // Rules enforced by the database itself (see 0065_money_integrity.sql). Their
+  // messages are written for people, so they map to equally plain copy.
+  {
+    match: /already awaiting confirmation/i,
+    message: 'You have already submitted a transfer for this. It is waiting to be confirmed.',
+  },
+  {
+    match: /due was not found|already paid|is not yours/i,
+    message: 'That payment is no longer available. Refresh and try again.',
+  },
+  {
+    match: /amount must match/i,
+    message: 'The amount does not match what is owed. Refresh and try again.',
+  },
+  {
+    match: /no longer available/i,
+    message: 'This item is no longer available.',
+  },
+  {
+    match: /cannot buy your own listing/i,
+    message: 'You can not buy your own listing.',
+  },
+  {
+    match: /only an order that is still awaiting transfer/i,
+    message: 'This order can no longer be cancelled because it has already been paid.',
+  },
   {
     match: /could not find the table|schema cache/i,
     message: 'Something went wrong loading that. Please try again in a moment.',

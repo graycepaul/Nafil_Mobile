@@ -59,6 +59,7 @@ export function PaymentMethodSheet({
   transferAccount,
   transferUnavailableMessage,
   transferNote,
+  amountError,
   onConfirm,
   onCancel,
 }: {
@@ -71,6 +72,8 @@ export function PaymentMethodSheet({
   transferUnavailableMessage?: string;
   /** Replaces the default "use your unit number as narration" hint under the account card. */
   transferNote?: string;
+  /** When set, the amount cannot be sent: the message is shown and confirming is disabled. */
+  amountError?: string;
   onConfirm: (method: PaymentMethod, proof?: PaymentProof) => Promise<void> | void;
   onCancel: () => void;
 }) {
@@ -196,6 +199,7 @@ export function PaymentMethodSheet({
         </View>
       )}
 
+      {amountError && <Notice message={amountError} />}
       {insufficientWallet && <Notice message="Your wallet balance isn't enough to cover this. Choose another method." />}
 
       <View className="flex-row gap-sm">
@@ -204,7 +208,7 @@ export function PaymentMethodSheet({
           label={method === 'transfer' ? "I've sent the transfer" : 'Pay now'}
           onPress={handleConfirm}
           loading={submitting}
-          disabled={insufficientWallet || transferUnavailable || (proofNeeded && !proof)}
+          disabled={!!amountError || insufficientWallet || transferUnavailable || (proofNeeded && !proof)}
           className="flex-1"
         />
       </View>

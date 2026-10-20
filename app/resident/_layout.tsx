@@ -99,6 +99,11 @@ export default function ResidentLayout() {
         options={{ title: 'My store', href: null, headerShown: false }}
       />
       <Tabs.Screen
+        name="purchases"
+        // Reached via the Market tab header's receipt icon.
+        options={{ title: 'My purchases', href: null, headerShown: false }}
+      />
+      <Tabs.Screen
         name="wallet-transactions"
         // Reached via "See all" on the Wallet screen.
         options={{ title: 'All transactions', href: null, headerShown: false }}

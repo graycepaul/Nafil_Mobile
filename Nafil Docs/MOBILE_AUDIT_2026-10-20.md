@@ -28,6 +28,8 @@ config.
 | M16 | Fixed (dev_admin role routing), released with the mobile devControl commit |
 | H1, H2, M1, M2, M3 | Fixed in the gate and access change set (code and migration 0064). Needs: migration applied (merge backend to `prod`), then an EAS Update for the app. |
 
+| H4, H6, M11, M12, M13, M14 | Fixed in the money correctness change set (code and migration 0065). Needs: migration applied (merge backend to `prod`), then an EAS Update. |
+
 Found while fixing: after a scheduled-visit check-in (`ScheduledVisitLookup.tsx:56`) only the register list is refreshed, not the On-site list, so a scheduled visitor does not appear on-site until the guard pulls to refresh. Not yet fixed.
 
 ## Summary

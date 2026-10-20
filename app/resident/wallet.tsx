@@ -9,6 +9,7 @@ import { friendlyDbError } from '../../lib/db-errors';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { formatNaira, relativeTime } from '../../lib/format';
+import { parseAmount, validateTopUp } from '../../lib/money';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -207,8 +208,12 @@ export default function WalletScreen() {
   }
 
   async function handleConfirmFund(method: PaymentMethod, proof?: PaymentProof) {
-    const amount = Number(fundAmount) || 0;
+    const amount = parseAmount(fundAmount);
     setError(undefined);
+    // The sheet already disables confirming, but this is the last line of defence
+    // before a transfer record is written.
+    const amountProblem = validateTopUp(amount);
+    if (amountProblem) return setError(amountProblem);
 
     if (method === 'transfer') {
       let proofUrl: string | undefined;
@@ -478,7 +483,7 @@ export default function WalletScreen() {
                 key={preset}
                 onPress={() => setFundAmount(String(preset))}
                 className={`flex-1 items-center rounded-md border py-sm ${
-                  Number(fundAmount) === preset
+                  parseAmount(fundAmount) === preset
                     ? 'border-brand-800 dark:border-brand-300'
                     : 'border-paper-200 dark:border-ink-border'
                 }`}
@@ -493,7 +498,8 @@ export default function WalletScreen() {
 
         <PaymentMethodSheet
           title="Fund wallet"
-          amount={Number(fundAmount) || 0}
+          amount={parseAmount(fundAmount)}
+          amountError={validateTopUp(parseAmount(fundAmount))}
           methods={['transfer']}
           requireProof
           transferAccount={transferAccountFor('wallet_topup')}

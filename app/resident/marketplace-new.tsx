@@ -8,6 +8,8 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { pickPhoto } from '../../lib/pick-photo';
+import { validateAccountNumber } from '../../lib/bank-account';
+import { validatePhone } from '../../lib/validation';
 import { uploadListingPhotos } from '../../lib/listing-photos';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
@@ -116,9 +118,10 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
   const deliveryMethodChosen = type !== 'good' || pickupAvailable || homeDeliveryAvailable;
   const pickupAddressValid = type !== 'good' || !pickupAvailable || pickupAddress.trim().length > 0;
   const deliveryValid = deliveryMethodChosen && pickupAddressValid;
-  const whatsappValid = type !== 'service' || whatsapp.trim().length > 0;
+  const whatsappValid = type !== 'service' || !validatePhone(whatsapp);
   const priceValid = type === 'good' ? Number(price) > 0 : Number(price) > 0 && Number(priceTo) >= Number(price);
-  const payoutAccountValid = accountName.trim().length > 0 && accountNumber.trim().length > 0 && bankName.trim().length > 0;
+  const accountNumberError = accountNumber ? validateAccountNumber(accountNumber) : undefined;
+  const payoutAccountValid = accountName.trim().length > 0 && !validateAccountNumber(accountNumber) && bankName.trim().length > 0;
   const canSubmit =
     title.trim() && priceValid && description.trim() && deliveryValid && whatsappValid && payoutAccountValid;
 
@@ -446,6 +449,8 @@ function MarketplaceForm({ listingId, initial }: { listingId?: string; initial?:
               keyboardType="number-pad"
               value={accountNumber}
               onChangeText={(v) => setAccountNumber(v.replace(/[^0-9]/g, ''))}
+              maxLength={10}
+              error={accountNumberError}
             />
           </View>
           <View className="flex-1">

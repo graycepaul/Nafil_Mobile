@@ -16,6 +16,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
 import { friendlyDbError } from '../../lib/db-errors';
+import { formatNaira } from '../../lib/format';
 import { useAuthStore } from '../../store/auth-store';
 import { useTheme } from '../../context/theme-context';
 import { Button } from '../../components/ui/Button';
@@ -23,6 +24,7 @@ import { Input } from '../../components/ui/Input';
 import { Notice } from '../../components/ui/Notice';
 import { Card } from '../../components/ui/Card';
 import { Overlay } from '../../components/ui/Overlay';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import type { DueCategory, Profile } from '../../types/database';
 
 const CATEGORIES: { value: DueCategory; label: string }[] = [
@@ -56,6 +58,7 @@ export default function AssignDuesScreen() {
   const [webDate, setWebDate] = useState(() => defaultDueDate().toISOString().slice(0, 10));
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string>();
 
   const isWeb = Platform.OS === 'web';
@@ -68,6 +71,10 @@ export default function AssignDuesScreen() {
         .select('id, full_name, unit_no')
         .eq('role', 'resident')
         .eq('approved', true)
+        // Dues belong to the unit, held by the primary resident. A household member
+        // shares that unit (and, with full access, can already see and pay its dues),
+        // so charging them too would bill the unit once per person.
+        .is('household_access_level', null)
         .order('full_name');
       if (error) throw error;
       return data as Pick<Profile, 'id' | 'full_name' | 'unit_no'>[];
@@ -100,6 +107,7 @@ export default function AssignDuesScreen() {
   const canSubmit = selectedCount > 0 && label.trim() && Number(amount) > 0 && !!resolvedDate;
 
   async function handleSubmit() {
+    setConfirming(false);
     if (!canSubmit || !profile?.estate_id || !resolvedDate) return;
     setError(undefined);
     setSubmitting(true);
@@ -350,7 +358,7 @@ export default function AssignDuesScreen() {
 
         <Button
           label="Assign due"
-          onPress={handleSubmit}
+          onPress={() => setConfirming(true)}
           loading={submitting}
           disabled={!canSubmit}
           className="mt-lg"
@@ -416,6 +424,14 @@ export default function AssignDuesScreen() {
           <Button label="Done" onPress={() => setResidentPickerOpen(false)} className="mt-md" />
         </Card>
       </Overlay>
+      <ConfirmDialog
+        visible={confirming}
+        title="Assign this due?"
+        message={`${label.trim()}: ${formatNaira(Number(amount) || 0)} each to ${selectedCount} resident${selectedCount === 1 ? '' : 's'}, ${formatNaira((Number(amount) || 0) * selectedCount)} in total. Residents are notified straight away.`}
+        confirmLabel="Assign due"
+        onConfirm={handleSubmit}
+        onCancel={() => setConfirming(false)}
+      />
     </KeyboardAvoidingView>
   );
 }

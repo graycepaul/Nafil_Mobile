@@ -37,6 +37,14 @@ export function MarketplaceCheckoutFlow({
   onCancel: () => void;
 }) {
   const { colors } = useTheme();
+  // A listing from before sellers had to give payout details has nowhere for the
+  // transfer to go. The listing screen already disables Buy for it; this keeps the
+  // sheet from ever showing a blank "Transfer to" account if it is reached anyway.
+  const hasPayoutAccount = !!(
+    listing.seller_account_name &&
+    listing.seller_account_number &&
+    listing.seller_bank_name
+  );
   const hasDelivery = listing.type === 'good' && (listing.pickup || listing.home_delivery);
   const hasChoice = listing.type === 'good' && listing.pickup && listing.home_delivery;
 
@@ -45,6 +53,18 @@ export function MarketplaceCheckoutFlow({
 
   const deliveryFee = deliveryChoice === 'delivery' ? listing.delivery_fee : 0;
   const total = listing.price + deliveryFee;
+
+  if (!hasPayoutAccount) {
+    return (
+      <Card className="bg-white p-lg dark:bg-ink-surface">
+        <Text className="mb-sm text-lg font-semibold text-paper-900 dark:text-ink-text">Can&apos;t buy this yet</Text>
+        <Text className="mb-lg text-[13px] text-paper-500 dark:text-ink-textMuted">
+          The seller hasn&apos;t added bank details for this listing, so there is nowhere to send the payment.
+        </Text>
+        <Button label="Close" onPress={onCancel} />
+      </Card>
+    );
+  }
 
   if (step === 'delivery' && hasDelivery) {
     return (
@@ -158,9 +178,9 @@ export function MarketplaceCheckoutFlow({
       amount={total}
       methods={['transfer']}
       transferAccount={{
-        name: listing.seller_account_name ?? 'Seller',
-        accountNumber: listing.seller_account_number ?? '',
-        bankName: listing.seller_bank_name ?? '',
+        name: listing.seller_account_name!,
+        accountNumber: listing.seller_account_number!,
+        bankName: listing.seller_bank_name!,
       }}
       transferNote="This goes straight to the seller - Nafil Estates doesn't hold or forward it."
       onConfirm={(method, proof) =>
