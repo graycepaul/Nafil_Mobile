@@ -35,6 +35,8 @@ const ROLE_HOME: Record<UserRole, string> = {
   admin: "/admin",
   super_admin: "/admin",
   finance: "/admin",
+  // Platform developer: no estate, no residents - only the devControl dashboard.
+  dev_admin: "/devcontrol",
 };
 
 // Only these roles have a dedicated notifications list today - security
@@ -217,7 +219,7 @@ function useNotificationRouting(
           | { kind?: string }
           | undefined;
         if (data?.kind === "emergency_alert") {
-          if (role) router.push((ROLE_ANNOUNCEMENTS[role] ?? ROLE_HOME[role]) as never);
+          if (role) router.push((ROLE_ANNOUNCEMENTS[role] ?? ROLE_HOME[role] ?? "/") as never);
           return;
         }
         const notificationsPath = role ? ROLE_NOTIFICATIONS[role] : undefined;
@@ -298,6 +300,9 @@ function RootNavigation() {
     if (section !== undefined && SHARED_ROUTES.has(section)) return;
 
     const homePath = ROLE_HOME[profile.role];
+    // A role this build doesn't know about (added server-side after release)
+    // must not crash the router; leave it on the splash rather than throwing.
+    if (!homePath) return;
     const isOnOwnSection = section === homePath.slice(1);
 
     if (

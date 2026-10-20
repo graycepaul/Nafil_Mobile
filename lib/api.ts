@@ -60,3 +60,26 @@ export async function apiDelete(path: string): Promise<void> {
     throw new ApiError(detail?.detail ?? `Request failed (${res.status})`);
   }
 }
+
+export async function apiGet<T>(path: string): Promise<T> {
+  if (!API_URL) {
+    throw new ApiError(
+      'EXPO_PUBLIC_API_URL is not set. The backend service URL needs to be in .env.'
+    );
+  }
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new ApiError('Not signed in.');
+
+  const res = await fetch(`${API_URL}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null);
+    throw new ApiError(detail?.detail ?? `Request failed (${res.status})`);
+  }
+
+  return res.json() as Promise<T>;
+}

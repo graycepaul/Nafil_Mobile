@@ -1,4 +1,4 @@
-export type UserRole = 'resident' | 'security' | 'admin' | 'super_admin' | 'finance';
+export type UserRole = 'resident' | 'security' | 'admin' | 'super_admin' | 'finance' | 'dev_admin';
 export type VisitorPassStatus = 'pending' | 'used' | 'expired' | 'revoked';
 export type VisitorLogMethod = 'qr' | 'code' | 'manual';
 export type IssueStatus = 'open' | 'in_progress' | 'resolved' | 'closed';

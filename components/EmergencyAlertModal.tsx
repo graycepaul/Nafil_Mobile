@@ -15,6 +15,7 @@ const ROLE_HOME: Record<UserRole, string> = {
   admin: '/admin',
   super_admin: '/admin',
   finance: '/admin',
+  dev_admin: '/devcontrol',
 };
 
 // Security has no announcements screen (see AnnouncementsFeed) - it falls
@@ -70,7 +71,7 @@ export function EmergencyAlertModal() {
             variant="danger"
             onPress={() => {
               dismiss();
-              if (role) router.push((ROLE_ANNOUNCEMENTS[role] ?? ROLE_HOME[role]) as never);
+              if (role) router.push((ROLE_ANNOUNCEMENTS[role] ?? ROLE_HOME[role] ?? '/') as never);
             }}
             className="flex-1"
           />
