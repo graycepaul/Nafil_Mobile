@@ -1,4 +1,5 @@
-import { View, Text, Linking, Platform } from 'react-native';
+import { View, Text, Platform } from 'react-native';
+import { openUrl } from '../lib/open-url';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme } from '../context/theme-context';
 import { Button } from './ui/Button';
@@ -33,7 +34,7 @@ export function UpdateRequiredScreen({ message, iosStoreUrl, androidStoreUrl }: 
       {storeUrl && (
         <Button
           label="Update now"
-          onPress={() => Linking.openURL(storeUrl)}
+          onPress={() => openUrl(storeUrl)}
           className="mt-xl w-full"
         />
       )}

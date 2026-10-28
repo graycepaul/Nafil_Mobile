@@ -2,8 +2,8 @@
   "expo": {
     "name": "Nafil Estates",
     "slug": "nafil-estate",
-    "version": "1.0.6",
-    "orientation": "portrait",
+    "version": "1.0.8",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -29,6 +29,9 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA"
+      ],
+      "blockedPermissions": [
+        "android.permission.WRITE_CONTACTS"
       ]
     },
     "web": {
@@ -74,7 +77,16 @@
           ]
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ]
     ],
     "scheme": "nafil-estates",
     "extra": {

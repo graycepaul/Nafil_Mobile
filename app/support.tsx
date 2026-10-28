@@ -1,4 +1,5 @@
-import { View, Text, Pressable, ScrollView, Linking } from 'react-native';
+import { View, Text, Pressable, ScrollView } from 'react-native';
+import { openUrl } from '../lib/open-url';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/theme-context';
@@ -67,7 +68,7 @@ export default function SupportScreen() {
             App problems, account access, or anything else, reach us directly.
           </Text>
           <Pressable
-            onPress={() => Linking.openURL(`mailto:${email}`)}
+            onPress={() => openUrl(`mailto:${email}`)}
             className="items-center rounded-md bg-brand-800 py-sm dark:bg-brand-500"
           >
             <Text className="text-base font-semibold text-white">{email}</Text>

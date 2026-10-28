@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { View, Text, Pressable, FlatList, RefreshControl, Linking } from 'react-native';
+import { View, Text, Pressable, FlatList, RefreshControl } from 'react-native';
+import { openUrl } from '../../lib/open-url';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -105,7 +106,7 @@ export default function AdminTransfersScreen() {
     setError(undefined);
     try {
       const signedUrl = await getTransferProofSignedUrl(path);
-      Linking.openURL(signedUrl);
+      if (!(await openUrl(signedUrl))) setError('Could not open proof of payment.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not open proof of payment.');
     }

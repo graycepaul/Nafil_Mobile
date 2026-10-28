@@ -48,6 +48,16 @@ async function doRegister(profileId: string): Promise<string | null> {
   if (Platform.OS === 'web') return null;
 
   if (Platform.OS === 'android') {
+    // The backend sends every non-emergency push (approvals, issue updates,
+    // announcements) with channelId "default". Nothing created that channel, so
+    // Android dropped those into a generic fallback channel with no heads-up
+    // banner. Creating it here makes the OS show them as normal alerts and gives
+    // the resident a named "General" toggle in system notification settings.
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'General',
+      importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 250],
+    });
     await Notifications.setNotificationChannelAsync('emergency', {
       name: 'Emergency alerts',
       importance: Notifications.AndroidImportance.MAX,
@@ -201,5 +211,6 @@ export function subscribeToPushTokenChanges() {
  */
 export function requestDndAccess() {
   if (Platform.OS !== 'android') return;
-  Linking.sendIntent?.('android.settings.NOTIFICATION_POLICY_ACCESS_SETTINGS');
+  // Rejects on devices that have no such settings screen; nothing useful to do then.
+  Linking.sendIntent?.('android.settings.NOTIFICATION_POLICY_ACCESS_SETTINGS')?.catch?.(() => undefined);
 }

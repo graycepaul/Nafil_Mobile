@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, Linking, Platform } from 'react-native';
+import { View, Text, Platform } from 'react-native';
+import { openUrl } from '../lib/open-url';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme } from '../context/theme-context';
 import { Overlay } from './ui/Overlay';
@@ -41,7 +42,7 @@ export function UpdateAvailableModal({ message, iosStoreUrl, androidStoreUrl }: 
               label="Update"
               onPress={() => {
                 setDismissed(true);
-                Linking.openURL(storeUrl);
+                openUrl(storeUrl);
               }}
               className="flex-1"
             />
