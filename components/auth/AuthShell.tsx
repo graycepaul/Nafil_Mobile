@@ -11,6 +11,7 @@ import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/theme-context";
 import { BrandLockup } from "../ui/BrandMark";
+import { useAuthStore } from "../../store/auth-store";
 
 interface AuthShellProps {
   title: string;
@@ -18,6 +19,8 @@ interface AuthShellProps {
   children: ReactNode;
   footer?: ReactNode;
   onBack?: () => void;
+  /** Onboarding screens: the account already exists, so this is the only way back out. */
+  showSignOut?: boolean;
 }
 
 /**
@@ -38,8 +41,10 @@ export function AuthShell({
   children,
   footer,
   onBack,
+  showSignOut,
 }: AuthShellProps) {
   const { colors } = useTheme();
+  const signOut = useAuthStore((s) => s.signOut);
   const insets = useSafeAreaInsets();
 
   return (
@@ -66,6 +71,17 @@ export function AuthShell({
                 className="mb-lg self-start active:opacity-50"
               >
                 <Ionicons name="arrow-back" color={colors.primary} size={24} />
+              </Pressable>
+            )}
+
+            {showSignOut && (
+              <Pressable
+                onPress={signOut}
+                accessibilityRole="button"
+                hitSlop={12}
+                className="mb-lg self-end active:opacity-50"
+              >
+                <Text className="text-sm font-semibold text-brand-800 dark:text-brand-300">Sign out</Text>
               </Pressable>
             )}
 

@@ -68,6 +68,7 @@ export default function ProfileSetupScreen() {
 
   return (
     <AuthShell
+      showSignOut
       title="Set up your profile"
       subtitle="A couple of details before we get you into your estate."
     >

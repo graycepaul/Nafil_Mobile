@@ -128,6 +128,7 @@ export default function JoinEstateScreen() {
 
   return (
     <AuthShell
+      showSignOut
       title="Join your estate"
       subtitle="Tell us where you live. Your estate admin confirms this against their records before you get access."
     >
