@@ -203,30 +203,25 @@ export default function AdminAnnouncementsScreen() {
             poster_token: posterToken,
           }
         );
-        // A 200 response only means the backend accepted the request and tried
-        // - Expo's API can still reject the whole batch, leaving tickets_sent
-        // at 0 with no thrown error. `recipients` alone can't tell success
-        // from that.
+        // A 200 response only means the backend accepted the request - Expo can
+        // still reject the whole batch, which leaves tickets_sent at 0.
         if (result.tickets_sent === 0 && result.recipients > 0) {
           toast = {
             tone: 'error',
-            message: `Announcement posted, but the push notification didn't send to any of the ${result.recipients} device${result.recipients === 1 ? '' : 's'} found.${result.errors[0] ? ` (${result.errors[0]})` : ''}`,
-          };
-        } else if (result.tickets_sent < result.recipients) {
-          toast = {
-            tone: 'success',
-            message: `Alert sent: ${result.tickets_sent} of ${result.recipients} device${result.recipients === 1 ? '' : 's'} notified, plus the in-app announcement.`,
+            message: 'Failed to send the alert. Please try again later.',
           };
         } else {
-          toast = {
-            tone: 'success',
-            message: `Alert sent: ${result.recipients} device${result.recipients === 1 ? '' : 's'} notified, plus the in-app announcement.`,
-          };
+          toast = { tone: 'success', message: 'Alert sent successfully!' };
         }
       } catch (pushError) {
+        // ApiError wording for a dropped connection or timeout mentions the
+        // connection; anything else came from the server side.
+        const offline = pushError instanceof Error && /connection|timed out/i.test(pushError.message);
         toast = {
           tone: 'error',
-          message: `Announcement posted, but the push notification failed: ${friendlyDbError(pushError)}`,
+          message: offline
+            ? 'Failed to send the alert. Please check your network and try again.'
+            : 'Failed to send the alert. Please try again later, our systems may be experiencing issues.',
         };
       }
     }
